@@ -146,7 +146,7 @@ export default class BuildCluster extends Command {
     // Prompt the user for confirmation
     const buildServer = await inquirer.prompt([
       {
-        message: 'Do you really want to build a master server?👊🏻',
+        message: 'Do you really want to build a cluster?👊🏻',
         name: 'buildServerConfirmation',
         type: 'confirm',
         validate(input) {
