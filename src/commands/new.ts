@@ -15,14 +15,14 @@ export default class BuildCluster extends Command {
 
   constructor(argv: string[], config: any) {
     super(argv, config);
-    this.log(process.cwd());
-    console.log(new URL('.', import.meta.url).pathname);
+    // console.log(new URL('.', import.meta.url).pathname);
+    console.log("Initializing building cluster!");
 
     // Load templates from a folder when the class is instantiated
     // this.loadTemplatesFromFolder('../src/templates/aws/common');
   }
 
-  async askBasicAWSVariables() {
+  async askAWSBasicVariables() {
     return inquirer.prompt([
       {
         default: 'us-east-1',
@@ -43,7 +43,7 @@ export default class BuildCluster extends Command {
         type: 'list',
       },
       {
-        default: 'terraform.tfstate',
+        default: 'variables.tfvars',
         message: 'Enter the name of the Terraform state file:',
         name: 'tfstate_key',
         type: 'input',
@@ -51,22 +51,13 @@ export default class BuildCluster extends Command {
     ]);
   }
 
-  async buildServers() {
-    // Create Liquid instance
+  async buildServers(cloudProvider: string) {
     const liquid = new Liquid();
-
-    // Read the Liquid template file
-    const templateFile = fs.readFileSync(path.join(new URL('.', import.meta.url).pathname, "..", "templates", "aws", "common", "variables.liquid"), 'utf8');
-
-    // Ask the user for variable values
-    const basicAWSVariables = await this.askBasicAWSVariables();
-
+    const templateFile = fs.readFileSync(path.join(new URL('.', import.meta.url).pathname, "..", "templates", cloudProvider, "common", "variables.liquid"), 'utf8');
     try {
-      // Parse and render the Liquid template with variables
-      const renderedTemplate = await liquid.parseAndRender(templateFile, basicAWSVariables);
-      this.log(renderedTemplate);
-      // Write the rendered template to a new file
-      fs.writeFileSync(path.join(new URL('.', import.meta.url).pathname, "..", "templates", "aws", "common", "variables.tfvars"), renderedTemplate);
+      const awsBasicVariables = await this.askAWSBasicVariables();
+      const renderedTemplate = await liquid.parseAndRender(templateFile, awsBasicVariables);
+      fs.writeFileSync(path.join(new URL('.', import.meta.url).pathname, "..", "templates", cloudProvider, "common", "variables.tfvars"), renderedTemplate);
 
       this.log('variables.tfvars file generated successfully.');
     } catch {
@@ -74,6 +65,49 @@ export default class BuildCluster extends Command {
     }
   }
 
+  async EKSVariables() {
+    return inquirer.prompt([
+      {
+        default: 'nebula',
+        message: 'Enter the Cluster name:',
+        name: 'cluster_name',
+        type: 'input',
+      },
+      {
+        default: '1.29',
+        message: 'Enter the version of the cluster to be used:',
+        name: 'cluster_version',
+        type: 'input',
+      },
+      {
+        choices: ['true', 'false'],
+        default: 'true',
+        message: 'Enable cluster public access through endpoint?',
+        name: 'cluster_endpoint_public_access',
+        type: 'list',
+      },
+      {
+        default: 'variables.tfvars',
+        message: 'Do you already have a VPC for the cluster:',
+        name: 'existing_vpc',
+        type: 'confirm',
+        validate(input) {
+          return input ? true : 'Please confirm to proceed';
+        },
+      },
+      {
+        message: 'Enter the VPC ID that is already present:',
+        name: 'vpc_id',
+        type: 'input',
+        when(answers) {
+            if(!answers.existing_vpc) {
+              console.log("Calling VPC creation module to create one for the cluster... If this was a mistake then please cancel the command and run again!")
+            }
+        },
+      }
+    ])
+  };
+  
   extractBaseFilename(filePath: string): string {
     const baseFilename = path.basename(filePath);
     const filenameWithoutExtension = path.parse(baseFilename).name;
@@ -123,9 +157,18 @@ export default class BuildCluster extends Command {
 
     // Check user confirmation
     if (buildServer.buildServerConfirmation) {
+      const { cloudProvider } = await inquirer.prompt([
+        {
+          choices: ['aws'],
+          message: 'Select a cloud provider:',
+          name: 'cloudProvider',
+          type: 'list',
+        },
+      ]);
+
       // Build the master and worker servers
       this.log('Building master and worker servers...');
-      await this.buildServers();
+      await this.buildServers(cloudProvider);
     } else {
       this.log('The basic server can be provisioned too!');
     }
