@@ -1,7 +1,7 @@
 magikube
 =================
 
-CLI tool to bring up infrastructure and basic project
+Infrastructure as Code in minutes using magikube
 
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
@@ -20,7 +20,7 @@ $ npm install -g magikube
 $ magikube COMMAND
 running command...
 $ magikube (--version)
-magikube/0.0.0 darwin-arm64 node-v21.7.3
+magikube/0.0.0 darwin-arm64 node-v20.10.0
 $ magikube --help [COMMAND]
 USAGE
   $ magikube COMMAND
@@ -65,7 +65,7 @@ EXAMPLES
   hello friend from oclif! (./src/commands/hello/index.ts)
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/infrastructure/infrastructure/blob/v0.0.0/src/commands/hello/index.ts)_
+_See code: [src/commands/hello/index.ts](https://github.com/calfus-open-source/magikube/blob/v0.0.0/src/commands/hello/index.ts)_
 
 ## `magikube hello world`
 
@@ -83,7 +83,7 @@ EXAMPLES
   hello world! (./src/commands/hello/world.ts)
 ```
 
-_See code: [src/commands/hello/world.ts](https://github.com/infrastructure/infrastructure/blob/v0.0.0/src/commands/hello/world.ts)_
+_See code: [src/commands/hello/world.ts](https://github.com/calfus-open-source/magikube/blob/v0.0.0/src/commands/hello/world.ts)_
 
 ## `magikube help [COMMAND]`
 
@@ -151,7 +151,7 @@ GLOBAL FLAGS
 DESCRIPTION
   Installs a plugin into magikube.
 
-  Uses bundled npm executable to install plugins into /Users/neelshah/.local/share/magikube
+  Uses bundled npm executable to install plugins into /Users/sjujara/.local/share/magikube
 
   Installation of a user-installed plugin will override a core plugin.
 
@@ -225,7 +225,7 @@ GLOBAL FLAGS
 DESCRIPTION
   Installs a plugin into magikube.
 
-  Uses bundled npm executable to install plugins into /Users/neelshah/.local/share/magikube
+  Uses bundled npm executable to install plugins into /Users/sjujara/.local/share/magikube
 
   Installation of a user-installed plugin will override a core plugin.
 
