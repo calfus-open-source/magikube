@@ -1,0 +1,11 @@
+{% comment %} Region to store the terraform state file {% endcomment %}
+region = "{{ region }}"
+
+{% comment %} Bucket name which stores the TF file, this is generally manually created{% endcomment %}
+tfstate_bucket  = "{{ tfstate_bucket }}"
+
+{% comment %} Encryption for the bucket which tf state file {% endcomment %}
+tfstate_bucket_encryption = {{ tfstate_bucket_encryption }}
+
+{% comment %} The file name which stores the state for terraform {% endcomment %}
+tfstate_key     = "{{ tfstate_key }}"

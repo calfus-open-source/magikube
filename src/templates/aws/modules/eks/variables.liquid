@@ -1,0 +1,16 @@
+# terraform.tfvars
+
+cluster_name = "{{ cluster_name }}"
+cluster_version = "{{ cluster_version }}"
+cluster_endpoint_public_access = "{{ cluster_endpoint_public_access }}"
+vpc_id = "{{ vpc_id }}"
+vpc_public_subnets = [
+  {% for subnet in vpc_public_subnets %}
+    "{{ subnet }}"{% unless forloop.last %},{% endunless %}
+  {% endfor %}
+]
+vpc_private_subnets = [
+  {% for subnet in vpc_private_subnets %}
+    "{{ subnet }}"{% unless forloop.last %},{% endunless %}
+  {% endfor %}
+]

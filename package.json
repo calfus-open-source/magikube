@@ -6,7 +6,7 @@
   "bin": {
     "magikube": "./bin/run.js"
   },
-  "bugs": "https://github.com/infrastructure/infrastructure/issues",
+  "bugs": "https://github.com/calfus-open-source/magikube/issues",
   "dependencies": {
     "@oclif/core": "^3.26.6",
     "@oclif/plugin-help": "^6",
@@ -19,6 +19,7 @@
     "configstore": "^6.0.0",
     "figlet": "^1.7.0",
     "inquirer": "^9.2.20",
+    "liquidjs": "^10.12.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.8",
     "simple-git": "^3.24.0",
@@ -37,7 +38,7 @@
     "eslint-config-oclif-typescript": "^3",
     "eslint-config-prettier": "^9",
     "mocha": "^10",
-    "oclif": "^4",
+    "oclif": "^4.10.10",
     "shx": "^0.3.3",
     "ts-node": "^10",
     "typescript": "^5"
@@ -48,9 +49,10 @@
   "files": [
     "/bin",
     "/dist",
+    "/src",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/infrastructure/infrastructure",
+  "homepage": "https://github.com/calfus-open-source/magikube",
   "keywords": [
     "oclif"
   ],
@@ -79,9 +81,9 @@
       "command_incomplete": "./dist/hooks/command_incomplete.js"
     }
   },
-  "repository": "infrastructure/infrastructure",
+  "repository": "calfus-open-source/magikube",
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "shx rm -rf dist && tsc -b && shx cp -r src/templates dist",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",

@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 // Define a type for replacements
 interface Replacements {
@@ -10,7 +10,8 @@ interface Replacements {
 function replaceVariableValues(terraformFilePath: string, replacements: Replacements) {
     let terraformFile = fs.readFileSync(terraformFilePath, 'utf8');
     for (const [key, value] of Object.entries(replacements)) {
-        terraformFile = terraformFile.replace(new RegExp(`\\$\{var.${key}}`, 'g'), value);
+        terraformFile = terraformFile.replaceAll(new RegExp(`\\$\{var.${key}}`, 'g'), value);
     }
+
     return terraformFile;
 }

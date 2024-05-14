@@ -1,0 +1,49 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+          "Effect": "Allow",
+          "Principal": {
+              "AWS": "${s3_iamuser_arn}"
+          },
+          "Action": [
+              "s3:ListBucket"
+          ],
+          "Resource": "${tradefull_internal_customer_files_bucket_arn}"
+      },
+      {
+          "Effect": "Allow",
+          "Principal": {
+              "AWS": "${s3_iamuser_arn}"
+          },
+          "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:PutObjectAcl"
+          ],
+          "Resource": "${tradefull_internal_customer_files_bucket_arn}/*"
+      },
+      {
+        "Effect": "Allow",
+        "Principal": {
+            "Service": "lambda.amazonaws.com"
+        },
+        "Action": [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:PutObjectAcl"
+        ],
+        "Resource": "${tradefull_internal_customer_files_bucket_arn}/*"
+    },
+    {
+        "Effect": "Allow",
+        "Principal": {
+            "Service": "lambda.amazonaws.com"
+        },
+        "Action": [
+            "s3:ListBucket"
+        ],
+        "Resource": "${tradefull_internal_customer_files_bucket_arn}"
+    }
+    ]
+}
