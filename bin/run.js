@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { execute } from '@oclif/core';
+import {execute} from '@oclif/core'
+import chalk from 'chalk';
 import clear from 'clear';
 import figlet from 'figlet';
-import chalk from 'chalk';
 
 clear();
 
@@ -13,4 +13,5 @@ console.log(
   )
 );
 
-await execute({ dir: new URL('.', import.meta.url).pathname });
+
+await execute({dir: import.meta.url})

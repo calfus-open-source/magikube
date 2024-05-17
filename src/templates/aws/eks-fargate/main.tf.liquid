@@ -1,0 +1,14 @@
+provider "aws" {
+    region     = "{{ aws_region }}"
+}
+  
+terraform {
+    backend "s3" {
+        bucket  = "{{ project_name }}-terraform-state"
+        encrypt = true
+        key     = "{{ project_name }}-terraform.tfstate"
+        region  = "{{ aws_region }}"
+    }
+}
+
+

@@ -1,0 +1,11 @@
+terraform {
+    required_version = {{ terraform_version }}
+    required_providers {
+        {% if cloud_provider == 'aws' %}
+        aws = {
+            source = "hashicorp/aws"
+            version = {{ aws_provider_version }}
+        }
+        {% endif %}
+    }
+}

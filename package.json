@@ -1,37 +1,33 @@
 {
   "name": "magikube",
-  "description": "CLI tool to bring up infrastructure and basic project",
+  "description": "Infrastructure as Code in minutes using magikube",
   "version": "0.0.0",
-  "author": "neelshah19",
+  "author": "Calfus",
   "bin": {
     "magikube": "./bin/run.js"
   },
-  "bugs": "https://github.com/infrastructure/infrastructure/issues",
+  "bugs": "https://github.com/calfus-open-source/magikube/issues",
   "dependencies": {
-    "@oclif/core": "^3.26.6",
+    "@oclif/core": "^3",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
-    "@octokit/auth-basic": "^1.4.8",
-    "@octokit/rest": "^20.1.1",
     "chalk": "^5.3.0",
     "clear": "^0.1.0",
-    "clui": "^0.3.6",
-    "configstore": "^6.0.0",
     "figlet": "^1.7.0",
-    "inquirer": "^9.2.20",
-    "lodash": "^4.17.21",
-    "minimist": "^1.2.8",
-    "simple-git": "^3.24.0",
-    "touch": "^3.1.0"
+    "inquirer": "^9.2.21",
+    "liquidjs": "^10.13.0"
   },
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^3",
     "@types/chai": "^4",
+    "@types/clear": "^0.1.4",
+    "@types/figlet": "^1.5.8",
     "@types/inquirer": "^9.0.7",
     "@types/mocha": "^10",
     "@types/node": "^18",
     "chai": "^4",
+    "copyfiles": "^2.4.1",
     "eslint": "^8",
     "eslint-config-oclif": "^5",
     "eslint-config-oclif-typescript": "^3",
@@ -50,7 +46,7 @@
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/infrastructure/infrastructure",
+  "homepage": "https://github.com/calfus-open-source/magikube",
   "keywords": [
     "oclif"
   ],
@@ -59,29 +55,23 @@
   "type": "module",
   "oclif": {
     "bin": "magikube",
-    "commands": "./dist/commands",
     "dirname": "magikube",
-    "topicSeparator": " ",
+    "commands": "./dist/commands",
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
     ],
-    "binAliases": [
-      "magikube"
-    ],
+    "topicSeparator": " ",
     "topics": {
       "hello": {
         "description": "Say hello to the world and others"
       }
-    },
-    "flexibleTaxonomy": true,
-    "hooks": {
-      "command_incomplete": "./dist/hooks/command_incomplete.js"
     }
   },
-  "repository": "infrastructure/infrastructure",
+  "repository": "https://github.com/calfus-open-source/magikube",
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
+    "copy-templates": "copyfiles -u 1 src/templates/**/* dist && copyfiles -u 1 src/templates/**/**/* dist && copyfiles -u 1 src/templates/* dist",
+    "build": "shx rm -rf dist && tsc -b && npm run copy-templates",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
