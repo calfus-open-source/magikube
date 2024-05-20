@@ -1,0 +1,68 @@
+data "aws_availability_zones" "available" {}
+
+locals {
+  azs      = slice(data.aws_availability_zones.available.names, 0, {{ aws_az_count }})
+  vpc_cidr = var.cidr
+}
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "{{ aws_vpc_module_version }}"
+ 
+  name                 = "${var.name}-${var.environment}"  
+  cidr                 = var.cidr
+  azs                  = local.azs
+  public_subnets       = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
+  private_subnets      = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 3)]
+  database_subnets     = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 6)]
+
+  create_database_subnet_group = true  
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+
+  private_subnet_suffix = "private"
+  public_subnet_suffix = "public"
+  database_subnet_suffix = "database"
+
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = 1
+  }
+
+  tags = {
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "networking"
+    "terraform"      = "true"    
+    "kubernetes.io/cluster/${var.name}-${var.environment}-eks" = "shared"
+  }
+}
+
+output "id" {
+  value = module.vpc.vpc_id
+}
+
+output "public_subnets" {
+  value = module.vpc.public_subnets
+}
+
+output "private_subnets" {
+  value = module.vpc.private_subnets
+}
+
+output "database_subnets" {
+  value = module.vpc.database_subnets
+}
+
+output "vpc_cidr_block" {
+  value = module.vpc.vpc_cidr_block
+}
+
+output "database_subnet_group" {
+  value = module.vpc.database_subnet_group
+}

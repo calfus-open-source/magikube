@@ -7,7 +7,7 @@ import BaseCommand from '../commands/base.js';
 export default abstract class BaseProject {    
     protected systemConfig: SystemConfig;
     protected responses: any;
-    protected command: BaseCommand;
+    public command: BaseCommand;
     protected engine = new Liquid();
     protected projectPath: string = '';
     
@@ -41,13 +41,16 @@ export default abstract class BaseProject {
         this.createFile('providers.tf', '../templates/common/providers.tf.liquid');
     }
 
-    async createFile(filename: string, templateFilename: string): Promise<void> {
+    async createFile(filename: string, templateFilename: string, folderName: string = '.'): Promise<void> {
         //create a file in the path
 
         this.command.log(`Creating ${filename} file`);
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
         const output = await this.engine.parseAndRender(templateFile, { ...this.responses, ...this.systemConfig.getConfig() } );
-        fs.writeFileSync(join(this.projectPath, filename), output);
-
+        const folderPath = join(this.projectPath, folderName);
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
+        }
+        fs.writeFileSync(join(folderPath, filename), output);
     }   
 }

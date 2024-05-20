@@ -4,11 +4,16 @@ provider "aws" {
   
 terraform {
     backend "s3" {
-        bucket  = "{{ project_name }}-terraform-state"
+        bucket  = "{{ project_id }}-tfstate"
         encrypt = true
         key     = "{{ project_name }}-terraform.tfstate"
         region  = "{{ aws_region }}"
     }
 }
 
-
+module "vpc" {
+    source = "./modules/vpc"
+    name = "{{ project_name }}-{{ environment }}-vpc"
+    environment = "{{ environment }}"
+    cidr = "{{ aws_vpc_cidr }}"
+}

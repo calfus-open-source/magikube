@@ -1,9 +1,11 @@
 import {Args, Command, Flags} from '@oclif/core'
 import BaseCommand from '../base.js'
 import inquirer from 'inquirer';
-import cloudProviderPrompts from '../../prompts/provider.js';
-import awsPrompts from '../../prompts/aws.js';
+
 import TerraformProject from '../../core/terraform-project.js';
+import PropmtGenerator from '../../prompts/prompt-generator.js';
+import { v4 as uuidv4 } from 'uuid';
+
 
 export default class Project extends BaseCommand {  
   static args = {
@@ -20,19 +22,27 @@ Creating a new infrastructure as code project named 'sample' in the current dire
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(Project);
-    let responses = { "project_name": args.name };
+    let responses = { "project_name": args.name, "project_id": uuidv4() };    
+    const promptGenerator = new PropmtGenerator();
 
-    // Get the cloud provider from the prompt
-    for (const propmt of cloudProviderPrompts) {
+    for (const propmt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(propmt);
       responses = { ...responses, ...resp };
-    }
 
-    if ('cloud_provider' in responses && responses['cloud_provider'] === 'aws') {
-      for (const propmt of awsPrompts) {
+      for (const propmt of promptGenerator.getCloudProviderPrompts(resp['cloud_provider'])) {
         const resp = await inquirer.prompt(propmt);
         responses = { ...responses, ...resp };
       }
+
+      for (const propmt of promptGenerator.getEnvironment()) {
+        const resp = await inquirer.prompt(propmt);
+        responses = { ...responses, ...resp };
+
+        for (const propmt of promptGenerator.getLifecycles(resp['environment'])) {
+          const resp = await inquirer.prompt(propmt);
+          responses = { ...responses, ...resp };
+        }
+      } 
     }
 
     this.log(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)
