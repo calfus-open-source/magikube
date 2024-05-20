@@ -1,6 +1,6 @@
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
-import EKSFargateProject from './aws-eks-fargate.js';
+import EKSFargateProject from './aws/aws-eks-fargate.js';
 import BaseProject from './base-project.js';
 
 export default abstract class TerraformProject {    
