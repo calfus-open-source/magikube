@@ -5,6 +5,7 @@ import inquirer from 'inquirer';
 import TerraformProject from '../../core/terraform-project.js';
 import PropmtGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
+import SystemConfig from '../../config/system.js';
 
 
 export default class Project extends BaseCommand {  
@@ -46,12 +47,12 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     }
 
     this.log(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)
-    this.log('Config:', this.systemConfig.getConfig());
-    this.log('Responses: ', responses);
+    SystemConfig.getInstance().mergeConfigs(responses);
+    this.log('Config:', SystemConfig.getInstance().getConfig());
 
     // Get the project name from the command line arguments
     const projectName = args.name;
-    const terraform = await TerraformProject.generateProject(this, this.systemConfig, responses);
+    const terraform = await TerraformProject.generateProject(this);
     if (terraform)
       await terraform.createProject(projectName, process.cwd());
   }

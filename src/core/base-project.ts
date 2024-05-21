@@ -5,15 +5,13 @@ import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 
 export default abstract class BaseProject {    
-    protected systemConfig: SystemConfig;
-    protected responses: any;
+    protected config: any = {};
     public command: BaseCommand;
     protected engine = new Liquid();
     protected projectPath: string = '';
     
-    constructor(command: BaseCommand, systemConfig: SystemConfig, responses: any) {
-        this.systemConfig = systemConfig;
-        this.responses = responses;
+    constructor(command: BaseCommand, config: any) {
+        this.config = config;
         this.command = command;
     }
 
@@ -46,7 +44,7 @@ export default abstract class BaseProject {
 
         this.command.log(`Creating ${filename} file`);
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
-        const output = await this.engine.parseAndRender(templateFile, { ...this.responses, ...this.systemConfig.getConfig() } );
+        const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
         const folderPath = join(this.projectPath, folderName);
         if (!fs.existsSync(folderPath)) {
             fs.mkdirSync(folderPath, { recursive: true });
