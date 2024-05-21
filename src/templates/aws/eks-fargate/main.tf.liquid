@@ -6,7 +6,7 @@ terraform {
     backend "s3" {
         bucket  = "{{ project_id }}-tfstate"
         encrypt = true
-        key     = "{{ project_name }}-terraform.tfstate"
+        key     = "{{ project_name }}-{{ environment }}.tfstate"
         region  = "{{ aws_region }}"
     }
 }

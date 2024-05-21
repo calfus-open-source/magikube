@@ -6,10 +6,10 @@ export default class EKSFargateProject extends AWSProject {
     super.createProject(name, path);
     AWSBackend.create(
       this,
-      `${this.responses.project_id}-tfstate`,
-      this.responses.aws_region,
-      this.responses.aws_access_key_id,
-      this.responses.aws_secret_access_key
+      `${this.config.project_id}-tfstate`,
+      this.config.aws_region,
+      this.config.aws_access_key_id,
+      this.config.aws_secret_access_key
     );
     this.createMainFile();
   }
