@@ -15,10 +15,30 @@ export default abstract class BaseProject {
         this.command = command;
     }
 
+    async destroyProject(name: string, path: string): Promise<void> {
+        //initialize terraform in the path
+        this.projectPath = join(path, name);
+        this.deleteFolder();
+    }
+
+    async deleteFolder(): Promise<void> {
+        if (fs.existsSync(this.projectPath)) {
+            this.command.log(`Removing folder '${this.projectPath}'`);
+            fs.rmSync(this.projectPath, { recursive: true });
+        } else {
+            this.command.log(`Folder '${this.projectPath}' does not exist in the path`);
+        }
+    }
+
     async createProject(name: string, path: string): Promise<void> {
         //initialize terraform in the path
         this.projectPath = join(path, name);
         this.createFolder();
+
+        const projectConfigFile = join(this.projectPath, '.magikube');
+        this.command.log(`Creating project '${name}' in the path`);
+        fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
+
         this.createProviderFile();
     }
 
@@ -50,5 +70,11 @@ export default abstract class BaseProject {
             fs.mkdirSync(folderPath, { recursive: true });
         }
         fs.writeFileSync(join(folderPath, filename), output);
+    }   
+
+    async generateContent(templateFilename: string): Promise<any> {
+        this.command.log(`Creating content from ${templateFilename}`);
+        const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
+        return await this.engine.parseAndRender(templateFile, { ...this.config } );
     }   
 }

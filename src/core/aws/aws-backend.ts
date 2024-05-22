@@ -15,7 +15,7 @@ export default class AWSBackend {
     region: string,
     accessKeyId: string,
     secretAccessKey: string
-  ): Promise<void> {
+  ): Promise<boolean> {
     const s3Client = new S3Client({
       region: region,
       credentials: {
@@ -37,7 +37,7 @@ export default class AWSBackend {
       if (await bucketExists(bucketName)) {
         project.command.log(`Bucket ${bucketName} already exists`);
         console.log(`Bucket ${bucketName} already exists`);
-        return;
+        return false;
       }
       const data = await s3Client.send(
         new CreateBucketCommand({ Bucket: bucketName })
@@ -46,5 +46,7 @@ export default class AWSBackend {
     } catch (err) {
       project.command.error(`Error creating bucket ${bucketName}, ${err}`);
     }
+
+    return true;
   }
 }

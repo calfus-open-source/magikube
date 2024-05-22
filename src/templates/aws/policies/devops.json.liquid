@@ -1,0 +1,273 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ec2:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "wafv2:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "waf-regional:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "rds:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "events:ListRules",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "kafka:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "dynamodb:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:PutBucketPolicy",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "route53:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "acm:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "elasticloadbalancing:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "cloudwatch:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetGroup",
+        "iam:CreateRole",
+        "iam:ListAccountAliases",
+        "iam:TagRole",
+        "iam:GetRole",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:AttachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:ListInstanceProfilesForRole",
+        "iam:DeleteRole",
+        "iam:CreatePolicy",
+        "iam:TagPolicy",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:ListPolicyVersions",
+        "iam:DeletePolicy",
+        "iam:DetachRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:CreateOpenIDConnectProvider",
+        "iam:TagOpenIDConnectProvider",
+        "iam:GetOpenIDConnectProvider",
+        "iam:DeleteOpenIDConnectProvider",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:CreatePolicyVersion",
+        "iam:ListOpenIDConnectProviders",
+        "iam:DeletePolicyVersion",
+        "iam:CreateUser",
+        "iam:TagUser",
+        "iam:GetUser",
+        "iam:ListGroupsForUser",
+        "iam:DeleteUser",
+        "iam:AttachUserPolicy",
+        "iam:ListAttachedUserPolicies",
+        "iam:DetachUserPolicy",
+        "iam:UploadSSHPublicKey",
+        "iam:GetSSHPublicKey",
+        "iam:DeleteSSHPublicKey",
+        "iam:ListAccessKeys",
+        "iam:CreateAccessKey",
+        "iam:UpdateAccessKey",
+        "iam:DeleteAccessKey",
+        "iam:ListRoles",
+        "iam:ListUsers",
+        "iam:ListPolicies",
+        "iam:DetachGroupPolicy",
+        "iam:CreateGroup",
+        "iam:AttachGroupPolicy",
+        "iam:DeleteGroup"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iam:PassRole"],
+      "Resource": [
+        "arn:aws:iam::*:role/{{ project_name }}-*",
+        "arn:aws:iam::*:role/kube-system-*",
+        "arn:aws:iam::*:role/codebuild-*",
+        "arn:aws:iam::*:role/codepipeline-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:TagResource",
+        "logs:PutRetentionPolicy",
+        "logs:DescribeLogGroups",
+        "logs:ListTagsLogGroup",
+        "logs:DeleteLogGroup"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["lambda:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["kms:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["eks:*"],
+      "Resource": "*"
+    },
+    {
+      "Action": "iam:CreateServiceLinkedRole",
+      "Effect": "Allow",
+      "Resource": "arn:aws:iam::*:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+      "Condition": {
+        "StringLike": {
+          "iam:AWSServiceName": "rds.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ecr:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["cloudfront:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:ListSecrets",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:TagResource",
+        "secretsmanager:PutSecretValue",
+        "secretsmanager:DeleteSecret",
+        "secretsmanager:UpdateSecret",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:ListSecretVersionIds",
+        "secretsmanager:DeleteResourcePolicy",
+        "secretsmanager:PutResourcePolicy",
+        "secretsmanager:CancelRotateSecret",
+        "secretsmanager:RotateSecret",
+        "secretsmanager:GetResourcePolicy"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iam:*"],
+      "Resource": "arn:aws:iam::*:user/${aws:username}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateVirtualMFADevice",
+        "iam:DeleteVirtualMFADevice",
+        "iam:EnableMFADevice",
+        "iam:ListMFADevices",
+        "iam:ResyncMFADevice"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iam:GetAccountSummary", "iam:ListAccountAliases"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "codecommit:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "codebuild:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "codepipeline:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:DescribeImages",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:GetRegistryScanningConfiguration"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["logs:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Deny",
+      "Action": [
+        "codecommit:GitPush",
+        "codecommit:DeleteBranch",
+        "codecommit:PutFile"
+      ],
+      "Resource": "arn:aws:codecommit:us-east-1:*:*",
+      "Condition": {
+        "StringEqualsIfExists": {
+          "codecommit:References": ["refs/heads/main", "refs/heads/prod"]
+        },
+        "Null": {
+          "codecommit:References": "false"
+        }
+      }
+    }
+  ]
+}

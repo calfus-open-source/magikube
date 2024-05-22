@@ -1,0 +1,33 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "iam:*"
+        ],
+        "Resource": "arn:aws:iam::*:user/${aws:username}"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "iam:GetAccountSummary",
+          "iam:ListAccountAliases"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "codecommit:*",
+        "Resource": "*"
+      },
+      {
+        "Effect": "Deny",
+        "Resource": "*",
+        "Action": [
+          "codecommit:CreateRepository",
+          "codecommit:DeleteRepository"
+        ]
+      }
+    ]
+  }
