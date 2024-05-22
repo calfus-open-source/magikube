@@ -8,7 +8,9 @@
   },
   "bugs": "https://github.com/calfus-open-source/magikube/issues",
   "dependencies": {
+    "@aws-sdk/client-iam": "^3.577.0",
     "@aws-sdk/client-s3": "^3.577.0",
+    "@aws-sdk/client-sts": "^3.577.0",
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",

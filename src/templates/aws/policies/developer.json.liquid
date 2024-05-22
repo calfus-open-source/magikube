@@ -1,0 +1,121 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:*"
+      ],
+      "Resource": "arn:aws:iam::*:user/${aws:username}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": 
+        [
+          "iam:CreateVirtualMFADevice",
+          "iam:DeleteVirtualMFADevice",
+          "iam:EnableMFADevice",
+          "iam:ListMFADevices",
+          "iam:ResyncMFADevice"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetAccountSummary",
+        "iam:ListAccountAliases"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "codecommit:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Deny",
+      "Resource": "*",
+      "Action": [
+        "codecommit:CreateRepository",
+        "codecommit:DeleteRepository"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "codebuild:*",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Deny",
+      "Resource": "*",
+      "Action": [
+        "codebuild:CreateProject",
+        "codebuild:DeleteProject",
+        "codebuild:BatchDeleteBuilds",
+        "codebuild:DeleteReport",
+        "codebuild:DeleteReportGroup"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codepipeline:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:DescribeImages",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:GetRegistryScanningConfiguration"
+      ],
+      "Resource": "*"
+    },    
+    {
+      "Effect": "Deny",
+      "Action": [ 
+        "codepipeline:DeletePipeline",
+        "codepipeline:CreatePipeline"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:*"
+      ],
+      "Resource": "*"
+    },
+    {
+        "Effect": "Deny",
+        "Action": [
+            "codecommit:GitPush",
+            "codecommit:DeleteBranch",
+            "codecommit:PutFile",
+            "codecommit:MergeBranchesByFastForward",
+            "codecommit:MergeBranchesBySquash",
+            "codecommit:MergeBranchesByThreeWay",
+            "codecommit:MergePullRequestByFastForward",
+            "codecommit:MergePullRequestBySquash",
+            "codecommit:MergePullRequestByThreeWay"
+        ],
+        "Resource": "arn:aws:codecommit:{{ aws_region }}:*:*",
+        "Condition": {
+            "StringEqualsIfExists": {
+                "codecommit:References": [
+                    "refs/heads/main", 
+                    "refs/heads/prod"
+                  ]
+            },
+            "Null": {
+                "codecommit:References": "false"
+            }
+        }
+    }
+  ]
+}

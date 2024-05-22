@@ -4,8 +4,7 @@ import EKSFargateProject from './aws/aws-eks-fargate.js';
 import BaseProject from './base-project.js';
 
 export default abstract class TerraformProject {    
-
-    static async generateProject(command: BaseCommand): Promise<BaseProject | null> {
+    static async getProject(command: BaseCommand): Promise<BaseProject | null> {
         const config = SystemConfig.getInstance().getConfig();
 
         if (config.cloud_provider === 'aws') {

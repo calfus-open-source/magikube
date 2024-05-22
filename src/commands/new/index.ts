@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import SystemConfig from '../../config/system.js';
 
 
-export default class Project extends BaseCommand {  
+export default class CreateProject extends BaseCommand {  
   static args = {
     name: Args.string({description: 'Infrastructure project name to be created', required: true}),
   }
@@ -22,7 +22,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
   ]
 
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(Project);
+    const {args, flags} = await this.parse(CreateProject);
     let responses = { "project_name": args.name, "project_id": uuidv4() };    
     const promptGenerator = new PropmtGenerator();
 
@@ -52,7 +52,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
 
     // Get the project name from the command line arguments
     const projectName = args.name;
-    const terraform = await TerraformProject.generateProject(this);
+    const terraform = await TerraformProject.getProject(this);
     if (terraform)
       await terraform.createProject(projectName, process.cwd());
   }

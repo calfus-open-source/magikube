@@ -1,16 +1,8 @@
 import AWSProject from "./aws-project.js";
-import AWSBackend from "./aws-backend.js";
 
 export default class EKSFargateProject extends AWSProject {
   async createProject(name: string, path: string): Promise<void> {
     super.createProject(name, path);
-    AWSBackend.create(
-      this,
-      `${this.config.project_id}-tfstate`,
-      this.config.aws_region,
-      this.config.aws_access_key_id,
-      this.config.aws_secret_access_key
-    );
     this.createMainFile();
   }
 
