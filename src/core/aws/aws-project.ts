@@ -1,5 +1,5 @@
 import BaseProject from '../base-project.js';
-import AWSBackend from "./aws-backend.js";
+import AWSTerraformBackend from "./aws-tf-backend.js";
 import AWSPolicies from "./aws-iam.js";
 
 export default class AWSProject extends BaseProject {
@@ -13,9 +13,9 @@ export default class AWSProject extends BaseProject {
             this.config.aws_secret_access_key
             );
     
-        AWSBackend.create(
+        AWSTerraformBackend.create(
           this,
-          `${this.config.project_id}-tfstate`,
+          this.config.project_id,
           this.config.aws_region,
           this.config.aws_access_key_id,
           this.config.aws_secret_access_key
@@ -31,7 +31,17 @@ export default class AWSProject extends BaseProject {
         );
 
         if (status) {
-            super.destroyProject(name, path);
+            const backendStatus = await AWSTerraformBackend.delete(
+                this,
+                this.config.project_id,
+                this.config.aws_region,
+                this.config.aws_access_key_id,
+                this.config.aws_secret_access_key
+            );
+
+            if (backendStatus) {
+                super.destroyProject(name, path);
+            }
         }
     }
 
