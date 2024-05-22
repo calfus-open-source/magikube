@@ -70,6 +70,9 @@ class SystemConfig {
             "aws_vpc_module_version": "5.5.1",
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",
+            "master_instance_type": "t3.medium",
+            "worker_instance_type": "t3.medium",
+            "worker_instance_count": "2",
         }, null, 4);
         fs.writeFileSync(path, data);
     }    
