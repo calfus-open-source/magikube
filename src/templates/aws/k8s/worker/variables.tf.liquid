@@ -13,9 +13,6 @@ variable "default_security_group_id" {
   type        = string
 }
 
-variable "vpc_public_subnets" {
+variable "vpc_private_subnets" {
   description = "The public subnets of the VPC"
-  type        = list(object({
-      id = string
-  }))
 }

@@ -10,12 +10,17 @@ export default class AWSK8SProject extends AWSProject {
         this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid');
         this.createFile('terraform.tfvars', '../templates/aws/k8s/terraform.tfvars.liquid');
         this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid');
+        this.createSSHKeyPair();
         this.createBastionHost();
         this.createMasterNode();
         this.createWorkerNode();
         this.createVpc();        
     }    
     
+    async createSSHKeyPair() {
+        this.createFile('main.tf', '../templates/aws/k8s/ssh-key/main.tf.liquid', 'modules/ssh-key');
+        this.createFile('variables.tf', '../templates/aws/k8s/ssh-key/variables.tf.liquid', 'modules/ssh-key');
+    }
     async createBastionHost() {
         this.createFile('main.tf', '../templates/aws/k8s/bastion/main.tf.liquid', 'modules/bastion');
         this.createFile('variables.tf', '../templates/aws/k8s/bastion/variables.tf.liquid', 'modules/bastion');
