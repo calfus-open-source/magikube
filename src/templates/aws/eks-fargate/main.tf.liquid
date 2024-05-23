@@ -8,6 +8,7 @@ terraform {
         encrypt = true
         key     = "{{ project_name }}-{{ environment }}.tfstate"
         region  = "{{ aws_region }}"
+        dynamodb_table = "{{ project_id }}-tfstate-lock"
     }
 }
 
@@ -17,3 +18,11 @@ module "vpc" {
     environment = "{{ environment }}"
     cidr = "{{ aws_vpc_cidr }}"
 }
+
+module "eks" {
+    source                  = "./modules/eks-fargate"
+    name                    = "{{ project_name }}"
+    environment             = "{{ environment }}"
+    vpc_id                  = module.vpc.id
+    vpc_private_subnets     = module.vpc.private_subnets
+  }

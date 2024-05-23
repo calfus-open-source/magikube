@@ -43,10 +43,10 @@ Creating a new infrastructure as code project named 'sample' in the current dire
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
         }
-        for (const prompt of promptGenerator.getClusterPrompts(responses['cluster_type'])) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
+        // for (const prompt of promptGenerator.getClusterPrompts(responses['cluster_type'])) {
+        //   const resp = await inquirer.prompt(prompt);
+        //   responses = { ...responses, ...resp };
+        // }
       }
     }
 

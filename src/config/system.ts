@@ -66,13 +66,12 @@ class SystemConfig {
         //create a new system.json file in the path with default values
         const data = JSON.stringify({
             "terraform_version": "1.8.2",
-            "aws_provider_version": "5.34.0",
+            "aws_provider_version": "5.50.0",
             "aws_vpc_module_version": "5.5.1",
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",
-            "master_instance_type": "t3.medium",
-            "worker_instance_type": "t3.medium",
-            "worker_instance_count": "2",
+            "aws_eks_module_version": "~> 20.0",
+            "aws_eks_cluster_version": "1.29"
         }, null, 4);
         fs.writeFileSync(path, data);
     }    
