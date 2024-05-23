@@ -17,6 +17,16 @@ export default class EKSFargateProject extends AWSProject {
         "../templates/aws/eks-fargate/variables.tf.liquid"
       );
   
+    this.createEKS();
     this.createVpc();
   }
+
+  async createEKS(): Promise<void> {
+    this.createFile("main.tf", "../templates/aws/modules/eks-fargate/main.tf.liquid", "./modules/eks-fargate");
+    this.createFile(
+        "variables.tf",
+        "../templates/aws/modules/eks-fargate/variables.tf.liquid", "./modules/eks-fargate"
+      );
+  
+    }  
 }
