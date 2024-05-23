@@ -1,0 +1,50 @@
+provider "aws" {
+    region     = "{{ aws_region }}"
+}
+  
+terraform {
+    backend "s3" {
+        bucket  = "{{ project_name }}-terraform-state"
+        encrypt = true
+        key     = "{{ project_name }}-terraform.tfstate"
+        region  = "{{ aws_region }}"
+    }
+}
+
+module "vpc" {
+  source = "./modules/vpc"
+  name = "{{ project_name }}-{{ environment }}-vpc"
+  environment = "{{ environment }}"
+  cidr = "{{ aws_vpc_cidr }}"
+}
+
+module "ssh-key" {
+  source          = "./modules/ssh-key"
+  ssh_key_name    = "{{ project_name }}-key"
+  env_files_bucket_name = "{{ project_name }}-bucket"
+}
+
+module "bastion" {
+  source                     = "./modules/bastion"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.vpc_private_subnets
+  vpc_public_subnets         = module.vpc.vpc_public_subnets
+  name                       = "{{ project_name }}-{{ environment }}-bastion"
+}
+
+module "master" {
+  source                     = "./modules/master"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.vpc_private_subnets
+  name                       = "{{ project_name }}-{{ environment }}-master"
+}
+
+module "worker" {
+  source                     = "./modules/worker"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = data.aws_security_group.asg.id
+  vpc_private_subnets        = module.vpc.vpc_private_subnets
+  name                       = "{{ project_name }}-{{ environment }}-worker"
+}
