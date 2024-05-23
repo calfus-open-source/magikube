@@ -31,7 +31,9 @@ data "aws_ami" "bastion_host_ami" {
       id = aws_launch_template.bastion-host-launch-template.id
       version = "$Latest"    
     }
-  
+
+    associate_public_ip_address = true
+
     subnet_id = var.vpc_public_subnets
     vpc_security_group_ids = [var.default_security_group_id]
     
