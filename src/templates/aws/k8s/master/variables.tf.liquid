@@ -1,0 +1,19 @@
+variable "name" {
+    description = "The name of the k8s master"
+    type        = string
+}
+
+variable "ssh_key_name" {
+    description = "The name of the ssh key"
+    type        = string
+}
+
+variable "default_security_group_id" {
+    description = "The default security group id"
+    type        = string
+}
+
+variable "vpc_private_subnets" {
+    description = "The private subnets of the VPC"
+
+}

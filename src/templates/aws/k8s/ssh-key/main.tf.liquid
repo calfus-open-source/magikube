@@ -1,0 +1,45 @@
+
+resource "tls_private_key" "ssh-key-pk" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "ssh-keypair" {
+  key_name   = "${var.ssh_key_name}" 
+  public_key = tls_private_key.ssh-key-pk.public_key_openssh
+}
+
+resource "local_sensitive_file" "ssh-key-pem" {
+  filename = pathexpand("~/.ssh/${var.ssh_key_name}.pem")
+  file_permission = "600"
+  directory_permission = "700"
+  content = tls_private_key.ssh-key-pk.private_key_pem
+}
+
+resource "aws_s3_bucket" "env_files" {
+  bucket = "${var.env_files_bucket_name}"
+}
+
+resource "aws_s3_bucket_ownership_controls" "env_files_ownership" {
+  bucket = aws_s3_bucket.env_files.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "env_files_acl" {
+  depends_on = [aws_s3_bucket_ownership_controls.env_files_ownership]
+
+  bucket = aws_s3_bucket.env_files.id
+  acl    = "private"
+}
+
+resource "aws_s3_object" "ssh_key_upload" {
+  bucket = aws_s3_bucket.env_files.id
+  key    = "${var.ssh_key_name}.pem"
+  content = tls_private_key.ssh-key-pk.private_key_pem
+}
+
+output "ssh_key_name" {
+  value = aws_key_pair.ssh-keypair.key_name
+}

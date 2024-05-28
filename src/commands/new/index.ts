@@ -3,7 +3,7 @@ import BaseCommand from '../base.js'
 import inquirer from 'inquirer';
 
 import TerraformProject from '../../core/terraform-project.js';
-import PropmtGenerator from '../../prompts/prompt-generator.js';
+import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
 import SystemConfig from '../../config/system.js';
 
@@ -23,27 +23,31 @@ Creating a new infrastructure as code project named 'sample' in the current dire
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(CreateProject);
-    let responses = { "project_name": args.name, "project_id": uuidv4() };    
-    const promptGenerator = new PropmtGenerator();
+    let responses:any = { "project_name": args.name, "project_id": uuidv4() };    
+    const promptGenerator = new PromptGenerator();
 
-    for (const propmt of promptGenerator.getCloudProvider()) {
-      const resp = await inquirer.prompt(propmt);
+    for (const prompt of promptGenerator.getCloudProvider()) {
+      const resp = await inquirer.prompt(prompt);
       responses = { ...responses, ...resp };
 
-      for (const propmt of promptGenerator.getCloudProviderPrompts(resp['cloud_provider'])) {
-        const resp = await inquirer.prompt(propmt);
+      for (const prompt of promptGenerator.getCloudProviderPrompts(resp['cloud_provider'])) {
+        const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
       }
 
-      for (const propmt of promptGenerator.getEnvironment()) {
-        const resp = await inquirer.prompt(propmt);
+      for (const prompt of promptGenerator.getEnvironment()) {
+        const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
 
-        for (const propmt of promptGenerator.getLifecycles(resp['environment'])) {
-          const resp = await inquirer.prompt(propmt);
+        for (const prompt of promptGenerator.getLifecycles(resp['environment'])) {
+          const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
         }
-      } 
+        // for (const prompt of promptGenerator.getClusterPrompts(responses['cluster_type'])) {
+        //   const resp = await inquirer.prompt(prompt);
+        //   responses = { ...responses, ...resp };
+        // }
+      }
     }
 
     this.log(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)

@@ -57,7 +57,33 @@ const awsPrompts: any[] = [
   },
 ];
 
-export default class PropmtGenerator {
+const k8sPrompts: any[] = [
+  {
+    message: 'Enter the type of worker instance: ',
+    name: 'instance_type',
+    type: 'input',
+    default: 't3.micro',
+  },
+  {
+    message: 'Enter the number of master nodes: ',
+    name: 'master_nodes_count',
+    type: 'input',
+    default: 1,
+  },
+  {
+    message: 'Enter the type of worker instance: ',
+    name: 'instance_type',
+    type: 'input',
+    default: 't3.micro',
+  },
+  {
+    message: 'Enter the number of worker nodes: ',
+    name: 'worker_nodes',
+    type: 'input',
+    default: 1,
+  },
+];
+export default class PromptGenerator {
   getCloudProvider(): any[] {
     return [
       {
@@ -93,5 +119,9 @@ export default class PropmtGenerator {
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
     return cloudProvider === CloudProvider.AWS ? awsPrompts : [];
+  }
+
+  getClusterPrompts(clusterType: string): any[] {
+    return clusterType === 'k8s' ? k8sPrompts : [];
   }
 }
