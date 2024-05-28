@@ -6,43 +6,49 @@ export default class AWSProject extends BaseProject {
     async createProject(name: string, path: string): Promise<void> {
         super.createProject(name, path);
     
-        AWSPolicies.create(
+        if (!this.config.dryrun) {
+            AWSPolicies.create(
+                this,
+                this.config.aws_region,
+                this.config.aws_access_key_id,
+                this.config.aws_secret_access_key
+                );
+        
+            AWSTerraformBackend.create(
             this,
+            this.config.project_id,
             this.config.aws_region,
             this.config.aws_access_key_id,
             this.config.aws_secret_access_key
             );
-    
-        AWSTerraformBackend.create(
-          this,
-          this.config.project_id,
-          this.config.aws_region,
-          this.config.aws_access_key_id,
-          this.config.aws_secret_access_key
-        );
+        }
     }
 
     async destroyProject(name: string, path: string): Promise<void> {
-        const status = await AWSPolicies.delete(
-            this,
-            this.config.aws_region,
-            this.config.aws_access_key_id,
-            this.config.aws_secret_access_key
-        );
+        let awsStatus = true;
 
-        if (status) {
-            const backendStatus = await AWSTerraformBackend.delete(
+        if (!this.config.dryrun) {
+            const status = await AWSPolicies.delete(
                 this,
-                this.config.project_id,
                 this.config.aws_region,
                 this.config.aws_access_key_id,
                 this.config.aws_secret_access_key
             );
 
-            if (backendStatus) {
-                super.destroyProject(name, path);
+            if (status) {
+                awsStatus = await AWSTerraformBackend.delete(
+                    this,
+                    this.config.project_id,
+                    this.config.aws_region,
+                    this.config.aws_access_key_id,
+                    this.config.aws_secret_access_key
+                );
             }
         }
+
+        if (awsStatus) {
+            super.destroyProject(name, path);
+        }        
     }
 
     async createVpc(): Promise<void> {

@@ -1,6 +1,6 @@
 import {Args, Command, Flags} from '@oclif/core'
 import BaseCommand from '../base.js'
-import inquirer from 'inquirer';
+import inquirer, { Answers } from 'inquirer';
 
 import TerraformProject from '../../core/terraform-project.js';
 import PropmtGenerator from '../../prompts/prompt-generator.js';
@@ -13,6 +13,10 @@ export default class CreateProject extends BaseCommand {
     name: Args.string({description: 'Infrastructure project name to be created', required: true}),
   }
 
+  static flags = {
+    dryrun: Flags.boolean({char: 'd', description: 'Dry run the create operation'})
+  }
+
   static description = 'Create a new infrastructure as code project'
 
   static examples = [
@@ -23,7 +27,12 @@ Creating a new infrastructure as code project named 'sample' in the current dire
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(CreateProject);
-    let responses = { "project_name": args.name, "project_id": uuidv4() };    
+    let responses: Answers = { 
+      "project_name": args.name, 
+      "project_id": uuidv4(),
+      "dryrun": flags.dryrun || false,
+    };    
+
     const promptGenerator = new PropmtGenerator();
 
     for (const propmt of promptGenerator.getCloudProvider()) {
@@ -35,6 +44,11 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         responses = { ...responses, ...resp };
       }
 
+      for (const prompt of promptGenerator.getVersionControlPrompts(responses['source_code_repository'])) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }        
+
       for (const propmt of promptGenerator.getEnvironment()) {
         const resp = await inquirer.prompt(propmt);
         responses = { ...responses, ...resp };
@@ -43,7 +57,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
           const resp = await inquirer.prompt(propmt);
           responses = { ...responses, ...resp };
         }
-      } 
+      }      
     }
 
     this.log(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)

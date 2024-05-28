@@ -71,7 +71,8 @@ class SystemConfig {
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",
             "aws_eks_module_version": "~> 20.0",
-            "aws_eks_cluster_version": "1.29"
+            "aws_eks_cluster_version": "1.29",
+            "github_provider_version": "~> 6.0",
         }, null, 4);
         fs.writeFileSync(path, data);
     }    

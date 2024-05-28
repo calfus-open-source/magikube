@@ -9,14 +9,18 @@ import { join } from 'path';
 
 export default class DestroyProject extends BaseCommand {  
   static args = {
-    name: Args.string({description: 'Infrastructure project name to be created', required: true}),
+    name: Args.string({description: 'Infrastructure project name to be destroyed', required: true}),
   }
 
-  static description = 'Create a new infrastructure as code project'
+  static flags = {
+    dryrun: Flags.boolean({char: 'd', description: 'Dry run the destroy operation'})
+  }
+
+  static description = 'Destroy infrastructure as code project'
 
   static examples = [
     `<%= config.bin %> <%= command.id %> sample 
-Creating a new infrastructure as code project named 'sample' in the current directory
+Destroying infrastructure as code project named 'sample' in the current directory
 `,
   ]
 
@@ -33,6 +37,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     const {args, flags} = await this.parse(DestroyProject);
     //read config and responses form project level config
     const responses = await this.readProjectConfig(args.name, process.cwd());
+    responses['dryrun'] = flags.dryrun || false;
 
     this.log(`Destroying infrastructure as code project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);

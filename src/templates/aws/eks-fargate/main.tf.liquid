@@ -25,4 +25,14 @@ module "eks" {
     environment             = "{{ environment }}"
     vpc_id                  = module.vpc.id
     vpc_private_subnets     = module.vpc.private_subnets
-  }
+}
+
+{% if source_code_repository == 'github' %}
+module "gitops" {
+    source = "./modules/gitops"
+    name = "{{ project_name }}"
+    environment = "{{ environment }}"
+    github_token = "{{ github_access_token }}"
+    github_owner = "{{ github_owner }}"
+}
+{% endif %}

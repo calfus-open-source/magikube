@@ -7,5 +7,12 @@ terraform {
             version = "{{ aws_provider_version }}"
         }
         {% endif %}
+
+        {% if source_code_repository == 'github' %}
+        github = {
+            source = "integrations/github"
+            version = "{{ github_provider_version }}"
+        }
+        {% endif %}
     }
 }

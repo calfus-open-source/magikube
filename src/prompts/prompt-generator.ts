@@ -12,6 +12,12 @@ enum CloudProvider {
   ON_PREMISES = "on-premises",
 }
 
+enum VersionControl {
+  GITHUB = "github",
+  CODECOMMIT = "codecommit",
+  BITBUCKET = "bitbucket",
+}
+
 const productionPrompts: any[] = [
   {
     choices: ["production", "sandbox"],
@@ -55,6 +61,28 @@ const awsPrompts: any[] = [
     type: "password",
     default: process.env.AWS_SECRET_ACCESS_KEY || SystemConfig.getInstance().getConfig().aws_secret_access_key,
   },
+  {
+    message: "Source code repository: ",
+    name: "source_code_repository",
+    type: "list",
+    choices: [ VersionControl.CODECOMMIT, VersionControl.GITHUB, VersionControl.BITBUCKET ],
+    default: VersionControl.CODECOMMIT || SystemConfig.getInstance().getConfig().source_code_repository,
+  },
+];
+
+const githubPrompts: any[] = [
+  {
+    message: "Enter GitHub Organization Name: ",
+    name: "github_owner",
+    type: "input",
+    default: process.env.GITHUB_OWNER || SystemConfig.getInstance().getConfig().github_owner,
+  },
+  {
+    message: "Enter GitHub Access Token: ",
+    name: "github_access_token",
+    type: "password",
+    default: process.env.GITHUB_ACCESS_TOKEN || SystemConfig.getInstance().getConfig().github_access_token,
+  },
 ];
 
 export default class PropmtGenerator {
@@ -93,5 +121,9 @@ export default class PropmtGenerator {
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
     return cloudProvider === CloudProvider.AWS ? awsPrompts : [];
+  }
+
+  getVersionControlPrompts(versionControl: string): any[] {
+    return versionControl === VersionControl.GITHUB ? githubPrompts : [];
   }
 }
