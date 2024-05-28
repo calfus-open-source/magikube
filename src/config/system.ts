@@ -4,6 +4,32 @@ import UserConfig from './user.js';
 class SystemConfig {
     private config: any = {};
     private static _instance: SystemConfig;
+    private bastionSystemConfig: any = {
+        "bastion_host_ami_owner": "099720109477",
+        "bastion_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
+        "bastion_host_ami_virtualization_type": "hvm",
+        "bastion_instance_type": "t3.micro",
+        "bastion_instance_count": "1",
+    };
+
+    private masterSystemConfig: any = {
+        "master_host_ami_owner": "099720109477",
+        "master_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
+        "master_host_ami_virtualization_type": "hvm",
+        "master_instance_type": "t3.medium",
+        "master_instance_count": "1",
+        "ebs_volume_size": "100",
+        "ebs_volume_type": "gp2",
+    };
+    private workerSystemConfig: any = {
+        "worker_host_ami_owner": "099720109477",
+        "worker_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
+        "worker_host_ami_virtualization_type": "hvm",
+        "worker_instance_type": "t3.medium",
+        "worker_instance_count": "2",
+        "ebs_volume_size": "100",
+        "ebs_volume_type": "gp2",
+    };
 
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
@@ -70,9 +96,14 @@ class SystemConfig {
             "aws_vpc_module_version": "5.5.1",
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",
+            "worker_instance_type": "t3.medium",
+            "worker_instance_count": "2",
             "aws_eks_module_version": "~> 20.0",
             "aws_eks_cluster_version": "1.29",
             "github_provider_version": "~> 6.0",
+            ...this.bastionSystemConfig,
+            ...this.masterSystemConfig,
+            ...this.workerSystemConfig,
         }, null, 4);
         fs.writeFileSync(path, data);
     }    
