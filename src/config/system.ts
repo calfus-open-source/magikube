@@ -100,6 +100,7 @@ class SystemConfig {
             "worker_instance_count": "2",
             "aws_eks_module_version": "~> 20.0",
             "aws_eks_cluster_version": "1.29",
+            "github_provider_version": "~> 6.0",
             ...this.bastionSystemConfig,
             ...this.masterSystemConfig,
             ...this.workerSystemConfig,
