@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Define variables
+source_dir="/data/run/containerd"
+symlink="/run/containerd"
+
+# Check if the path is a directory and not a symbolic link
+if [ -d "$symlink" ] && [ ! -L "$symlink" ]; then
+    echo "The path is a directory and not a symbolic link."
+    rm -fr $symlink
+else
+    echo "The path is either not a directory or is a symbolic link."
+fi
+
+if [ ! -L "$symlink" ]; then
+    # Create the symlink if it doesn't exist
+    ln -s "$source_dir" "$symlink"
+    echo "Symlink created."
+else
+    echo "Symlink already exists."
+fi

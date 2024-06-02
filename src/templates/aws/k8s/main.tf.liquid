@@ -21,8 +21,8 @@ module "vpc" {
 
 module "ssh-key" {
   source          = "./modules/ssh-key"
-  ssh_key_name    = "{{ project_name }}-key"
-  env_files_bucket_name = "{{ project_name }}-bucket"
+  ssh_key_name    = "{{ project_name }}-{{ environment }}-key"
+  env_files_bucket_name = "{{ project_name }}-{{ environment }}-bucket"
 }
 
 module "bastion" {

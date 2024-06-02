@@ -1,0 +1,12 @@
+- name: storage-class template
+  become: yes
+  become_user: kube
+  template: src=./templates/storage-class.j2 dest=$HOME/storage-class.yaml
+
+- name: Install Kubernetes Dashboard and Metrics Server
+  become: yes
+  become_user: kube
+  shell: |
+    kubectl apply -f $HOME/storage-class.yaml
+  args:
+    chdir: $HOME

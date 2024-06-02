@@ -15,6 +15,7 @@ export default class AWSK8SProject extends AWSProject {
         this.createMasterNode();
         this.createWorkerNode();
         this.createVpc();        
+        this.copyFolderAndRender('../templates/aws/ansible', 'dist/templates/aws/ansible');
     }    
     
     async createSSHKeyPair() {

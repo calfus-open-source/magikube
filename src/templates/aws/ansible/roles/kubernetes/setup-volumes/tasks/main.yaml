@@ -1,0 +1,81 @@
+---
+- name: List Linux block devices
+  ansible.builtin.shell:
+    cmd: "lsblk -o PATH,SIZE | grep {{ disk_size }} | cut -d' ' -f1 | grep -oE '/dev/nvme[0-9]n[0-9]( |$)'"
+  register: lsblk
+
+- name: Store EBS volume device name
+  ansible.builtin.set_fact:
+    ebs_volume_device_name: "{{ lsblk.stdout_lines }}"
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "Device name: {{ ebs_volume_device_name }}"
+
+- name: create disk parition
+  parted:
+    device: "{{ item }}"
+    number: 1
+    flags: [ lvm ]
+    state: present
+  loop: "{{ ebs_volume_device_name }}"
+
+- name: format disk partition
+  filesystem:
+    fstype: xfs
+    dev: "{{item}}p1"
+  loop: "{{ ebs_volume_device_name }}"
+
+- name: create_mount_point_data_dir
+  file:
+    path: /data
+    state: directory
+    mode: "0775"
+  tags: mount
+
+- name: create_mount_point_logs_dir
+  file:
+    path: /logs
+    state: directory
+    mode: "0775"
+  tags: mount
+
+- name: get the uuid
+  ansible.builtin.shell:
+    cmd: "blkid -s UUID -o value {{ ebs_volume_device_name[0] }}p1"
+  register: uuid
+
+- name: Store UUID values
+  ansible.builtin.set_fact:
+    uuid_device1: "{{ uuid.stdout_lines[0] }}"
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "UUID: {{ uuid_device1 }}"
+
+- name: Mount EC2 volume
+  mount:
+    path: /data
+    src: "UUID={{ uuid_device1 }}"
+    fstype: xfs
+    state: mounted
+
+- name: get the uuid
+  ansible.builtin.shell:
+    cmd: "blkid -s UUID -o value {{ ebs_volume_device_name[1] }}p1"
+  register: uuid
+
+- name: Store UUID values
+  ansible.builtin.set_fact:
+    uuid_device2: "{{ uuid.stdout_lines[0] }}"
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "UUID: {{ uuid_device2 }}"
+
+- name: Mount EC2 volume
+  mount:
+    path: /logs
+    src: "UUID={{ uuid_device2 }}"
+    fstype: xfs
+    state: mounted
