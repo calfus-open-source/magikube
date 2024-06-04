@@ -28,9 +28,16 @@
       - net-tools     
       - awscli
       - jq
+      - python3-pip
     state: latest
     update_cache: true
     
+- name: Install multi python packages
+  ansible.builtin.pip:
+    name:
+      - boto
+      - boto3
+
 - name: Check the uptime prior reboot
   shell: uptime
   register: UPTIME_PRE_REBOOT

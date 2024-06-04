@@ -35,6 +35,8 @@ class SystemConfig {
         "master_ip": "{{ hostvars[groups['k8s_master'][0]]['ansible_default_ipv4'].address | default(groups['k8s_master'][0]) }}",
         "worker_name": "{{ hostvars[groups['k8s_worker'][0]]['inventory_hostname'] }}",
         "worker_ip":  "{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4'].address }}",
+        "ansible_user": "{{ ansible_user }}",
+        "bastion_ip": "{{ hostvars[groups[\"bastion\"][0]][\"public_ip_address\"] }}",
     };
 
     private kubernetesSystemConfig: any = {

@@ -2,6 +2,13 @@
 # Ansible
 ansible_user: ubuntu
 ansible_ssh_private_key_file: ~/.ssh/{{ project_name }}-{{ environment }}-key.pem
+aws_profile: {{ project_name }}
+
+instance_volumes:
+  data:
+    size: 100G
+  logs:
+    size: 100G
 
 ##auto shutdown servers after this limit (specified in hours)
 server_uptime_limit: 4
