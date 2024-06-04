@@ -1,10 +1,4 @@
 ---
-
-- name: kubernetes-dashboard template
-  become: yes
-  become_user: kube
-  template: src=./templates/kubernetes-dashboard.j2 dest=$HOME/kubernetes-dashboard.yaml
-
 - name: metrics-server template
   become: yes
   become_user: kube
@@ -18,7 +12,6 @@
     kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/master-
     kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/control-plane-
     kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/control-plane:NoSchedule-
-    kubectl apply -f $HOME/kubernetes-dashboard.yaml
     kubectl apply -f $HOME/metrics-server.yaml
     kubectl create serviceaccount dashboard-admin-sa
     kubectl create clusterrolebinding dashboard-admin-sa --clusterrole=cluster-admin --serviceaccount=default:dashboard-admin-sa

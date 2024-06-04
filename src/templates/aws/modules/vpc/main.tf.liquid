@@ -78,6 +78,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
   to_port          = 22
   ip_protocol      = "tcp"
   cidr_ipv4        = "0.0.0.0/0"
+  depends_on       = [module.vpc]
 }
 resource "aws_vpc_security_group_ingress_rule" "allow_internal_traffic" {
   security_group_id = module.vpc.default_security_group_id
@@ -86,6 +87,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_internal_traffic" {
   to_port          = 65535
   ip_protocol      = "tcp"
   cidr_ipv4        = "10.0.0.0/8"
+  depends_on       = [module.vpc]
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_external_traffic" {
@@ -95,4 +97,5 @@ resource "aws_vpc_security_group_egress_rule" "allow_external_traffic" {
   to_port          = 0
   ip_protocol      = "-1"
   cidr_ipv4        =  "0.0.0.0/0"
+  depends_on       = [module.vpc]
 }
