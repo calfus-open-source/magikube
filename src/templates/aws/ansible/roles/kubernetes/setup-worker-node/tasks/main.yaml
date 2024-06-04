@@ -67,7 +67,6 @@
 
 - name: Prep the cluster
   shell: |
-    kubectl label node --all topology.kubernetes.io/zone={{ az }}
     kubectl label node --all topology.kubernetes.io/region={{ region }}
     exit 0
   args:
