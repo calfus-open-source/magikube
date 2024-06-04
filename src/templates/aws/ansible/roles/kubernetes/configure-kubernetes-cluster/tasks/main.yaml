@@ -1,10 +1,5 @@
 ---
-- name: metrics-server template
-  become: yes
-  become_user: kube
-  template: src=./templates/metrics-server.j2 dest=$HOME/metrics-server.yaml
-
-- name: Install Kubernetes Dashboard and Metrics Server
+- name: Remove taints from master node and create service account for dashboard
   become: yes
   become_user: kube
   shell: |
@@ -12,7 +7,6 @@
     kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/master-
     kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/control-plane-
     kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/control-plane:NoSchedule-
-    kubectl apply -f $HOME/metrics-server.yaml
     kubectl create serviceaccount dashboard-admin-sa
     kubectl create clusterrolebinding dashboard-admin-sa --clusterrole=cluster-admin --serviceaccount=default:dashboard-admin-sa
   args:

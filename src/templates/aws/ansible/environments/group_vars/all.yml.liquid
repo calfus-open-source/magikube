@@ -6,9 +6,9 @@ aws_profile: {{ project_name }}
 
 instance_volumes:
   data:
-    size: 100G
+    size: {{ ebs_vol_size }}
   logs:
-    size: 100G
+    size: {{ ebs_vol_size }}
 
 ##auto shutdown servers after this limit (specified in hours)
 server_uptime_limit: 4
@@ -24,8 +24,8 @@ kubeadm_opts: ""
 # For example:
 # kubeadm_opts: '--apiserver-cert-extra-sans "k8s.domain.com,kubernetes.domain.com"'
 
-service_cidr: "192.168.0.0/17"
-pod_network_cidr: "192.168.128.0/17"
+service_cidr: "{{ service_cidr }}"
+pod_network_cidr: "{{ pod_network_cidr }}"
 
 systemd_dir: /lib/systemd/system
 system_env_dir: /etc/sysconfig
@@ -33,57 +33,30 @@ network_dir: /etc/kubernetes/network
 kubeadmin_config: /etc/kubernetes/admin.conf
 kube_addon_dir: /etc/kubernetes/addon
 kube_config_dir: /etc/kubernetes
-kube_version: 1.29
-kube_cni_version: 1.2.0-00
+kube_version: {{ kube_version }}
+kube_cni_version: {{ kube_cni_version }}
 
-disk_size: 100G
-kube_reserved_cpu: 100m
-kube_reserved_memory: 100Mi
-system_reserved_cpu: 100m
-system_reserved_memory: 100Mi
-eviction_memory_threshold: 100Mi
+disk_size: {{ disk_size }}
+kube_reserved_cpu: {{ kube_reserved_cpu }}
+kube_reserved_memory: {{ kube_reserved_memory }}
+system_reserved_cpu: {{ system_reserved_cpu }}
+system_reserved_memory: {{ system_reserved_memory }}
+eviction_memory_threshold: {{ eviction_memory_threshold }}
 
 # temporary directory used by additional features
 tmp_dir: /tmp/kubeadm-ansible-files
 
-master_ip: "{{ master_ip }}"
-worker_name: "{{ worker_name }}"
-worker_ip:  "{{ worker_ip }}"
+master_ip: {% raw %}"{{ hostvars[groups['k8s_master'][0]]['ansible_default_ipv4'].address | default(groups['k8s_master'][0]) }}"{% endraw %}
+worker_name: {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['inventory_hostname'] }}"{% endraw %}
+worker_ip:  {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4'].address }}"{% endraw %}
 
 lifecycle: {{ environment }}
 external_hostname: {{ external_hostname }}
 
-kafka_version: {{ kafka_version }}
-mongodb_version: {{ mongodb_version }}
-postgres_version: {{ postgres_version }}
-keycloak_version: {{ keycloak_version }}
-nginx_ingress_controller_version: {{ nginx_ingress_controller_version }}
-redis_version: {{ redis_version }}
-vault_version: {{ vault_version }}
-prometheus_version: {{ prometheus_version }}
-grafana_version: {{ grafana_version }}
-
-grafana_replicas: {{ grafana_replicas }}
-kubernetes_dashboard_replicas: {{ kubernetes_dashboard_replicas }}
-kafka_replicas: {{ kafka_replicas }}
-mongodb_replicas: {{ mongodb_replicas }}
-redis_master_count: {{ redis_master_count }} ## signifies master nodes only
-postgres_read_replicas: {{ postgres_read_replicas }}
-keycloak_replicas: {{ keycloak_replicas }}
-vault_replicas: {{ vault_replicas }}
-ingress_controller_replicas: {{ ingress_controller_replicas }}
 run_as_uid: 1001
 run_as_gid: 1001
 
-grafana_data_volume_size: {{ grafana_data_volume_size }}
-kafka_data_volume_size: {{ kafka_data_volume_size }}
-kafka_logs_volume_size: {{ kafka_logs_volume_size }}
-mongodb_data_volume_size: {{ mongodb_data_volume_size }}
-postgres_data_volume_size: {{ postgres_data_volume_size }}
-prometheus_server_data_volume_size: {{ prometheus_server_data_volume_size }}
-prometheus_alertManager_data_volume_size: {{ prometheus_alertManager_data_volume_size }}
-vault_data_volume_size: {{ vault_data_volume_size }} #Gave an eccentric value for proper binding for now
-
+# Ports to open
 # port 53  - DNS
 # port 179  - BGP
 # port 8443 - alternative HTTPS port

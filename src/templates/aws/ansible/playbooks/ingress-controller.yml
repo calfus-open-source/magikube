@@ -1,7 +1,0 @@
----
-
-- hosts: k8s_master
-  gather_facts: yes
-  become: yes
-  roles:
-    - { role: ../roles/ingress-controller/setup-ingress-controller, tags: 'setup-ingress-controller' }
