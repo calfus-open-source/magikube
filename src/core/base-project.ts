@@ -81,7 +81,6 @@ export default abstract class BaseProject {
     async copyFolderAndRender(source: string, destination: string): Promise<void> {
         const fullPath = join(new URL('.', import.meta.url).pathname, source);
         const destFullPath = join(this.projectPath, destination);
-        this.command.log(`Copying folder ${fullPath} to ${destFullPath}`);
         
         if (!fs.existsSync(fullPath)) {
             this.command.error(`Source path ${fullPath} does not exist`);
@@ -89,23 +88,15 @@ export default abstract class BaseProject {
         }
         
         const files = fs.readdirSync(fullPath, 'utf8');
-        this.command.log(`Files in ${fullPath}: ${files.join(', ')}`);
     
         for (const file of files) {
             const srcPath = join(fullPath, file);
             const destPath = join(destFullPath, file);
             const stat = fs.statSync(srcPath);
         
-            this.command.log(`Processing file ${file}`);
-            this.command.log(`Source path: ${srcPath}`);
-            this.command.log(`Destination path: ${destPath}`);
-            this.command.log(`Stat: ${stat}`);
-            this.command.log(`Is directory: ${stat.isDirectory()}`);
-    
             if (stat.isDirectory()) {
                 if (!fs.existsSync(destPath)) {
                     fs.mkdirSync(destPath, { recursive: true });
-                    this.command.log(`Created directory ${destPath}`);
                 }
                 await this.copyFolderAndRender(join(source, file), join(destination, file));
             } else if (file.endsWith('.liquid')) {
@@ -115,18 +106,14 @@ export default abstract class BaseProject {
                 const outputFilePath = destPath.replace('.liquid', '');
                 if (!fs.existsSync(dirname(outputFilePath))) {
                     fs.mkdirSync(dirname(outputFilePath), { recursive: true });
-                    this.command.log(`Created directory ${dirname(outputFilePath)}`);
                 }
     
                 fs.writeFileSync(outputFilePath, output);
-                this.command.log(`Rendered and copied ${srcPath} to ${outputFilePath}`);
             } else {
                 if (!fs.existsSync(dirname(destPath))) {
                     fs.mkdirSync(dirname(destPath), { recursive: true });
-                    this.command.log(`Created directory ${dirname(destPath)}`);
                 }
                 fs.copyFileSync(srcPath, destPath);
-                this.command.log(`Copied ${srcPath} to ${destPath}`);
             }
         }
     }
