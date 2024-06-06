@@ -9,35 +9,6 @@ resource "aws_route53_zone" "main" {
   }
 }
 
-resource "aws_acm_certificate" "ssl-cert" {
-  domain_name       = var.domain_name
-  validation_method = "DNS"
-
-  tags = {
-    "product"        = var.name
-    "environment"    = var.environment
-    "role"           = "networking"
-    "terraform"      = "true"    
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-{% comment %} 
-resource "aws_route53_record" "ssl-cert-validation" {
-  for_each = toset(aws_acm_certificate.ssl-cert.domain_validation_options)
-
-  allow_overwrite = true
-  name            = each.value.resource_record_name
-  records         = [each.value.resource_record_value]
-  ttl             = 60
-  type            = each.value.resource_record_type
-  zone_id         = aws_route53_zone.main.zone_id
-} 
-{% endcomment %}
-
 output "zone_id" {
   value = aws_route53_zone.main.zone_id
 }

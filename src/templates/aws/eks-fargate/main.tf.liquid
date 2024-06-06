@@ -33,17 +33,18 @@ module "route53" {
     source = "./modules/route53"
     name = "${ var.project_name }"
     environment = "${ var.environment }"
-    domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
+    domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
 }
 
+{% if domain %}
 module "acm" {
     source = "./modules/acm"
     name = "${ var.project_name }"
     environment = "${ var.environment }"
     domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
     route53_zoneid = module.route53.zone_id
-}
-
+} 
+{% endif %}
 
 {% if source_code_repository == 'github' %}
 module "gitops" {
@@ -51,7 +52,7 @@ module "gitops" {
     name = "${ var.project_name }"
     environment = "${ var.environment }"
     github_token = "${ var.github_access_token }"
-    github_owner = "${ github_owner }"
+    github_owner = "${ var.github_owner }"
 }
 {% endif %}
 
