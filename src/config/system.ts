@@ -51,9 +51,9 @@ class SystemConfig {
 
         if (!this.exists(`${this.configDir}/system.json`)) {
             fs.mkdirSync(this.configDir, { recursive: true });
-            this.create(`${this.configDir}/system.json`);
         }
 
+        this.create(`${this.configDir}/system.json`);
         this.load(`${this.configDir}/system.json`);
 
         if (this.exists(`${this.configDir}/user.json`)) {
@@ -92,15 +92,14 @@ class SystemConfig {
         //create a new system.json file in the path with default values
         const data = JSON.stringify({
             "terraform_version": "1.8.2",
+            "github_provider_version": "~> 6.0",
             "aws_provider_version": "5.50.0",
             "aws_vpc_module_version": "5.5.1",
-            "aws_az_count": "2",
-            "aws_vpc_cidr": "10.0.0.0/16",
-            "worker_instance_type": "t3.medium",
-            "worker_instance_count": "2",
             "aws_eks_module_version": "~> 20.0",
             "aws_eks_cluster_version": "1.29",
-            "github_provider_version": "~> 6.0",
+            "aws_load_balancer_controller_version": "1.8.0",
+            "aws_az_count": "2",
+            "aws_vpc_cidr": "10.0.0.0/16",
             ...this.bastionSystemConfig,
             ...this.masterSystemConfig,
             ...this.workerSystemConfig,

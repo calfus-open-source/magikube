@@ -17,35 +17,8 @@ export default class EKSFargateProject extends AWSProject {
       "../templates/aws/eks-fargate/variables.tf.liquid"
     );
 
+    this.createCommon();
     this.createEKS();
-    this.createVpc();
-    this.createGitOps();
-  }
-
-  async createGitOps(): Promise<void> {
-    if (this.config.source_code_repository === "codecommit") {
-      this.createFile(
-        "main.tf",
-        "../templates/aws/modules/gitops/main.tf.liquid",
-        "./modules/gitops"
-      );
-      this.createFile(
-        "variables.tf",
-        "../templates/aws/modules/gitops/variables.tf.liquid",
-        "./modules/gitops"
-      );
-    } else if (this.config.source_code_repository === "github") {
-        this.createFile(
-            "main.tf",
-            "../templates/github/main.tf.liquid",
-            "./modules/gitops"
-        );
-        this.createFile(
-            "variables.tf",
-            "../templates/github/variables.tf.liquid",
-            "./modules/gitops"
-        );
-    }
   }
 
   async createEKS(): Promise<void> {

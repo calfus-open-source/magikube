@@ -51,8 +51,57 @@ export default class AWSProject extends BaseProject {
         }        
     }
 
+    async createCommon(): Promise<void> {
+        this.createVpc();
+        this.createACM();
+        this.createRoute53();
+        this.createGitOps();
+        this.createIngressController();
+    }
+
     async createVpc(): Promise<void> {
         this.createFile('main.tf', '../templates/aws/modules/vpc/main.tf.liquid', './modules/vpc');
         this.createFile('variables.tf', '../templates/aws/modules/vpc/variables.tf.liquid', './modules/vpc');
-    }    
+    }
+    
+    async createRoute53(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/route53/main.tf.liquid', './modules/route53');
+        this.createFile('variables.tf', '../templates/aws/modules/route53/variables.tf.liquid', './modules/route53');
+    }
+
+    async createIngressController(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/ingress-controller/main.tf.liquid', './modules/ingress-controller');
+        this.createFile('variables.tf', '../templates/aws/modules/ingress-controller/variables.tf.liquid', './modules/ingress-controller');
+    }
+
+    async createACM(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/acm/main.tf.liquid', './modules/acm');
+        this.createFile('variables.tf', '../templates/aws/modules/acm/variables.tf.liquid', './modules/acm');
+    }
+
+    async createGitOps(): Promise<void> {
+        if (this.config.source_code_repository === "codecommit") {
+          this.createFile(
+            "main.tf",
+            "../templates/aws/modules/gitops/main.tf.liquid",
+            "./modules/gitops"
+          );
+          this.createFile(
+            "variables.tf",
+            "../templates/aws/modules/gitops/variables.tf.liquid",
+            "./modules/gitops"
+          );
+        } else if (this.config.source_code_repository === "github") {
+            this.createFile(
+                "main.tf",
+                "../templates/github/main.tf.liquid",
+                "./modules/gitops"
+            );
+            this.createFile(
+                "variables.tf",
+                "../templates/github/variables.tf.liquid",
+                "./modules/gitops"
+            );
+        }
+    }
 }
