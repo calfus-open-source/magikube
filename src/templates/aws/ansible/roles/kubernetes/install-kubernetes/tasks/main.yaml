@@ -1,0 +1,41 @@
+---
+- name: install and configure dependencies
+  shell: |
+      curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{kube_version}}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg --yes
+
+- name: Create kubernetes repo file
+  file:
+    path: "/etc/apt/sources.list.d/kubernetes.list"
+    state: "touch"
+
+- name: Add K8s Source
+  blockinfile:
+    path: "/etc/apt/sources.list.d/kubernetes.list"
+    block: |
+          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{kube_version}}/deb/ /
+
+- name: install kubernetes
+  shell: |
+          apt-get update
+          apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+          apt-mark hold kubelet kubeadm kubectl
+
+- name: Add limits environment variable in kubelet.conf
+  blockinfile:
+    path: "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
+    block: |
+      Environment="KUBELET_LIMITS=--kube-reserved=cpu={{ kube_reserved_cpu }},memory={{ kube_reserved_memory }} --system-reserved=cpu={{ system_reserved_cpu }},memory={{ system_reserved_memory }} --eviction-hard=memory.available<{{ eviction_memory_threshold }}"
+
+- name: setup limits for kubelet
+  lineinfile:
+    path: /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+    regexp: "^ExecStart="
+    line: 'ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS $KUBELET_LIMITS'
+
+- name: Perform daemon-reload
+  command: systemctl daemon-reload
+
+- name: Restart kubelet service
+  service:
+    name: kubelet
+    state: restarted          

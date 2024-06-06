@@ -1,0 +1,94 @@
+---
+# Ansible
+ansible_user: ubuntu
+ansible_ssh_private_key_file: ~/.ssh/{{ project_name }}-{{ environment }}-key.pem
+aws_profile: {{ aws_profile }}
+
+instance_volumes:
+  data:
+    size: {{ ebs_vol_size }}
+  logs:
+    size: {{ ebs_vol_size }}
+
+##auto shutdown servers after this limit (specified in hours)
+server_uptime_limit: 4
+
+# need better way to determine region and AZ
+region: {{ aws_region }}
+
+# Kubernetes
+token: iotn9i.9ymmeaol3iztc0yy
+
+# Any other additional opts you want to add..
+kubeadm_opts: ""
+# For example:
+# kubeadm_opts: '--apiserver-cert-extra-sans "k8s.domain.com,kubernetes.domain.com"'
+
+service_cidr: "{{ service_cidr }}"
+pod_network_cidr: "{{ pod_network_cidr }}"
+
+systemd_dir: /lib/systemd/system
+system_env_dir: /etc/sysconfig
+network_dir: /etc/kubernetes/network
+kubeadmin_config: /etc/kubernetes/admin.conf
+kube_addon_dir: /etc/kubernetes/addon
+kube_config_dir: /etc/kubernetes
+kube_version: {{ kube_version }}
+kube_cni_version: {{ kube_cni_version }}
+
+disk_size: {{ disk_size }}
+kube_reserved_cpu: {{ kube_reserved_cpu }}
+kube_reserved_memory: {{ kube_reserved_memory }}
+system_reserved_cpu: {{ system_reserved_cpu }}
+system_reserved_memory: {{ system_reserved_memory }}
+eviction_memory_threshold: {{ eviction_memory_threshold }}
+
+# temporary directory used by additional features
+tmp_dir: /tmp/kubeadm-ansible-files
+
+master_ip: {% raw %}"{{ hostvars[groups['k8s_master'][0]]['ansible_default_ipv4'].address | default(groups['k8s_master'][0]) }}"{% endraw %}
+worker_name: {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['inventory_hostname'] }}"{% endraw %}
+worker_ip:  {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4'].address }}"{% endraw %}
+
+lifecycle: {{ environment }}
+external_hostname: {{ external_hostname }}
+
+run_as_uid: 1001
+run_as_gid: 1001
+
+# Ports to open
+# port 53  - DNS
+# port 179  - BGP
+# port 8443 - alternative HTTPS port
+# 2379-2381/tcp - ETCD( 2381 for metrics)
+# 6782-6783/tcp - weavenetworks
+# 6783-6784/udp - weavenetworks
+# 8472/udp - VxLAN ( linux kernel uses this for VxLAN traffic)
+# 4789/udp - VxLAN ( open vSwitch)
+# 9153/tcp - coreDNS metrics
+# 27017-27019/tcp - mongodb port
+ports_to_open:
+  - 80/tcp
+  - 8080/tcp
+  - 53/tcp
+  - 53/udp
+  - 123/udp
+  - 179/tcp
+  - 443/tcp
+  - 2379-2381/tcp
+  - 5432/tcp
+  - 6443/tcp
+  - 6781-6784/tcp
+  - 6781-6784/udp
+  - 8090-8091/tcp
+  - 8472/udp
+  - 9153/tcp
+  - 10248-10260/tcp
+  - 4789/udp
+  - 5473/tcp
+  - 8443/tcp
+  - 8472/udp
+  - 9099/tcp
+  - 27017-27019/tcp
+  - 30000-65535/tcp
+  - 9000-9005/tcp

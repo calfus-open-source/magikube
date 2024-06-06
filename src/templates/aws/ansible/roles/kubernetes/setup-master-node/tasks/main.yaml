@@ -1,0 +1,141 @@
+---
+
+- name: Enable kubelet 
+  shell: |
+    systemctl enable kubelet
+    kubeadm config images pull 
+    exit 0
+  args:
+    executable: /bin/bash      
+  register: SHELL_STDOUT
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "kubelet systemctl: {{SHELL_STDOUT.stdout}}"
+
+- name: Reset Kubernetes component
+  shell: "kubeadm reset --force"
+  register: reset_cluster
+
+- name: Pause for 10 seconds to make sure reset is complete
+  ansible.builtin.pause:
+    seconds: 10
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "kubeadm init: stderr: {{reset_cluster.stderr_lines}}  stdout: {{reset_cluster.stdout_lines}}"
+
+# #   #command: firewall-cmd --reload
+# # - name: 2.6.reload_firewall
+# #   command: systemctl start firewalld.service
+
+- name: create symlinks for containerd
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+  with_items:
+    - src: /data/run/containerd
+      dest: /run/containerd
+
+- name: Init Kubernetes cluster
+  #when: reset_cluster is succeeded
+  shell: |
+    kubeadm init --service-cidr {{ service_cidr }} \
+                 --pod-network-cidr {{ pod_network_cidr }} \
+                 --token {{ token }} \
+                 --control-plane-endpoint {{ master_ip }} \
+                 --cri-socket=/data/run/containerd/containerd.sock
+
+  args:
+    chdir: $HOME
+  register: init_cluster
+  environment:
+    no_proxy: "$no_proxy,.svc,.svc.cluster.local"
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "Init Kubernetes Cluster: stderr: {{ init_cluster.stderr_lines }} stdout: {{ init_cluster.stdout_lines }}"
+
+# - name: Update feature-gates for apiserver
+#   when: init_cluster is succeeded
+#   ansible.builtin.lineinfile:
+#     path: "{{ kube_config_dir }}/manifests/kube-apiserver.yaml"
+#     regexp: '^    - --feature-gates=RemoveSelfLink=false'
+#     insertafter: '^    - --tls-private-key-file=/etc/kubernetes/pki/apiserver.key'
+#     line: '    - --feature-gates=RemoveSelfLink=false'
+#   register: update_feature_gates
+
+- name: create .kube directory for ansible user
+  file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    mode: 0755
+
+- name: copies admin.conf to ansible user's kube config
+  copy:
+    src: "{{ kubeadmin_config }}"
+    dest: /home/{{ ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 0700
+    remote_src: yes
+
+- name: create .kube directory  for kube user
+  become: yes
+  become_user: kube
+  file:
+    path: $HOME/.kube
+    state: directory
+    mode: 0755
+
+- name: copies admin.conf to kube's kube config
+  copy:
+    src: "{{ kubeadmin_config }}"
+    dest: /data/home/kube/.kube/config
+    owner: kube
+    group: kube
+    mode: 0700
+    remote_src: yes
+
+- name: Fetch the config file
+  when: init_cluster is succeeded
+  fetch:
+    src: "{{ kubeadmin_config }}"
+    dest: ../config
+
+- name: weave-daemonset-k8s template
+  become: yes
+  become_user: kube
+  template: src=./templates/weave-daemonset-k8s.j2 dest=$HOME/weave-daemonset-k8s.yaml
+
+- name: Pause for 1 minutes to make sure kubernetes is up
+  ansible.builtin.pause:
+    minutes: 1
+
+- name: install Pod network
+  become: yes
+  become_user: kube
+  shell: kubectl apply -f $HOME/weave-daemonset-k8s.yaml
+  args:
+    chdir: $HOME
+
+- name: Get the token for joining the worker nodes
+  become: yes
+  become_user: kube
+  shell: kubeadm token create  --print-join-command
+  register: kubernetes_join_command
+
+- name: output join command
+  ansible.builtin.debug: 
+    msg: "kubeadm init: {{kubernetes_join_command.stdout}}"
+
+- name: output join command more debug
+  ansible.builtin.debug: 
+    msg: "kubeadm init: {{kubernetes_join_command.stdout_lines[0]}}"
+
+- name: Copy join command to local file.
+  become: no
+  local_action: copy content="{{ kubernetes_join_command.stdout_lines[0] }}" dest="../config/kubernetes_join_command" mode=0777
+
+# kubeadm init --service-cidr 192.168.0.0/17 --pod-network-cidr 192.168.128.0/17 --token iotn9i.9ymmeaol3iztc0yy --control-plane-endpoint ip-172-32-20-25 --cri-socket=/data/run/containerd/containerd.sock

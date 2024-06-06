@@ -31,6 +31,19 @@ class SystemConfig {
         "ebs_volume_type": "gp2",
     };
 
+    private kubernetesSystemConfig: any = {
+        "ebs_vol_size": "100G",
+        "service_cidr": "192.168.0.0/17",
+        "pod_network_cidr": "192.168.128.0/17",
+        "kube_version": "1.29",
+        "kube_cni_version": "1.2.0-00",
+        "disk_size": "100G",
+        "kube_reserved_cpu": "100m",
+        "kube_reserved_memory": "300Mi",
+        "system_reserved_cpu": "100m",
+        "system_reserved_memory": "200Mi",
+        "eviction_memory_threshold": "100Mi",
+    };
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
@@ -103,6 +116,7 @@ class SystemConfig {
             ...this.bastionSystemConfig,
             ...this.masterSystemConfig,
             ...this.workerSystemConfig,
+            ...this.kubernetesSystemConfig,
         }, null, 4);
         fs.writeFileSync(path, data);
     }    

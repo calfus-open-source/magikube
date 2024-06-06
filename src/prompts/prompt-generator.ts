@@ -52,20 +52,10 @@ const awsPrompts: any[] = [
     type: "list",
   },
   {
-    message: "Enter AWS Access Key ID: ",
-    name: "aws_access_key_id",
+    message: "Enter AWS profile to use: ",
+    name: "aws_profile",
     type: "input",
-    default:
-      process.env.AWS_ACCESS_KEY_ID ||
-      SystemConfig.getInstance().getConfig().aws_access_key_id,
-  },
-  {
-    message: "Enter AWS Secret Access Key: ",
-    name: "aws_secret_access_key",
-    type: "password",
-    default:
-      process.env.AWS_SECRET_ACCESS_KEY ||
-      SystemConfig.getInstance().getConfig().aws_secret_access_key,
+    default: "sample",
   },
   {
     message: "Source code repository: ",
@@ -79,6 +69,26 @@ const awsPrompts: any[] = [
     default:
       VersionControl.CODECOMMIT ||
       SystemConfig.getInstance().getConfig().source_code_repository,
+  },
+];
+
+const awsCreds: any[] = [
+  {
+    message: "Enter AWS Access Key ID: ",
+    name: "aws_access_key_id",
+    type: "input",
+    default:
+      process.env.AWS_ACCESS_KEY_ID ||
+      SystemConfig.getInstance().getConfig().aws_secret_access_key,
+
+  },
+  {
+    message: "Enter AWS Secret Access Key: ",
+    name: "aws_secret_access_key",
+    type: "password",
+    default:
+      process.env.AWS_SECRET_ACCESS_KEY ||
+      SystemConfig.getInstance().getConfig().aws_secret_access_key,
   },
 ];
 
@@ -154,6 +164,10 @@ export default class PromptGenerator {
         type: "list",
       },
     ];
+  }
+
+  getAWSCredentials(): any[] {
+    return awsCreds;
   }
 
   getLifecycles(environment: Environment): any[] {

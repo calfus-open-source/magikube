@@ -1,0 +1,112 @@
+---
+- name: create the kube user account
+  user: name=kube state=present home=/data/home/kube createhome=yes shell=/bin/bash
+
+- name: allow 'kube' to use sudo without needing a password
+  lineinfile:
+    dest: /etc/sudoers
+    line: 'kube ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: create .ssh folder
+  file:
+    path: /data/home/kube/.ssh
+    state: directory
+    owner: kube
+    group: kube
+    mode: 0700
+
+- name: set up authorized keys for the kube user
+  copy:
+    src: /home/ubuntu/.ssh/authorized_keys
+    dest: /data/home/kube/.ssh/authorized_keys
+    remote_src: yes
+    owner: kube
+    group: kube   
+    mode: 0400
+
+- name: Sets default ACL for kube on /data
+  ansible.posix.acl:
+    path: /data
+    entity: kube
+    etype: user
+    permissions: rw
+    default: true
+    state: present
+
+- name: Sets default ACL for kube on /logs
+  ansible.posix.acl:
+    path: /logs
+    entity: kube
+    etype: user
+    permissions: rw
+    default: true
+    state: present
+
+- name: Create logrotate configuration
+  template:
+    src: ./templates/logrotate.j2
+    dest: /etc/logrotate.d/syslogsconf 
+  notify: Reload Logrotate 
+
+- name: Create cronjob for pruning images
+  become: yes
+  cron:
+    name: prune_images
+    minute: 0
+    hour: 0
+    weekday: 0
+    job: "crictl rmi --prune"
+
+- name: Create auto-shutdown script
+  become: yes
+  template:
+    src: ./templates/auto-shutdown.sh.j2
+    dest: /usr/local/bin/auto-shutdown.sh
+    mode: u=rwx,g=rx,o=r
+
+- name: Creates entry for "@reboot /usr/local/bin/auto-shutdown.sh"
+  become: yes
+  ansible.builtin.cron:
+    name: "auto-shutdown"
+    special_time: reboot
+    job: "/usr/local/bin/auto-shutdown.sh"
+
+- name: Create fix-symlink script
+  become: yes
+  template:
+    src: ./templates/create-symlink.sh.j2
+    dest: /usr/local/bin/create-symlink.sh
+    mode: u=rwx,g=rx,o=r
+
+- name: Insert symlink fix in kubelet systemd service file
+  lineinfile:
+    path: /etc/systemd/system/multi-user.target.wants/kubelet.service
+    line: 'ExecStartPre=-/usr/local/bin/create-symlink.sh'
+    insertbefore: '^ExecStart=' 
+    state: present
+
+- name: Check the uptime prior reboot
+  shell: uptime
+  register: UPTIME_PRE_REBOOT
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "Uptime Before Reboot: {{UPTIME_PRE_REBOOT.stdout}}"
+
+- name: Reboot node and stop polling.
+  shell: reboot
+  async: 10 # Do not care for 10 sec
+  poll: 0 # Fire & Forget
+  when: not ansible_check_mode
+
+- name: Wait for connection (600s default)
+  ansible.builtin.wait_for_connection:
+
+- name: Check the uptime post reboot
+  shell: uptime
+  register: UPTIME_POST_REBOOT
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "Uptime After Reboot: {{UPTIME_POST_REBOOT.stdout}}"    

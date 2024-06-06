@@ -9,7 +9,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "{{ aws_vpc_module_version }}"
  
-  name                 = "${var.name}-${var.environment}"  
+  name                 = "${var.name}"  
   cidr                 = var.cidr
   azs                  = local.azs
   public_subnets       = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
@@ -39,34 +39,8 @@ module "vpc" {
     "environment"    = var.environment
     "role"           = "networking"
     "terraform"      = "true"    
-    "kubernetes.io/cluster/${var.name}-${var.environment}-eks" = "shared"
+    "kubernetes.io/cluster/${var.name}-eks" = "shared"
   }
-}
-
-resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
-  security_group_id = module.vpc.default_security_group_id
-  description      = "ssh"
-  from_port        = 22
-  to_port          = 22
-  ip_protocol      = "tcp"
-  cidr_ipv4        = "0.0.0.0/0"
-}
-resource "aws_vpc_security_group_ingress_rule" "allow_internal_traffic" {
-  security_group_id = module.vpc.default_security_group_id
-  description      = "Allow access to all ports from internal network"
-  from_port        = 0
-  to_port          = 65535
-  ip_protocol      = "tcp"
-  cidr_ipv4        = "172.0.0.0/8"
-}
-
-resource "aws_vpc_security_group_egress_rule" "allow_external_traffic" {
-  security_group_id = module.vpc.default_security_group_id
-  description      = "Allow all traffic"
-  from_port        = 0
-  to_port          = 0
-  ip_protocol      = "-1"
-  cidr_ipv4        = "0.0.0.0/0"
 }
 
 output "id" {
@@ -95,4 +69,33 @@ output "database_subnet_group" {
 
 output "default_security_group_id" {
   value = module.vpc.default_security_group_id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
+  security_group_id = module.vpc.default_security_group_id
+  description      = "ssh"
+  from_port        = 22
+  to_port          = 22
+  ip_protocol      = "tcp"
+  cidr_ipv4        = "0.0.0.0/0"
+  depends_on       = [module.vpc]
+}
+resource "aws_vpc_security_group_ingress_rule" "allow_internal_traffic" {
+  security_group_id = module.vpc.default_security_group_id
+  description      = "Allow access to all ports from internal network"
+  from_port        = 0
+  to_port          = 65535
+  ip_protocol      = "tcp"
+  cidr_ipv4        = "10.0.0.0/8"
+  depends_on       = [module.vpc]
+}
+
+resource "aws_vpc_security_group_egress_rule" "allow_external_traffic" {
+  security_group_id = module.vpc.default_security_group_id
+  description      = "Allow all traffic"
+  from_port        = 0
+  to_port          = 0
+  ip_protocol      = "-1"
+  cidr_ipv4        =  "0.0.0.0/0"
+  depends_on       = [module.vpc]
 }
