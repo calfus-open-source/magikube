@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import SystemConfig from '../../config/system.js';
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 
 export default class CreateProject extends BaseCommand {  
   static args = {
@@ -19,7 +20,6 @@ export default class CreateProject extends BaseCommand {
   }
 
   static description = 'Create a new infrastructure as code project'
-
   static examples = [
     `<%= config.bin %> <%= command.id %> sample 
 Creating a new infrastructure as code project named 'sample' in the current directory
@@ -45,14 +45,26 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     return { profiles: [] };
   }
 
-  //write the function to add the credentials to the file
   async addAwsCredentialsToFile(profileName: string, awsAccessKey: string, awsSecretAccessKey: string): Promise<void> {
-    const credentialsFilePath = `${os.homedir()}/.aws/credentials`;
+    const awsDirectoryPath = path.join(os.homedir(), '.aws');
+    const credentialsFilePath = path.join(awsDirectoryPath, 'credentials');
+
+    // Create the .aws directory if it doesn't exist
+    if (!fs.existsSync(awsDirectoryPath)) {
+      fs.mkdirSync(awsDirectoryPath);
+    }
+
+    // Create the credentials file if it doesn't exist
+    if (!fs.existsSync(credentialsFilePath)) {
+      fs.writeFileSync(credentialsFilePath, '');
+    }
+
     const credentialsFileContent = fs.readFileSync(credentialsFilePath, 'utf8');
     const newProfile = `[${profileName}]
-aws_access_key_id = ${awsAccessKey}
-aws_secret_access_key = ${awsSecretAccessKey}
-`;
+  aws_access_key_id = ${awsAccessKey}
+  aws_secret_access_key = ${awsSecretAccessKey}
+  `;
+
     fs.writeFileSync(credentialsFilePath, `${credentialsFileContent}\n${newProfile}`);
   }
 
@@ -77,13 +89,13 @@ aws_secret_access_key = ${awsSecretAccessKey}
       const awsProfileCredsResult = await awsProfileCreds;
       if(awsProfileCredsResult.profiles.some((profile: { profileName: any; }) => profile.profileName === responses['aws_profile'])) {
         // AWS profile exists and set the keys from the file
-        console.log('AWS Profile exists');
+        this.log('AWS Profile exists');
         responses['aws_access_key_id'] = awsProfileCredsResult.profiles.find((profile: { profileName: any; }) => profile.profileName === responses['aws_profile']).awsAccessKey;
         responses['aws_secret_access_key'] = awsProfileCredsResult.profiles.find((profile: { profileName: any; }) => profile.profileName === responses['aws_profile']).awsSecretAccessKey;
       } else {
         //Ask for the awsCreds prompt
-        console.log('AWS Profile does not exist');
-        console.log('Adding AWS Profile to the file');
+        this.log('AWS Profile does not exist');
+        this.log('Adding AWS Profile to the file');
         for (const prompt of promptGenerator.getAWSCredentials()) {
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
