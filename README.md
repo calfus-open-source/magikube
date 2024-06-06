@@ -8,8 +8,13 @@ magikube
 
 
 <!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
+- [magikube](#magikube)
+- [Get Ready](#get-ready)
+- [Quick Install](#quick-install)
+- [What you will need to start](#what-you-will-need-to-start)
+- [Commands](#commands)
+  - [`magikube help`](#magikube-help)
+  - [`magikube new PROJECT_NAME`](#magikube-new-project_name)
 <!-- tocstop -->
 # Get Ready
 <!-- getready -->
@@ -22,6 +27,7 @@ magikube
    ```bash 
    tfenv install 1.8.2
    ```
+You are all set for magikube now.
 <!-- getreadystop -->
 <!-- quickinstall -->
 # Quick Install
@@ -35,9 +41,10 @@ npm i magikube
 # What you will need to start
 Magikube will need a few things to be able to setup environment for you.
 
-1. AWS Access Key
-2. Github personal access token for user that has admin rights
-3. Github Organisation name
+1. If you have already configured AWS credentials then you will need profile name and skip to step 3
+2. AWS Access Key / Secret
+3. Github personal access token for user that has admin rights
+4. Github Organisation name
 <!-- needsstop -->
 
 # Commands
@@ -53,7 +60,7 @@ USAGE
 
 ## `magikube new PROJECT_NAME`
 
-This is the auto-mode where we have pre-selected lot of options. You answer a few prompts and magikube does the rest.
+This is the auto-mode where we have pre-selected a lot of options for you which will get you production ready in few minutes 🚀🚀. You answer a few prompts and magikube does the rest.
 
 ```
 USAGE
@@ -63,12 +70,10 @@ ARGUMENTS
   PROJECT_NAME
 
 DESCRIPTION
-  Create a new cluster in auto mode. PROJECT_NAME will be the folder in which file
+  Create a new cluster in auto mode. PROJECT_NAME will be the folder in which files will be created before execution.
 
 EXAMPLES
   $ magikube new my_awesome_project
   
 ```
-
-_See code: [src/commands/hello/index.ts](https://github.com/calfus-open-source/magikube/blob/v0.0.0/src/commands/hello/index.ts)_
 <!-- commandsstop -->
