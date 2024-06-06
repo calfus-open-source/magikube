@@ -8,15 +8,27 @@ locals {
   azs      = slice(data.aws_availability_zones.available.names, 0, {{ aws_az_count }})
 }
 
+resource "aws_kms_key" "eks_kms" {
+  description = "${var.name}-${var.environment}-eks-key"
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "{{ aws_eks_module_version }}"
 
   cluster_name       = "${var.name}-${var.environment}-eks"
-  cluster_version    = "{{ aws_eks_cluster_version }}"
+  cluster_version    = var.cluster_version
+  cluster_encryption_config = {
+    "resources": [
+      "secrets"
+    ]
+}
 
   kms_key_owners = data.aws_iam_group.devops.users[*].arn
 
+  enable_cluster_creator_admin_permissions = false
+
+  authentication_mode = "API"
   cluster_endpoint_public_access  = true
 
   cluster_addons = {
@@ -33,7 +45,7 @@ module "eks" {
 
   subnet_ids               = var.vpc_private_subnets
   vpc_id                   = var.vpc_id
-  
+
   # Fargate Profile(s)
   fargate_profiles = merge(
     {
@@ -74,10 +86,69 @@ module "eks" {
   }
 }
 
+
+resource "aws_eks_access_entry" "example" {
+  for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
+  cluster_name      = module.eks.cluster_name
+  principal_arn     = each.value.arn
+  type              = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "AmazonEKSClusterAdminPolicy" {
+  for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
+
+  cluster_name  = module.eks.cluster_name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = each.value.arn
+
+  access_scope {
+    type       = "cluster"
+  }
+}
+
+resource "aws_eks_access_policy_association" "AmazonEKSAdminPolicy" {
+  for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
+
+  cluster_name  = module.eks.cluster_name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+  principal_arn = each.value.arn
+
+  access_scope {
+    type       = "cluster"
+  }
+}
+
+resource "aws_iam_role" "{{ project_name }}-{{ environment }}-eks-fargate-role" {
+  name = "eks-fargate-profile-{{ project_name }}-{{ environment }}-role"
+
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Action = ["sts:AssumeRole", "sts:AssumeRoleWithWebIdentity"]
+      Effect = "Allow"
+      Principal = {
+        Service = "eks-fargate-pods.amazonaws.com"
+      }
+    }]
+    Version = "2012-10-17"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "{{ project_name }}-{{ environment }}-AmazonEKSFargatePodExecutionRolePolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy"
+  role       = aws_iam_role.{{ project_name }}-{{ environment }}-eks-fargate-role.name
+}
+
+resource "aws_iam_role_policy_attachment" "{{ project_name }}-{{ environment }}-AmazonEKS_CNI_Policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.{{ project_name }}-{{ environment }}-eks-fargate-role.name
+}
+
+
 #store these keys in secrets manager
 resource "aws_secretsmanager_secret" "k8s_secret" {
-  name = "${var.name}-${var.environment}-k8s-secrets"
+  name = "${var.name}-${var.environment}-eks-secrets"
   description = "Kubernetes related authentication details"
+  recovery_window_in_days = 0
   tags = {
     "product"        = var.name
     "environment"    = var.environment

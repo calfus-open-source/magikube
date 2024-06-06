@@ -1,7 +1,8 @@
+{% comment "Following can not be replaced with terraform variables and it requires to be defined upfront" %}{% endcomment %}
 provider "aws" {
-    region     = "{{ aws_region }}"
+    region     = "{{ aws_region}}"
 }
-  
+
 terraform {
     backend "s3" {
         bucket  = "{{ project_id }}-tfstate"
@@ -14,25 +15,62 @@ terraform {
 
 module "vpc" {
     source = "./modules/vpc"
-    name = "{{ project_name }}-{{ environment }}-vpc"
-    environment = "{{ environment }}"
-    cidr = "{{ aws_vpc_cidr }}"
+    name = "${ var.project_name }-${ var.environment }-vpc"
+    environment = "${ var.environment }"
+    cidr = "${ var.vpc_cidr }"
 }
 
 module "eks" {
     source                  = "./modules/eks-fargate"
-    name                    = "{{ project_name }}"
-    environment             = "{{ environment }}"
+    name                    = "${ var.project_name }"
+    environment             = "${ var.environment }"
     vpc_id                  = module.vpc.id
     vpc_private_subnets     = module.vpc.private_subnets
+    cluster_version         = "${ var.cluster_version }"
 }
+
+module "route53" {
+    source = "./modules/route53"
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+    domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
+}
+
+module "acm" {
+    source = "./modules/acm"
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+    domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
+    route53_zoneid = module.route53.zone_id
+}
+
 
 {% if source_code_repository == 'github' %}
 module "gitops" {
     source = "./modules/gitops"
-    name = "{{ project_name }}"
-    environment = "{{ environment }}"
-    github_token = "{{ github_access_token }}"
-    github_owner = "{{ github_owner }}"
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+    github_token = "${ var.github_access_token }"
+    github_owner = "${ github_owner }"
 }
 {% endif %}
+
+data "aws_eks_cluster_auth" "eks_cluster_auth" {
+    name = module.eks.cluster_name
+}
+  
+module "ingress-controller" {
+    source                 = "./modules/ingress-controller"
+    name                   = "${ var.project_name }"
+    environment            = "${ var.environment }"
+    region                 = "${ var.region }"
+    cluster_endpoint       = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name           = module.eks.cluster_name
+    vpc_id                 = module.vpc.id
+    vpc_private_subnets    = module.vpc.private_subnets
+    vpc_public_subnets     = module.vpc.public_subnets
+    oidc_provider_arn      = module.eks.oidc_provider_arn
+    oidc_provider          = module.eks.oidc_provider
+    cluster_token          = data.aws_eks_cluster_auth.eks_cluster_auth.token
+}
