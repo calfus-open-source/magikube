@@ -19,6 +19,8 @@
     "chalk": "^5.3.0",
     "clear": "^0.1.0",
     "figlet": "^1.7.0",
+    "fs-extra": "^11.2.0",
+    "fs-extra-plus": "^0.6.0",
     "inquirer": "^9.2.21",
     "liquidjs": "^10.13.0",
     "uuid": "^9.0.1"
@@ -76,7 +78,7 @@
   },
   "repository": "https://github.com/calfus-open-source/magikube",
   "scripts": {
-    "copy-templates": "copyfiles -u 1 src/templates/**/* dist && copyfiles -u 1 src/templates/**/**/* dist && copyfiles -u 1 src/templates/**/**/**/* dist && copyfiles -u 1 src/templates/* dist",
+    "copy-templates": "copyfiles -u 1 'src/templates/**/*' 'dist'",
     "build": "shx rm -rf dist && tsc -b && npm run copy-templates",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",

@@ -1,0 +1,3 @@
+---
+# SSH / ProxyJump
+ansible_ssh_common_args: '-o ProxyCommand="ssh -o StrictHostKeyChecking=no -o ForwardAgent=yes -o UserKnownHostsFile=/dev/null -o IdentityFile=~/.ssh/{{ project_name }}-{{ environment }}-key.pem -W %h:%p -q {% raw %}{{ ansible_user }}{% endraw %}@{% raw %}{{ hostvars[groups["bastion"][0]]["public_ip_address"] }}{% endraw %}"'

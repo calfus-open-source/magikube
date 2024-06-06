@@ -1,6 +1,6 @@
 import { Liquid } from 'liquidjs';
-import * as fs from 'fs';
-import { join } from 'path';
+import fs from 'fs-extra';
+import { dirname, join } from 'path';
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 
@@ -77,4 +77,44 @@ export default abstract class BaseProject {
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
         return await this.engine.parseAndRender(templateFile, { ...this.config } );
     }   
+    
+    async copyFolderAndRender(source: string, destination: string): Promise<void> {
+        const fullPath = join(new URL('.', import.meta.url).pathname, source);
+        const destFullPath = join(this.projectPath, destination);
+        
+        if (!fs.existsSync(fullPath)) {
+            this.command.error(`Source path ${fullPath} does not exist`);
+            return;
+        }
+        
+        const files = fs.readdirSync(fullPath, 'utf8');
+    
+        for (const file of files) {
+            const srcPath = join(fullPath, file);
+            const destPath = join(destFullPath, file);
+            const stat = fs.statSync(srcPath);
+        
+            if (stat.isDirectory()) {
+                if (!fs.existsSync(destPath)) {
+                    fs.mkdirSync(destPath, { recursive: true });
+                }
+                await this.copyFolderAndRender(join(source, file), join(destination, file));
+            } else if (file.endsWith('.liquid')) {
+                const templateFile = fs.readFileSync(srcPath, 'utf8');
+                const output = await this.engine.parseAndRender(templateFile, { ...this.config });
+    
+                const outputFilePath = destPath.replace('.liquid', '');
+                if (!fs.existsSync(dirname(outputFilePath))) {
+                    fs.mkdirSync(dirname(outputFilePath), { recursive: true });
+                }
+    
+                fs.writeFileSync(outputFilePath, output);
+            } else {
+                if (!fs.existsSync(dirname(destPath))) {
+                    fs.mkdirSync(dirname(destPath), { recursive: true });
+                }
+                fs.copyFileSync(srcPath, destPath);
+            }
+        }
+    }
 }

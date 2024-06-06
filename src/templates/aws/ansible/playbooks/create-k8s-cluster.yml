@@ -1,0 +1,54 @@
+---
+- hosts: bastion 
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-vm, tags: 'setup-vm' }
+
+- hosts: k8s_master, k8s_worker 
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-vm, tags: 'setup-vm' }    
+
+- hosts: k8s_master, k8s_worker 
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-volumes, tags: 'setup-volumes' }    
+
+- hosts: k8s_master, k8s_worker
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-firewall, tags: 'setup-firewall' }
+
+- hosts: k8s_master, k8s_worker
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-containerd, tags: 'setup-containerd' }
+
+- hosts: k8s_master, k8s_worker
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/install-kubernetes, tags: 'install-kubernetes' }
+
+- hosts: k8s_master, k8s_worker
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-kubernetes-node, tags: 'setup-kubernetes-node' }
+
+- hosts: k8s_master
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-master-node, tags: 'setup-master-node' }
+
+- hosts: k8s_worker
+  gather_facts: yes
+  become: yes
+  roles:
+    - { role:  ../roles/kubernetes/setup-worker-node, tags: 'setup-worker-node' }

@@ -1,0 +1,130 @@
+---
+- name: Load AWS credentials from ~/.aws/credentials file
+  ansible.builtin.set_fact:
+    aws_access_key_id: "{{ lookup('ini', 'aws_access_key_id section={{ aws_profile }} file=~/.aws/credentials') }}"
+    aws_secret_access_key: "{{ lookup('ini', 'aws_secret_access_key section={{ aws_profile }} file=~/.aws/credentials') }}"
+  vars:
+    profile: "{{ aws_profile }}"
+
+- name: List Linux block devices
+  ansible.builtin.shell:
+    cmd: "lsblk -o PATH,SIZE,SERIAL | grep ' vol' | sed 's/ vol/ vol-/'"
+  register: lsblk
+
+- name: Store EBS volume device name
+  ansible.builtin.set_fact:
+    ebs_volume_device_name: "{{ lsblk.stdout_lines }}"
+
+- name: Local Instance Device Names
+  ansible.builtin.debug: 
+    msg: "Device name: {{ ebs_volume_device_name }}"
+
+# The url is from the below documentation and it is specific to the instance
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#link-local-addresses
+- name: Get hostname
+  ansible.builtin.shell:
+    cmd: "curl -s http://169.254.169.254/latest/meta-data/instance-id"
+  register: instanceID
+
+- name: Store hostname
+  ansible.builtin.set_fact:
+    instanceID: "{{ instanceID.stdout_lines }}"
+
+- name: debug output
+  ansible.builtin.debug:  
+    msg: "Device name: {{ instance_volumes.keys() | join(',') }}"
+
+- name: Fetch EC2 volume facts
+  amazon.aws.ec2_vol_info:
+    aws_access_key: "{{ aws_access_key_id }}"
+    aws_secret_key: "{{ aws_secret_access_key }}"
+    region: "{{ region }}"
+    filters:
+      attachment.instance-id: "{{ instanceID }}"
+      tag:Name: "{{ instance_volumes.keys() }}"
+  register: ec2_volumes
+
+- name: Display volume IDs and tags
+  debug:
+    msg: "Volume device: {{ item }}"
+  loop: "{{ ec2_volumes.volumes }}"
+
+- name: Split ebs_volume_device_name variable
+  set_fact:
+    split_ebs_volume_device_name: "{{ ebs_volume_device_name | map('regex_replace', '\\s+', ' ') | map('split', ' ') | list }}"
+
+- name: Display split ebs_volume_device_name
+  debug:
+    msg: "{{ split_ebs_volume_device_name }}"
+
+- name: Initialize volume info dictionary
+  set_fact:
+    volume_info: {}
+
+- name: Extract volume IDs from ebs_volume_device_name
+  set_fact:
+    ebs_volume_ids: []
+
+- name: Loop over each EC2 volume
+  ansible.builtin.set_fact:
+    volume_info: "{{ volume_info | combine({item.id: {'tag': tag, 'size': size, 'device': device, 'volume_name': volume_name}}) }}"
+  loop: "{{ ec2_volumes.volumes }}"
+  vars:
+    device: "{{ item.attachment_set[0].device }}"
+    tag: "{{ item.tags.Name | default('Unknown') }}"
+    size: "{{ item.size }}G"
+    volume_name: "{{ split_ebs_volume_device_name | selectattr('2', 'search', item.id) | map('first') | first }}"
+  when: item.id in split_ebs_volume_device_name | map(attribute=2)
+
+- name: Display volume information
+  debug:
+    msg: "{{ volume_info }}"
+
+- name: Create disk partitions
+  parted:
+    device: "{{ item.value.volume_name }}"
+    number: 1
+    flags: [ lvm ]
+    state: present
+  loop: "{{ volume_info | dict2items }}"
+
+- name: Format disk partition
+  filesystem:
+    fstype: xfs
+    dev: "{{ item.value.volume_name }}p1"
+  loop: "{{ volume_info | dict2items }}"
+
+- name: Create mount point directories
+  file:
+    path: "/{{ item.value.tag }}"
+    state: directory
+    mode: "0775"
+  loop: "{{ volume_info | dict2items }}"
+
+- name: Get UUID for volume
+  ansible.builtin.shell:
+    cmd: "blkid -s UUID -o value {{ item.value.volume_name }}p1"
+  register: uuid
+  loop: "{{ volume_info | dict2items }}"
+  vars:
+    mount_point: "/{{ item.value.tag }}"
+
+- name: Store UUID values
+  ansible.builtin.set_fact:
+    uuid_device: "{{ uuid_device | default({}) | combine({item.item.value.tag: item.stdout_lines[0]}) }}"
+  loop: "{{ uuid.results }}"
+
+- name: Debug UUIDs
+  ansible.builtin.debug:
+    var: uuid_device
+
+- name: Mount volumes
+  ansible.builtin.mount:
+    path: "/{{ item.value.tag }}"
+    src: "UUID={{ uuid_device[item.value.tag] }}"
+    fstype: xfs
+    state: mounted
+  loop: "{{ volume_info | dict2items }}"
+  vars:
+    uuid_device: "{{ uuid_device }}"

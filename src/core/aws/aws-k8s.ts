@@ -15,8 +15,36 @@ export default class AWSK8SProject extends AWSProject {
         this.createMasterNode();
         this.createWorkerNode();
         this.createVpc();        
+        this.copyFolderAndRender('../templates/aws/ansible', 'templates/aws/ansible');
+        // this.createGitOps();
     }    
     
+    // async createGitOps(): Promise<void> {
+    //     if (this.config.source_code_repository === "codecommit") {
+    //       this.createFile(
+    //         "main.tf",
+    //         "../templates/aws/modules/gitops/main.tf.liquid",
+    //         "./modules/gitops"
+    //       );
+    //       this.createFile(
+    //         "variables.tf",
+    //         "../templates/aws/modules/gitops/variables.tf.liquid",
+    //         "./modules/gitops"
+    //       );
+    //     } else if (this.config.source_code_repository === "github") {
+    //         this.createFile(
+    //             "main.tf",
+    //             "../templates/github/main.tf.liquid",
+    //             "./modules/gitops"
+    //         );
+    //         this.createFile(
+    //             "variables.tf",
+    //             "../templates/github/variables.tf.liquid",
+    //             "./modules/gitops"
+    //         );
+    //     }
+    // }
+
     async createSSHKeyPair() {
         this.createFile('main.tf', '../templates/aws/k8s/ssh-key/main.tf.liquid', 'modules/ssh-key');
         this.createFile('variables.tf', '../templates/aws/k8s/ssh-key/variables.tf.liquid', 'modules/ssh-key');

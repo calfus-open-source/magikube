@@ -1,0 +1,78 @@
+---
+
+- name: create symlinks for containerd
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+  with_items:
+    - src: /data/run/containerd
+      dest: /run/containerd
+
+- name: Reset Kubernetes component
+  shell: "kubeadm reset --force"
+  register: reset_cluster
+
+- name: Copy join command from Ansiblehost to the worker nodes.
+  copy:
+    src: ../config/kubernetes_join_command
+    dest: $HOME/kubernetes_join_command
+    mode: 0777
+
+- name: Join to Kubernetes cluster
+  when: reset_cluster is succeeded
+  shell: |
+    sh $HOME/kubernetes_join_command
+  register: join_cluster
+  environment:
+    no_proxy: "$no_proxy,.svc,.svc.cluster.local"
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "kubeadm join: {{join_cluster.stdout}}"
+
+- name: create .kube directory for ansible user
+  file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    mode: 0755
+
+- name: copies admin.conf to ansible user's kube config
+  vars:
+    master_ips: "{{ groups['k8s_master'] | list }}"
+  copy:
+    src: "../config/{{ master_ips[0] }}/etc/kubernetes/admin.conf"
+    dest: /home/{{ ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: 0700
+
+- name: create .kube directory  for kube user
+  become: yes
+  become_user: kube
+  file:
+    path: $HOME/.kube
+    state: directory
+    mode: 0755
+
+- name: copies admin.conf to kube's kube config
+  vars:
+    master_ips: "{{ groups['k8s_master'] | list }}"
+  copy:
+    src: "../config/{{ master_ips[0] }}/etc/kubernetes/admin.conf"
+    dest: /data/home/kube/.kube/config
+    owner: kube
+    group: kube
+    mode: 0700
+
+- name: Prep the cluster
+  shell: |
+    kubectl label node --all topology.kubernetes.io/region={{ region }}
+    exit 0
+  args:
+    executable: /bin/bash      
+  register: SHELL_STDOUT
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "kubectl taint nodes: {{SHELL_STDOUT.stdout}}"

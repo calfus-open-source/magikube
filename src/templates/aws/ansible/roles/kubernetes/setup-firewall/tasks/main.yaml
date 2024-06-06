@@ -1,0 +1,49 @@
+---
+- name: Run apt update before installing prerequisites
+  apt:
+    update_cache: yes
+
+- name: 2.1.start_firewalld
+  command: systemctl start firewalld.service
+
+- name: 2.2.enable_firewalld
+  command: systemctl enable firewalld.service
+
+- name: 2.3.status_firewalld
+  command: systemctl status firewalld.service
+
+- name: 2.4.add_firewall_rules_public
+  command: firewall-cmd --permanent --zone=public --add-port={{item}}
+  loop: "{{ ports_to_open }}"
+  
+- name: 2.4.add_firewall_rules_trusted
+  command: firewall-cmd --permanent --zone=trusted --add-port={{item}}
+  loop: "{{ ports_to_open }}"
+
+- name: add service cidr in trusted zone
+  command: firewall-cmd --permanent --zone=trusted --add-source={{service_cidr}}
+  
+- name: add pod cidr in trusted zone
+  command: firewall-cmd --permanent --zone=trusted --add-source={{pod_network_cidr}}
+
+- name: Get list of master nodes
+  set_fact:
+    master_ips: "{{ groups['k8s_master'] | list }}"
+    worker_ips: []
+
+- name: Get list of worker nodes
+  set_fact:
+    worker_ips: "{{ groups['k8s_worker'] | list }}"
+  when:
+    - "'k8s-worker' in groups"
+
+- name: add master hosts in trusted zone
+  command: firewall-cmd --permanent --zone=trusted --add-source={{item}}
+  loop: "{{master_ips}}"
+
+- name: add worker hosts in trusted zone
+  command: firewall-cmd --permanent --zone=trusted --add-source={{item}}
+  loop: "{{worker_ips}}"
+
+- name: 2.6.reload_firewall
+  command: firewall-cmd --reload

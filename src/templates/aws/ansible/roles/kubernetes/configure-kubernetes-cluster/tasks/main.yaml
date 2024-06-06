@@ -1,0 +1,26 @@
+---
+- name: Remove taints from master node and create service account for dashboard
+  become: yes
+  become_user: kube
+  shell: |
+    export MASTER_NODE=$(kubectl get nodes |grep control-plane|cut -d ' ' -f1)
+    kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/master-
+    kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/control-plane-
+    kubectl taint nodes $MASTER_NODE node-role.kubernetes.io/control-plane:NoSchedule-
+    kubectl create serviceaccount dashboard-admin-sa
+    kubectl create clusterrolebinding dashboard-admin-sa --clusterrole=cluster-admin --serviceaccount=default:dashboard-admin-sa
+  args:
+    chdir: $HOME
+
+- name: Install helm
+  shell: |
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    exit 0
+  args:
+    executable: /bin/bash      
+  register: SHELL_STDOUT
+
+- name: debug output
+  ansible.builtin.debug: 
+    msg: "Helm Install: {{SHELL_STDOUT.stdout}}"
+
