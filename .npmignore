@@ -1,0 +1,8 @@
+src/
+.git
+.github
+test/
+
+node_modules/
+
+*.code-workspace
