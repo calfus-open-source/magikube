@@ -130,7 +130,28 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     // Get the project name from the command line arguments
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
-    if (terraform)
+    if (terraform) {
       await terraform.createProject(projectName, process.cwd());
+      // Delay of 5 seconds to allow the user to review the terraform files
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      if (responses['cluster_type'] === 'k8s') {
+        // Start the SSH process
+        terraform?.startSSHProcess();
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        this.log(process.cwd()+"/"+projectName);
+        await terraform?.runTerraform(process.cwd()+"/"+projectName);
+        //Run the ansible playbook to setup cluster
+        await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
+        await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
+        // Get the master IP address of the cluster and get the kubeconfig file
+        const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
+        // Add the kubeconfig to the user's kubeconfig file
+        await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
+        // Run the terraform files again to setup the ingress controller
+        await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", "module.ingress-controller");
+        // await terraform?.runAnsiblePlaybook(process.cwd()+"/"+projectName);
+        terraform?.stopSSHProcess();
+      } 
+    }
   }
 }

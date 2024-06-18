@@ -33,13 +33,13 @@ export default abstract class BaseProject {
     async createProject(name: string, path: string): Promise<void> {
         //initialize terraform in the path
         this.projectPath = join(path, name);
-        this.createFolder();
+        await this.createFolder();
 
         const projectConfigFile = join(this.projectPath, '.magikube');
         this.command.log(`Creating project '${name}' in the path`);
         fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
 
-        this.createProviderFile();
+        await this.createProviderFile();
     }
 
     async createFolder(): Promise<void> {

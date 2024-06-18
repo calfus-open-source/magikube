@@ -1,0 +1,19 @@
+%{ for index, ip in bastion_ips ~}
+Host ${project_name}-${environment}-proxy
+    HostName ${ip}
+    User ubuntu
+%{ endfor ~}
+
+%{ for index, ip in master_ips ~}
+Host ${project_name}-${environment}-master
+    HostName ${ip}
+    User kube
+    ProxyJump ${project_name}-${environment}-proxy
+%{ endfor ~}
+
+%{ for index, ip in worker_ips ~}
+Host ${project_name}-${environment}-worker-${index}
+    HostName ${ip}
+    User kube
+    ProxyJump ${project_name}-${environment}-proxy
+%{ endfor ~}

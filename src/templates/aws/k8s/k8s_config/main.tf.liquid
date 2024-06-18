@@ -1,0 +1,40 @@
+provider "aws" {
+    region     = "{{ aws_region }}"
+}
+  
+  terraform {
+    backend "s3" {
+        bucket  = "{{ project_id }}-tfstate"
+        encrypt = true
+        key     = "{{ project_name }}-{{ environment }}.tfstate"
+        region  = "{{ aws_region }}"
+        dynamodb_table = "{{ project_id }}-tfstate-lock"
+    }
+}
+
+data "terraform_remote_state" "output_state" {
+    backend = "s3"
+    config = {
+      bucket = "{{ project_id }}-tfstate"
+      key    = "{{ project_name }}-{{ environment }}.tfstate"
+      region = "{{ aws_region }}"
+    }
+  }
+    
+// Now you can use the master_ip output from nonprod
+output "referenced_master_ip" {
+    value = data.terraform_remote_state.output_state.outputs.master_ip
+}
+
+{% if cluster_type == "k8s" %}
+module "ingress-controller" {
+    source                 = "../modules/ingress-controller"
+    name                   = "{{ project_name }}"
+    environment            = "{{ environment }}"
+    region                 = "{{ aws_region }}"
+    master_ip              = data.terraform_remote_state.output_state.outputs.master_ip
+    vpc_id                 = data.terraform_remote_state.output_state.outputs.vpc_id
+    vpc_private_subnets    = data.terraform_remote_state.output_state.outputs.vpc_private_subnets
+    vpc_public_subnets     = data.terraform_remote_state.output_state.outputs.vpc_public_subnets
+}
+{% endif %}

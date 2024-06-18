@@ -1,50 +1,36 @@
+import { join } from 'path';
 import AWSProject from './aws-project.js';
 
 export default class AWSK8SProject extends AWSProject {    
+    // save the project name and path in variables
+    projectPath: string = '';
+    projectName: string = '';
+
     async createProject(name: string, path: string): Promise<void> {
-        super.createProject(name, path);
-        this.createMainFile();
+        this.projectName = name;
+        this.projectPath = join(path, name); 
+        await super.createProject(name, path);
+        await this.createMainFile();
     }
 
     async createMainFile(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid');
-        this.createFile('terraform.tfvars', '../templates/aws/k8s/terraform.tfvars.liquid');
-        this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid');
-        this.createSSHKeyPair();
-        this.createBastionHost();
-        this.createMasterNode();
-        this.createWorkerNode();
-        this.createVpc();        
-        this.copyFolderAndRender('../templates/aws/ansible', 'templates/aws/ansible');
-        // this.createGitOps();
+        //Wait for all the files generation tasks to run and in parallel execution
+        await Promise.all([
+            this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid'),
+            this.createFile('terraform.tfvars', '../templates/aws/k8s/terraform.tfvars.liquid'),
+            this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid'),
+            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', 'k8s_config'),
+            this.createCommon(),        
+            this.createSSHKeyPair(),
+            this.createBastionHost(),
+            this.createMasterNode(),
+            this.createWorkerNode(),
+            this.copyFolderAndRender('../templates/aws/ansible', 'templates/aws/ansible'),
+            this.createFile('ssh-config.tftpl', '../templates/aws/k8s/ssh-config.tftpl'),
+            // this.createGitOps()
+        ]);
     }    
     
-    // async createGitOps(): Promise<void> {
-    //     if (this.config.source_code_repository === "codecommit") {
-    //       this.createFile(
-    //         "main.tf",
-    //         "../templates/aws/modules/gitops/main.tf.liquid",
-    //         "./modules/gitops"
-    //       );
-    //       this.createFile(
-    //         "variables.tf",
-    //         "../templates/aws/modules/gitops/variables.tf.liquid",
-    //         "./modules/gitops"
-    //       );
-    //     } else if (this.config.source_code_repository === "github") {
-    //         this.createFile(
-    //             "main.tf",
-    //             "../templates/github/main.tf.liquid",
-    //             "./modules/gitops"
-    //         );
-    //         this.createFile(
-    //             "variables.tf",
-    //             "../templates/github/variables.tf.liquid",
-    //             "./modules/gitops"
-    //         );
-    //     }
-    // }
-
     async createSSHKeyPair() {
         this.createFile('main.tf', '../templates/aws/k8s/ssh-key/main.tf.liquid', 'modules/ssh-key');
         this.createFile('variables.tf', '../templates/aws/k8s/ssh-key/variables.tf.liquid', 'modules/ssh-key');

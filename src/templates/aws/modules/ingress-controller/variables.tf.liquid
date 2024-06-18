@@ -10,6 +10,10 @@ variable "region" {
   description = "the AWS region in which resources are created, you must set the availability_zones variable as well if you define this value to something other than the default"
 }
 
+variable "master_ip" {
+  description = "the IP address of the master node"
+}
+
 variable "vpc_id" {
   description = "VPC Id"
 }
@@ -22,6 +26,7 @@ variable "vpc_private_subnets" {
   description = "List of private subnets"
 }
 
+{% if cluster_type != "k8s" %}
 variable "cluster_certificate_authority_data" {
   description = "cluster certificate authority data"
 }
@@ -45,3 +50,4 @@ variable "oidc_provider" {
 variable "cluster_token" {
   description = "cluster token"
 }
+{% endif %}
