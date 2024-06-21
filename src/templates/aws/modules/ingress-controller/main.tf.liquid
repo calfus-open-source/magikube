@@ -108,4 +108,5 @@ resource "helm_release" "ingress" {
     name  = "serviceAccount.name"
     value = "aws-load-balancer-controller"
   }
+  depends_on = [ var.fargate_profiles ]
 }
