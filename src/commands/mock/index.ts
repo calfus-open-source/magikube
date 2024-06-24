@@ -6,7 +6,7 @@ import fs from 'fs';
 import os from 'os';
 import AWSProject from '../../core/aws/aws-project.js';
 import TerraformProject from '../../core/terraform-project.js';
-
+import PromptGenerator from '../../prompts/prompt-generator.js';
 
 export default class Mock extends BaseCommand {
   static args = {
@@ -34,13 +34,19 @@ export default class Mock extends BaseCommand {
     // log the project config
     this.log(JSON.stringify(projectConfig, null, 2));
     const projectName = args.name;
+    const promptGenerator = new PromptGenerator();
     const terraform = await TerraformProject.mockGetProject(this, projectConfig);
+    this.log(`Project Name ==========>: ${projectName}`);
     if (projectConfig['cluster_type'] === 'k8s') {
       // Enter dev commands here
       // This will only work once the cluster is up and running and the .magikube file is created in the project directory
       // You can create the functions in the magikube/src/core/aws/aws-project.ts file similar to runAnsiblePlaybook1 or runTerraformCommand1 functions
       // and call them here
       
+      console.log('Running.....!', projectConfig);
+
+      terraform?.createReactApp(process.cwd(), 'sample');
+      console.log('Completed.....!');
     }
   }
 }

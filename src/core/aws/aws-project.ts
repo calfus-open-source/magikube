@@ -299,4 +299,17 @@ export default class AWSProject extends BaseProject {
             console.error('Function not implemented.', error);
         }
     }
+
+    async createReactApp(projectPath: string, appName: string) {
+        try {
+            console.log('Creating React app...', appName);
+            execSync(`npx create-react-app ${appName}`, {
+                cwd: projectPath,
+                stdio: 'inherit'
+            });
+            console.log('React app created successfully.');
+        } catch (error) {
+            console.error('Failed to create React app:', error);
+        }
+    }
 }
