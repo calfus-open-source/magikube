@@ -300,16 +300,92 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-    async createReactApp(projectPath: string, appName: string) {
+    async createReactApp(projectPath: string, projectConfig: any) {
         try {
+            const appName = projectConfig['app_name'];
+            const appPath = path.join(projectPath, appName);
+            const createReactAppCommand = projectConfig['use_typescript'] === 'Yes' ? 
+                `npx create-react-app ${appName} --template typescript` : `npx create-react-app ${appName}`;
             console.log('Creating React app...', appName);
-            execSync(`npx create-react-app ${appName}`, {
+            
+            execSync(createReactAppCommand, {
                 cwd: projectPath,
                 stdio: 'inherit'
             });
-            console.log('React app created successfully.');
+
+            if(projectConfig['use_eslint'] === 'Yes') {
+                execSync(`cd ${appName} && npx eslint --init`, {
+                    stdio: 'inherit'
+                });
+            }
+            if(projectConfig['use_tailwind'] === 'Yes') {
+                execSync(`cd ${appName} && npm install tailwindcss@latest postcss@latest autoprefixer@latest && npx tailwindcss init -p`, {
+                    stdio: 'inherit'
+                });
+            }
+            execSync(`cd ${appName} && npm run build`, {
+                stdio: 'inherit'
+            });
+            // this.createDockerfile(appPath);
         } catch (error) {
             console.error('Failed to create React app:', error);
         }
     }
+
+    async createNodeExpressApp(projectPath: string, projectConfig: any) {
+        try {
+            const appName = projectConfig['app_name'];
+            console.log('Creating Node Express app...', appName);
+            const expressCommand = projectConfig['use_typescript'] === 'Yes' ? 
+                `npx express-generator-typescript ${appName} --no-view` : `npx express-generator ${appName} --no-view`;
+            execSync(expressCommand, {
+                cwd: projectPath,
+                stdio: 'inherit'
+            });
+
+            execSync(`cd ${appName} && npm run build`, {
+                stdio: 'inherit'
+            });
+            console.log('Node Express app created successfully.');
+        } catch (error) {
+            console.error('Failed to create Node Express app:', error);
+        }
+    }
+
+    // async createDockerfile(appPath: string) {
+    //     const dockerfileContent = `
+    //     # Use the official Node.js 20 image as the base image
+    //     FROM node:20
+
+    //     # Set the working directory in the container to /app
+    //     WORKDIR /app
+    
+    //     # Copy the package.json and package-lock.json files to the working directory
+    //     COPY package*.json ./
+    
+    //     # Install the dependencies
+    //     RUN npm install
+    
+    //     # Copy the rest of the application code to the working directory
+    //     COPY . .
+    
+    //     # Build the React application
+    //     RUN npm run build
+    
+    //     # Use the official Nginx image to serve the static files
+    //     FROM nginx:1.19
+    
+    //     # Copy the build output to the /usr/share/nginx/html directory
+    //     COPY --from=0 /app/build /usr/share/nginx/html
+    
+    //     # Expose port 80 to allow traffic to the application
+    //     EXPOSE 80
+    
+    //     # Start the Nginx server
+    //     CMD ["nginx", "-g", "daemon off;"]
+    //     `;
+    
+    //     fs.writeFileSync(path.join(appPath, 'Dockerfile'), dockerfileContent.trim());
+    //     console.log('Dockerfile created successfully.');
+    // }
 }

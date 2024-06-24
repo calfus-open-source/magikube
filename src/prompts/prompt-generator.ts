@@ -138,6 +138,19 @@ const githubPrompts: any[] = [
   },
 ];
 
+enum ApplicationType {
+  REACT = "react",
+  NEXT = "next",
+  NEST = "nest",
+  NODE_EXPRESS = "node-express",
+  NODE = "node",
+}
+
+enum YesNo {
+  YES = "Yes",
+  NO = "No",
+}
+
 export default class PromptGenerator {
   getCloudProvider(): any[] {
     return [
@@ -186,5 +199,66 @@ export default class PromptGenerator {
 
   getVersionControlPrompts(versionControl: string): any[] {
     return versionControl === VersionControl.GITHUB ? githubPrompts : [];
+  }
+
+  getApplicationType(): any[] {
+    return [
+      {
+        choices: [
+          ApplicationType.REACT,
+          ApplicationType.NEXT,
+          ApplicationType.NEST,
+          ApplicationType.NODE_EXPRESS,
+          ApplicationType.NODE,
+        ],
+        message: "Select an Application Type:",
+        name: "application_type",
+        type: "list",
+      },
+    ];
+  }
+
+  getUseTypeScript(): any[] {
+    return [
+      {
+        choices: [YesNo.YES, YesNo.NO],
+        message: "Would you like to use TypeScript?",
+        name: "use_typescript",
+        type: "list",
+      },
+    ];
+  }
+
+  getUseESLint(): any[] {
+    return [
+      {
+        choices: [YesNo.YES, YesNo.NO],
+        message: "Would you like to use ESLint?",
+        name: "use_eslint",
+        type: "list",
+      },
+    ];
+  }
+
+  getUseTailwind(): any[] {
+    return [
+      {
+        choices: [YesNo.YES, YesNo.NO],
+        message: "Would you like to use Tailwind CSS?",
+        name: "use_tailwind",
+        type: "list",
+      },
+    ];
+  }
+
+  getAppName(): any[] {
+    return [
+      {
+        type: 'input',
+        name: 'app_name',
+        message: 'What is your project name?',
+        default: 'my-app',
+      },
+    ];
   }
 }
