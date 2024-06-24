@@ -92,17 +92,10 @@ export default class Mock extends BaseCommand {
           projectConfig = { ...projectConfig, ...resp };
         }
 
-        let expressCommand = `npx express-generator ${resp?.app_name} --no-view`;
-        let expressCommandTs = `npx express-generator-typescript ${resp?.app_name} --no-view`;
+        // Express-Node application prompt
         for (const prompt of promptGenerator.getUseTypeScript()) {
           const resp = await inquirer.prompt(prompt);
           projectConfig = { ...projectConfig, ...resp };
-          if (resp.use_typescript === 'No') {
-            execSync(expressCommand);
-          }
-          else if (resp.use_typescript === 'Yes') {
-            execSync(expressCommandTs);
-          }
         }
       }
     if (projectConfig['cluster_type'] === 'k8s') {
