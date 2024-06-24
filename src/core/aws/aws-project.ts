@@ -53,7 +53,7 @@ export default class AWSProject extends BaseProject {
         }
 
         if (awsStatus) {
-            super.destroyProject(name, path);
+            await super.destroyProject(name, path);
         }        
     }
 
@@ -133,10 +133,10 @@ export default class AWSProject extends BaseProject {
     }
 
     // Function to run terraform init command
-    async runTerraformInit(projectPath: string):Promise<void> {
+    async runTerraformInit(projectPath: string, backend: string):Promise<void> {
         console.log('Running terraform init...', projectPath);
         try {
-            execSync('terraform init', {
+            execSync(`terraform init -backend-config=${backend}`, {
                 cwd: projectPath,
                 stdio: 'inherit'
             });
@@ -160,13 +160,16 @@ export default class AWSProject extends BaseProject {
     }
 
     // Function to run terraform apply command
-    async runTerraformApply(projectPath: string, module?: string): Promise<void> {
+    async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
         console.log('Running terraform apply...', projectPath);
         try {
             console.log('Running terraform apply...');
-            const command = module 
+            let command = module 
                 ? `terraform apply -target=${module} -auto-approve` 
                 : 'terraform apply -auto-approve';
+            if (varFile) {
+                command += ` -var-file=${varFile}`;
+            }    
             execSync(command, {
                 cwd: projectPath,
                 stdio: 'inherit'
@@ -177,12 +180,28 @@ export default class AWSProject extends BaseProject {
         }
     }
     
-    async runTerraform(projectPath: string, module?: string): Promise<void> {
+    async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
         try {
-            await this.runTerraformInit(projectPath);
-            await this.runTerraformApply(projectPath, module);
+            await this.runTerraformInit(projectPath, backend);
+            await this.runTerraformApply(projectPath, module, varFile);
         } catch (error) {
             console.error('Terraform process failed:', error);
+        }
+    }
+
+    async runTerraformDestroy(projectPath: string, module?: string): Promise<void> {
+        console.log('Running terraform destroy...', projectPath);
+        try {
+            let command = module 
+                ? `terraform destroy -target=${module} -auto-approve` 
+                : 'terraform destroy -auto-approve';
+            execSync(command, {
+                cwd: projectPath,
+                stdio: 'inherit'
+            });
+            console.log('Terraform destroy completed successfully.');
+        } catch (error) {
+            console.error('Failed to destroy terraform process:', error);
         }
     }
 
@@ -274,29 +293,55 @@ export default class AWSProject extends BaseProject {
     }
 
     async runAnsiblePlaybook1(projectPath: string) {
-        try{
-            console.log('Running ansible playbook...', projectPath);
-            execSync('ansible-playbook ../playbooks/create-k8s-cluster.yml', {
-                cwd: projectPath+'/templates/aws/ansible/environments',
-                stdio: 'inherit'
-            });
-            console.log('Kubernetes cluster completed successfully.');    
-
-        } catch (error) {
-            console.error('Function not implemented.', error);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+    
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                console.log(`Running ansible playbook... Attempt ${attempt}`, projectPath);
+                execSync('ansible-playbook ../playbooks/create-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit'
+                });
+                console.log('Kubernetes cluster created successfully.');
+                success = true;
+            } catch (error) {
+                console.error('An error occurred while running the Ansible playbook.', error);
+                if (attempt >= maxRetries) {
+                    console.error('Max retries reached. Exiting...');
+                    throw error;
+                } else {
+                    console.log(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
         }
-    }
-
+    }    
     async runAnsiblePlaybook2(projectPath: string) {
-        try{
-            console.log('Running ansible playbook...', projectPath+'/templates/aws/environments');
-            execSync('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {
-                cwd: projectPath+'/templates/aws/environments',
-                stdio: 'inherit'
-            });
-            console.log('Kubernetes cluster configuration completed successfully.');
-        } catch (error) {
-            console.error('Function not implemented.', error);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+    
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                console.log(`Running ansible playbook... Attempt ${attempt}`, projectPath);
+                execSync('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit'
+                });
+                console.log('Kubernetes cluster configuration completed successfully.');
+                success = true;
+            } catch (error) {
+                console.error('An error occurred while running the Ansible playbook.', error);
+                if (attempt >= maxRetries) {
+                    console.error('Max retries reached. Exiting...');
+                    throw error;
+                } else {
+                    console.log(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ data "aws_ami" "master_host_ami" {
   }
   
   resource "aws_launch_template" "master-host-launch-template" {
-    name_prefix                 = "{{ project_name }}-{{ environment }}-master"
+    name_prefix                 = "${ var.project_name }-${ var.environment }-master"
     description                 = "master-host-launch-template"
     disable_api_termination     = "false"
     image_id                    = data.aws_ami.master_host_ami.id  
@@ -35,7 +35,7 @@ data "aws_ami" "master_host_ami" {
     vpc_security_group_ids = [var.default_security_group_id]
     
     tags = {
-      Name = "{{ project_name }}-{{ environment }}-master" 
+      Name = "${ var.project_name }-${ var.environment }-master" 
       Group = "k8s-master"
     }
   

@@ -16,7 +16,7 @@ data "aws_ami" "bastion_host_ami" {
   }
   
   resource "aws_launch_template" "bastion-host-launch-template" {
-    name_prefix             = "{{ project_name }}-{{ environment }}-bastion"
+    name_prefix             = "${ var.project_name }-${ var.environment }-bastion"
     description             = "bastion-host-launch-template"
     disable_api_termination = "false"
     image_id                = data.aws_ami.bastion_host_ami.id  
@@ -38,7 +38,7 @@ data "aws_ami" "bastion_host_ami" {
     vpc_security_group_ids = [var.default_security_group_id]
     
     tags = {
-      Name = "{{ project_name }}-{{ environment }}-bastion"  
+      Name = "${ var.project_name }-${ var.environment }-bastion"  
       Group = "bastion"
     }
   }

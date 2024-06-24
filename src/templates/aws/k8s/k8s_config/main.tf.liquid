@@ -2,14 +2,9 @@ provider "aws" {
     region     = "{{ aws_region }}"
 }
   
-  terraform {
-    backend "s3" {
-        bucket  = "{{ project_id }}-tfstate"
-        encrypt = true
-        key     = "{{ project_name }}-{{ environment }}.tfstate"
-        region  = "{{ aws_region }}"
-        dynamodb_table = "{{ project_id }}-tfstate-lock"
-    }
+terraform {
+  backend "s3" {
+  }
 }
 
 data "terraform_remote_state" "output_state" {
@@ -29,9 +24,9 @@ output "referenced_master_ip" {
 {% if cluster_type == "k8s" %}
 module "ingress-controller" {
     source                 = "../modules/ingress-controller"
-    name                   = "{{ project_name }}"
-    environment            = "{{ environment }}"
-    region                 = "{{ aws_region }}"
+    name                   = "${var.project_name}"
+    environment            = "${var.environment}"
+    region                 = "${var.region}"
     master_ip              = data.terraform_remote_state.output_state.outputs.master_ip
     vpc_id                 = data.terraform_remote_state.output_state.outputs.vpc_id
     vpc_private_subnets    = data.terraform_remote_state.output_state.outputs.vpc_private_subnets
