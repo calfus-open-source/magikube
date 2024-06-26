@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import { dirname, join } from 'path';
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
+import TerraformProject from './terraform-project.js';
 
 export default abstract class BaseProject {    
     protected config: any = {};
@@ -18,7 +19,26 @@ export default abstract class BaseProject {
     async destroyProject(name: string, path: string): Promise<void> {
         //initialize terraform in the path
         this.projectPath = join(path, name);
-        this.deleteFolder();
+        // Run terraform destroy
+        this.command.log(`Destroying project '${name}' in the path`);
+        await this.terraformDestroy();
+        await this.deleteFolder();
+    }
+
+    async terraformDestroy(): Promise<void> {
+        // Run terraform destroy
+        this.command.log(`Running terraform destroy in the path`);
+        const terraform = await TerraformProject.getProject(this.command);
+        // Check if it has multiple modules
+        if (this.config.cluster_type === 'k8s') {
+            // Initialize the terraform
+            await terraform?.runTerraformInit(this.projectPath+'/k8s_config', `../${this.config.environment}-config.tfvars`);
+            terraform?.startSSHProcess();
+            // Destroy the ingress and other helm modules
+            await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `../terraform.tfvars`);
+            terraform?.stopSSHProcess();
+        }
+        await terraform?.runTerraformDestroy(this.projectPath);
     }
 
     async deleteFolder(): Promise<void> {
@@ -56,7 +76,7 @@ export default abstract class BaseProject {
 
     async createProviderFile(): Promise<void> {
         //create a providers.tf file in the path
-        this.createFile('providers.tf', '../templates/common/providers.tf.liquid');
+        await this.createFile('providers.tf', '../templates/common/providers.tf.liquid');
     }
 
     async createFile(filename: string, templateFilename: string, folderName: string = '.'): Promise<void> {

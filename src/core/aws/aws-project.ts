@@ -31,15 +31,23 @@ export default class AWSProject extends BaseProject {
     }
 
     async destroyProject(name: string, path: string): Promise<void> {
-        let awsStatus = true;
+        let awsStatus = false;
+        if (this.config.cloud_provider === 'aws') {
+            awsStatus = true;
+        }
 
         if (!this.config.dryrun) {
+            if (awsStatus) {
+                await super.destroyProject(name, path);
+            }
+
             const status = await AWSPolicies.delete(
                 this,
                 this.config.aws_region,
                 this.config.aws_access_key_id,
                 this.config.aws_secret_access_key
             );
+
 
             if (status) {
                 awsStatus = await AWSTerraformBackend.delete(
@@ -52,9 +60,6 @@ export default class AWSProject extends BaseProject {
             }
         }
 
-        if (awsStatus) {
-            await super.destroyProject(name, path);
-        }        
     }
 
     async createCommon(): Promise<void> {
@@ -189,12 +194,15 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-    async runTerraformDestroy(projectPath: string, module?: string): Promise<void> {
+    async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
         console.log('Running terraform destroy...', projectPath);
         try {
             let command = module 
                 ? `terraform destroy -target=${module} -auto-approve` 
                 : 'terraform destroy -auto-approve';
+            if (varFile) {
+                command += ` -var-file=${varFile}`;
+            }
             execSync(command, {
                 cwd: projectPath,
                 stdio: 'inherit'

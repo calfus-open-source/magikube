@@ -139,9 +139,9 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         await new Promise(resolve => setTimeout(resolve, 10000));
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
+        terraform?.startSSHProcess();
         const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
         await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
-        terraform?.startSSHProcess();
         await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
         terraform?.stopSSHProcess();
       } 
