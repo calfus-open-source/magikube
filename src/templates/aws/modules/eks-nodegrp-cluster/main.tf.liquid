@@ -1,0 +1,295 @@
+data "aws_availability_zones" "available" {}
+
+data "aws_iam_group" "devops" {
+  group_name = "${ var.name }-devops"
+}
+
+locals {
+  azs      = slice(data.aws_availability_zones.available.names, 0, {{ aws_az_count }})
+}
+
+resource "aws_kms_key" "eks_kms" {
+  description = "${ var.name }-${ var.environment }-eks-key"
+}
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "{{ aws_eks_module_version }}"
+  
+  cluster_name       = "${var.name}-${var.environment}-eks"
+  cluster_version    = var.cluster_version
+  cluster_encryption_config = {
+    "resources": [
+      "secrets"
+    ]
+  node_group_name    = "${var.name}-node-group"
+  }
+  kms_key_owners = data.aws_iam_group.devops.users[*].arn
+  enable_cluster_creator_admin_permissions = true
+  dataplane_wait_duration = "0s"
+
+  authentication_mode = "API"
+  cluster_endpoint_public_access  = true
+
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+  }
+
+  subnet_ids               = var.vpc_private_subnets
+  vpc_id                   = var.vpc_id
+  eks_managed_node_groups = {
+    eks_node_group = {
+      name             = "${var.name}-ng"
+      desired_capacity = "{{ node_desired_size }}"
+      max_capacity     = "{{ node_max_size }}"
+      min_capacity     = "{{ node_min_size }}"
+      instance_type    = "{{ node_instance_type }}"
+      capacity_type     = "SPOT"
+      disk_size         = "{{ ebs_volume_size }}"
+    }
+  }
+  tags = {
+    Name             = "${var.name}-${var.environment}-eks"
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "eks"
+    "terraform"      = "true"
+  }
+}
+
+# module "eks_managed_node_group" {
+#   source = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
+
+#   name            = "${var.name}-${var.environment}-node-group"
+#   cluster_name       = "${var.name}-${var.environment}-eks"
+#   cluster_version    = var.cluster_version
+
+#   subnet_ids               = var.vpc_private_subnets
+#   #vpc_id                   = module.eks.vpc_id
+
+#   // The following variables are necessary if you decide to use the module outside of the parent EKS module context.
+#   // Without it, the security groups of the nodes are empty and thus won't join the cluster.
+#   cluster_primary_security_group_id = module.eks.cluster_primary_security_group_id
+#   vpc_security_group_ids            = [module.eks.node_security_group_id]
+
+#   // Note: `disk_size`, and `remote_access` can only be set when using the EKS managed node group default launch template
+#   // This module defaults to providing a custom launch template to allow for custom security groups, tag propagation, etc.
+#   // use_custom_launch_template = false
+#   // disk_size = 50
+#   //
+#   //  # Remote access cannot be specified with a launch template
+#   //  remote_access = {
+#   //    ec2_ssh_key               = module.key_pair.key_pair_name
+#   //    source_security_group_ids = [aws_security_group.remote_access.id]
+#   //  }
+
+#   desired_size = "{{ node_desired_size }}"
+#   max_size     = "{{ node_max_size }}"
+#   min_size     = "{{ node_min_size }}"
+#   instance_types = ["{{ node_instance_type }}"]
+#   capacity_type  = "SPOT"
+#   disk_size      = "{{ ebs_volume_size }}"
+
+#   tags = {
+#     Name             = "${var.name}-${var.environment}-node-group"
+#     "product"        = var.name
+#     "environment"    = var.environment
+#     "terraform"      = "true"
+#   }
+# }
+
+resource "aws_eks_access_entry" "example" {
+  for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
+  cluster_name      = module.eks.cluster_name
+  principal_arn     = each.value.arn
+  type              = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "AmazonEKSClusterAdminPolicy" {
+  for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
+
+  cluster_name  = module.eks.cluster_name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = each.value.arn
+
+  access_scope {
+    type       = "cluster"
+  }
+}
+
+resource "aws_eks_access_policy_association" "AmazonEKSAdminPolicy" {
+  for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
+
+  cluster_name  = module.eks.cluster_name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+  principal_arn = each.value.arn
+
+  access_scope {
+    type       = "cluster"
+  }
+}
+
+# resource "aws_iam_role" "eks-ng-cluster-role" {
+#   name = "eks-ng-cluster-profile-${ var.name }-${ var.environment }-role"
+
+#   assume_role_policy = jsonencode({
+#     Statement = [{
+#       Action = ["sts:AssumeRole", "sts:AssumeRoleWithWebIdentity"]
+#       Effect = "Allow"
+#       Principal = {
+#         Service = "eks.amazonaws.com"
+#       }
+#     }]
+#     Version = "2012-10-17"
+#   })
+# }
+
+# resource "aws_iam_role" "eks-ng-cluster-instance-role" {
+#   name = "eks-ng-cluster-instance-profile-${ var.name }-${ var.environment }-role"
+
+#   assume_role_policy = jsonencode({
+#     Statement = [{
+#       Action = ["sts:AssumeRole"]
+#       Effect = "Allow"
+#       Principal = {
+#         Service = "ec2.amazonaws.com"
+#       }
+#     },
+#     {
+#       Action = ["sts:AssumeRole"]
+#       Effect = "Allow"
+#       Principal = {
+#         Service = "eks.amazonaws.com"
+#       }
+#     }
+#     ]
+#     Version = "2012-10-17"
+#   })
+# }
+
+# resource "aws_eks_cluster" "eks_cluster" {
+#   name     = module.eks.cluster_name
+#   role_arn = aws_iam_role.eks-ng-cluster-role.arn
+#   vpc_config {
+#     security_group_ids = [module.eks.cluster_security_group_id]
+#     subnet_ids         = var.vpc_private_subnets
+#   }
+  
+#   version = var.cluster_version
+#   enabled_cluster_log_types = [
+#     "api",
+#     "audit",
+#     "authenticator",
+#     "controllerManager",
+#     "scheduler"
+#   ]
+#   tags = {
+#     "product"        = var.name
+#     "environment"    = var.environment
+#     "role"           = "eks"
+#     "terraform"      = "true"
+#   }
+  
+# }
+
+# resource "aws_eks_node_group" "eks-ng-cluster" {
+#   cluster_name    = module.eks.cluster_name
+#   node_group_name = "eks-ng-cluster"
+#   node_role_arn   = aws_iam_role.eks-ng-cluster-instance-role.arn
+ 
+#   subnet_ids      = var.vpc_private_subnets
+#   scaling_config {
+#     desired_size = "{{ node_desired_size }}"
+#     max_size     = "{{ node_max_size }}"
+#     min_size     = "{{ node_min_size }}"
+#   }
+#   instance_types = ["{{ node_instance_type }}"]
+#   capacity_type  = "ON_DEMAND"
+#   disk_size      = "{{ ebs_volume_size }}"
+#   tags = {
+#     "product"        = var.name
+#     "environment"    = var.environment
+#     "role"           = "eks"
+#     "terraform"      = "true"
+#   }
+#   depends_on = [ aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
+#     aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
+#     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy
+#   ]
+# }
+
+# resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+#   role       = aws_iam_role.eks-ng-cluster-role.name
+# }
+
+# resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+#   role       = aws_iam_role.eks-ng-cluster-instance-role.name
+# }
+
+# resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+#   role       = aws_iam_role.eks-ng-cluster-instance-role.name
+# }
+
+# resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+#   role       = aws_iam_role.eks-ng-cluster-instance-role.name
+# }
+
+#store these keys in secrets manager
+resource "aws_secretsmanager_secret" "k8s_secret" {
+  name = "${ var.name }-${ var.environment }-eks-secrets"
+  description = "Kubernetes related authentication details"
+  recovery_window_in_days = 0
+  tags = {
+    "product"        = var.name
+    "environment"    = var.environment
+    "terraform"      = "true"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "k8s_secret_version" {
+  secret_id     = aws_secretsmanager_secret.k8s_secret.id
+  secret_string = jsonencode({
+    cluster_name = module.eks.cluster_name,
+    cluster_endpoint = module.eks.cluster_endpoint,
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
+    oidc_provider = module.eks.oidc_provider
+    oidc_provider_arn = module.eks.oidc_provider_arn
+  })
+}
+
+output "cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "cluster_certificate_authority_data" {
+  value = module.eks.cluster_certificate_authority_data
+}
+
+output "cluster_oidc_issuer_url" {
+  value = module.eks.cluster_oidc_issuer_url
+}
+
+output "oidc_provider" {
+  value = module.eks.oidc_provider
+}
+
+output "oidc_provider_arn" {
+  value = module.eks.oidc_provider_arn
+}
