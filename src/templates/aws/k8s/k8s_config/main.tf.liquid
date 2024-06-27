@@ -10,11 +10,11 @@ terraform {
 data "terraform_remote_state" "output_state" {
     backend = "s3"
     config = {
-      bucket = "{{ project_id }}-tfstate"
-      key    = "{{ project_name }}-{{ environment }}.tfstate"
-      region = "{{ aws_region }}"
-    }
+      bucket = "${var.project_id}-tfstate"
+      key    = "${var.project_name}-${var.environment}.tfstate"
+      region = var.region
   }
+}
     
 // Now you can use the master_ip output from nonprod
 output "referenced_master_ip" {
