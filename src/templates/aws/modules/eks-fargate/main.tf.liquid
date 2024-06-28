@@ -86,8 +86,7 @@ module "eks" {
   }
 }
 
-
-resource "aws_eks_access_entry" "example" {
+resource "aws_eks_access_entry" "devops_group" {
   for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
   cluster_name      = module.eks.cluster_name
   principal_arn     = each.value.arn
