@@ -52,7 +52,7 @@ module "eks" {
       max_capacity     = "{{ node_max_size }}"
       min_capacity     = "{{ node_min_size }}"
       instance_type    = "{{ node_instance_type }}"
-      capacity_type     = "SPOT"
+      capacity_type     = "ON_DEMAND"
       disk_size         = "{{ ebs_volume_size }}"
     }
   }
