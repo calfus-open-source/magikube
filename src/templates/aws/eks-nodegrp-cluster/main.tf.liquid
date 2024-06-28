@@ -3,6 +3,10 @@ provider "aws" {
     region     = "{{ aws_region}}"
 }
 
+terraform {
+    backend "s3" {
+    }
+}
 
 module "vpc" {
     source = "./modules/vpc"

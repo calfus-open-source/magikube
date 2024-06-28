@@ -16,6 +16,10 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
       "variables.tf",
       "../templates/aws/eks-nodegrp-cluster/variables.tf.liquid"
     );
+    this.createFile(
+      `${this.config.environment}-config.tfvars`,
+      "../templates/aws/eks-nodegrp-cluster/backend-config.tfvars.liquid"
+    );
 
     this.createCommon();
     this.createEKSng();
