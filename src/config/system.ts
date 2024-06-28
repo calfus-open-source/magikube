@@ -109,7 +109,7 @@ class SystemConfig {
             "aws_provider_version": "5.50.0",
             "aws_vpc_module_version": "5.5.1",
             "aws_eks_module_version": "~> 20.0",
-            "aws_eks_cluster_version": "1.29",
+            "aws_eks_cluster_version": "1.30",
             "aws_load_balancer_controller_version": "1.8.0",
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",

@@ -79,6 +79,7 @@ resource "kubernetes_service_account" "aws-load-balancer-controller-service-acco
         "eks.amazonaws.com/role-arn" = "${aws_iam_role.aws-load-balancer-controller-role.arn}"
       }
     }
+    depends_on = [ var.fargate_profiles ]
 }
 
 resource "helm_release" "ingress" {
@@ -108,4 +109,5 @@ resource "helm_release" "ingress" {
     name  = "serviceAccount.name"
     value = "aws-load-balancer-controller"
   }
+  depends_on = [ var.fargate_profiles ]
 }

@@ -26,6 +26,7 @@ module "eks" {
 
   kms_key_owners = data.aws_iam_group.devops.users[*].arn
   enable_cluster_creator_admin_permissions = true
+  dataplane_wait_duration = "0s"
 
   authentication_mode = "API"
   cluster_endpoint_public_access  = true
@@ -85,8 +86,7 @@ module "eks" {
   }
 }
 
-
-resource "aws_eks_access_entry" "example" {
+resource "aws_eks_access_entry" "devops_group" {
   for_each = { for user in data.aws_iam_group.devops.users : user.arn => user }
   cluster_name      = module.eks.cluster_name
   principal_arn     = each.value.arn
@@ -189,4 +189,8 @@ output "oidc_provider" {
 
 output "oidc_provider_arn" {
   value = module.eks.oidc_provider_arn
+}
+
+output "fargate_profiles" {
+  value = module.eks.fargate_profiles
 }
