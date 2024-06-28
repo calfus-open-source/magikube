@@ -134,8 +134,8 @@ Creating a new infrastructure as code project named 'sample' in the current dire
       await terraform.createProject(projectName, process.cwd());
       // Delay of 5 seconds to allow the user to review the terraform files
       await new Promise(resolve => setTimeout(resolve, 5000));
+      await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
       if (responses['cluster_type'] === 'k8s') {
-        await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
         await new Promise(resolve => setTimeout(resolve, 10000));
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
