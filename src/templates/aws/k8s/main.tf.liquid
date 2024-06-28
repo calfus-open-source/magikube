@@ -1,28 +1,24 @@
+{% comment "Following can not be replaced with terraform variables and it requires to be defined upfront" %}{% endcomment %}
 provider "aws" {
   region     = "{{ aws_region }}"
 }
 
 terraform {
   backend "s3" {
-      bucket  = "{{ project_id }}-tfstate"
-      encrypt = true
-      key     = "{{ project_name }}-{{ environment }}.tfstate"
-      region  = "{{ aws_region }}"
-      dynamodb_table = "{{ project_id }}-tfstate-lock"
   }
 }
 
 module "vpc" {
   source = "./modules/vpc"
-  name = "{{ project_name }}-{{ environment }}-vpc"
-  environment = "{{ environment }}"
-  cidr = "{{ aws_vpc_cidr }}"
+  name = "${ var.project_name }-${ var.environment }-vpc"
+  environment = "${ var.environment }"
+  cidr = "${ var.vpc_cidr }"
 }
 
 module "ssh-key" {
   source          = "./modules/ssh-key"
-  ssh_key_name    = "{{ project_name }}-{{ environment }}-key"
-  env_files_bucket_name = "{{ project_name }}-{{ environment }}-bucket"
+  ssh_key_name    = "${ var.project_name }-${ var.environment }-key"
+  env_files_bucket_name = "${ var.project_name }-${ var.environment }-bucket"
 }
 
 module "bastion" {
@@ -31,7 +27,10 @@ module "bastion" {
   default_security_group_id  = module.vpc.default_security_group_id
   vpc_private_subnets        = module.vpc.private_subnets[0]
   vpc_public_subnets         = module.vpc.public_subnets[0]
-  name                       = "{{ project_name }}-{{ environment }}-bastion"
+  name                       = "${ var.project_name }-${ var.environment }-bastion"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
 }
 
 module "master" {
@@ -39,7 +38,10 @@ module "master" {
   ssh_key_name               = module.ssh-key.ssh_key_name
   default_security_group_id  = module.vpc.default_security_group_id
   vpc_private_subnets        = module.vpc.private_subnets[0]
-  name                       = "{{ project_name }}-{{ environment }}-master"
+  name                       = "${ var.project_name }-${ var.environment }-master"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
 }
 
 module "worker" {
@@ -47,5 +49,68 @@ module "worker" {
   ssh_key_name               = module.ssh-key.ssh_key_name
   default_security_group_id  = module.vpc.default_security_group_id
   vpc_private_subnets        = module.vpc.private_subnets[0]
-  name                       = "{{ project_name }}-{{ environment }}-worker"
+  name                       = "${ var.project_name }-${ var.environment }-worker"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
 }
+
+{% comment %} 
+module "route53" {
+    source = "./modules/route53"
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+    domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
+} {% endcomment %}
+{% comment %} 
+{% if domain %}
+  module "acm" {
+      source = "./modules/acm"
+      name = "${ var.project_name }"
+      environment = "${ var.environment }"
+      domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
+      route53_zoneid = module.route53.zone_id
+  } 
+{% endif %} {% endcomment %}
+
+locals {
+  rendered_template = templatefile("./ssh-config.tftpl", {
+    project_name = "${ var.project_name }"
+    environment  = "${ var.environment }"
+    bastion_ips   = module.bastion.k8s-bastion-ips
+    master_ips    = module.master.k8s-master-ips
+    worker_ips   = module.worker.k8s-worker-ips
+  })
+}
+
+resource "null_resource" "ssh_config" {
+  provisioner "local-exec" {
+    command = "echo '${local.rendered_template}' >> ~/.ssh/config"
+  }
+}
+
+output "master_ip" {
+  value = module.master.k8s-master-ips[0]
+}
+  
+output "vpc_id" {
+  value = module.vpc.id
+}
+
+output "vpc_public_subnets" {
+  value = module.vpc.public_subnets
+}
+
+output "vpc_private_subnets" {
+  value = module.vpc.private_subnets
+}
+
+{% comment %} {% if source_code_repository == 'github' %}
+  module "gitops" {
+      source = "./modules/gitops"
+      name = "${ var.project_name }"
+      environment = "${ var.environment }"
+      github_token = "${ var.github_access_token }"
+      github_owner = "${ github_owner }"
+  }
+{% endif %} {% endcomment %}

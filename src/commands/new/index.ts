@@ -130,7 +130,21 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     // Get the project name from the command line arguments
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
-    if (terraform)
+    if (terraform) {
       await terraform.createProject(projectName, process.cwd());
+      // Delay of 5 seconds to allow the user to review the terraform files
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
+      if (responses['cluster_type'] === 'k8s') {
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
+        await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
+        terraform?.startSSHProcess();
+        const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
+        await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
+        await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
+        terraform?.stopSSHProcess();
+      } 
+    }
   }
 }

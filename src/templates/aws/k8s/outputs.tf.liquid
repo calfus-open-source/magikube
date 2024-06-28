@@ -1,0 +1,9 @@
+output "k8s-master-ids" {
+  value = aws_instance.master-host.*.id
+}
+
+output "k8s-master-ips" {
+  value = [for host in aws_instance.master-host:
+    host.private_ip 
+  ]
+}

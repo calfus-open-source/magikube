@@ -15,7 +15,7 @@ data "aws_ami" "worker_host_ami" {
   }
   
   resource "aws_launch_template" "worker-host-launch-template" {
-    name_prefix                 = "{{ project_name }}-{{ environment }}-worker"
+    name_prefix                 = "${ var.project_name }-${ var.environment }-worker"
     description                 = "worker-host-launch-template"
     disable_api_termination     = "false"
     image_id                    = data.aws_ami.worker_host_ami.id  
@@ -35,7 +35,7 @@ data "aws_ami" "worker_host_ami" {
     vpc_security_group_ids = [var.default_security_group_id]
     
     tags = {
-      Name = "{{ project_name }}-{{ environment }}-worker" 
+      Name = "${ var.project_name }-${ var.environment }-worker" 
       Group = "k8s-worker"
     }
   
