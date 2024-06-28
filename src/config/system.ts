@@ -119,7 +119,7 @@ class SystemConfig {
             ...this.kubernetesSystemConfig,
         }, null, 4);
         fs.writeFileSync(path, data);
-    }    
+    }
 }
 
 export default SystemConfig;

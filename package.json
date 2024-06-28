@@ -81,6 +81,7 @@
   "repository": "https://github.com/calfus-open-source/magikube",
   "scripts": {
     "copy-templates": "copyfiles -u 1 'src/templates/**/*' 'dist'",
+    "copy-app-templates": "copyfiles -u 1 '../magikube-templates/**/*' 'dist'",
     "build": "shx rm -rf dist && tsc -b && npm run copy-templates",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",

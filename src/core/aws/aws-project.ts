@@ -1,11 +1,12 @@
 import BaseProject from '../base-project.js';
 import AWSTerraformBackend from "./aws-tf-backend.js";
 import AWSPolicies from "./aws-iam.js";
-import { spawn, execSync } from 'child_process';
-import fs from 'fs';
+import { spawn, execSync, exec } from 'child_process';
+import fs, { rm, rmdirSync } from 'fs';
 import * as path from 'path';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
+import SystemConfig from '../../config/system.js';
 let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
@@ -32,7 +33,6 @@ export default class AWSProject extends BaseProject {
 
     async destroyProject(name: string, path: string): Promise<void> {
         let awsStatus = true;
-
         if (!this.config.dryrun) {
             const status = await AWSPolicies.delete(
                 this,
@@ -54,7 +54,11 @@ export default class AWSProject extends BaseProject {
 
         if (awsStatus) {
             super.destroyProject(name, path);
-        }        
+        }
+
+        // Once the prompts are accepted at the start, these parameters will be accessible
+        const  {app_name, git_user_name, github_access_token, organization_name} = this.config;
+        await this.destroyApp(app_name, git_user_name, github_access_token, organization_name);
     }
 
     async createCommon(): Promise<void> {
@@ -297,6 +301,132 @@ export default class AWSProject extends BaseProject {
             console.log('Kubernetes cluster configuration completed successfully.');
         } catch (error) {
             console.error('Function not implemented.', error);
+        }
+    }
+
+    async createNodeExpressApp(projectConfig: any) {
+        let appName;
+        let repoSetupError: boolean = false;
+        let appSetupError: boolean = false;
+        try {
+            appName = projectConfig['backend_app_name'];
+            const token = this.config['github_access_token'];
+            const userName = projectConfig['git_user_name'];
+            const orgName = projectConfig['organization_name'];
+            await this.createFile('app.ts', '../magikube-templates/express/app.ts.liquid', `../${appName}/src`);
+            await this.createFile('.gitignore', '../magikube-templates/express/gitignore.liquid', `../${appName}`);
+            const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml', 'deployment.yml'];
+            for (const file of files) {
+                await this.createFile(file, `../magikube-templates/express/${file}.liquid`, `../${appName}`);
+            }
+            // Run npm install
+            execSync('npm install', {
+                cwd: `${process.cwd()}/../${appName}`,
+                stdio: 'inherit'
+            });
+            repoSetupError = await this.setupRepo(appName, userName, token, orgName);
+            console.log('Node Express app created successfully.');
+        } catch (error) {
+            console.error('Failed to create Node Express app:', error);
+            appSetupError = true;
+            if (!repoSetupError && appSetupError) {
+                console.log(`Error occured, cleaning up the ${appName} directory...`);
+                rmdirSync(`../${appName}`, { recursive: true });
+            }
+        }
+    }
+
+    //create Next.js application
+    async createNextApp(appRouter: string, projectConfig: any) {
+        let appSetupError: boolean = false;
+        let appName;
+        let repoSetupError: boolean = false;
+        try {
+            appName = projectConfig['frontend_app_name'];
+            const token = this.config['github_access_token'];
+            const userName = projectConfig['git_user_name'];
+            const orgName = projectConfig['organization_name'];
+            console.log('app name is', appName);    
+            console.log('app router is', appRouter);   
+            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json', 'deployment.yml'];
+            const appRouterFiles = appRouter ? ['page.tsx', 'layout.tsx', 'global.css'] : [];
+            const nonAppRouterFiles = !appRouter ? ['_app.tsx', 'index.tsx', 'Home.module.css', 'global.css'] : [];
+            const files = [...commonFiles, ...appRouterFiles, ...nonAppRouterFiles];
+            for (const file of files) {
+            const path = appRouterFiles.includes(file) ? `../${appName}/app` : nonAppRouterFiles.includes(file) ? `../${appName}/src/${file.includes('.css') ? 'styles' : 'pages'}` : `../${appName}`;
+                await this.createFile(file, `../magikube-templates/next/${file}.liquid`, path);
+            }
+            await this.createFile('.gitignore', `../magikube-templates/next/gitignore.liquid`, `../${appName}`);
+    
+            execSync(`npm i`, {
+            cwd: `${process.cwd()}/../${appName}`,
+            stdio: 'inherit'
+            });
+            repoSetupError = await this.setupRepo(appName, userName, token, orgName);
+            console.log('Next.js application created successfully.');
+        } catch (error) {
+            console.error('Failed to create Next.js app:', error);
+            appSetupError = true;
+        } finally {
+            if (!repoSetupError && appSetupError) {
+                console.log('Deleting created files and folders...');
+                rmdirSync(`../${appName}`, { recursive: true });           
+            }
+        }
+    }
+
+    async setupRepo(appName: string, userName: string, token: string, orgName: string) {
+        let repoSetupError: boolean = false;
+        try {
+            const execCommand = (command: string) => execSync(command, { cwd: `${process.cwd()}/../${appName}`, stdio: 'inherit' });
+            
+            // Create repository
+            const url = (orgName && userName) ? `https://api.github.com/orgs/${orgName}/repos` : (!orgName && userName) ? 'https://api.github.com/user/repos' : '';
+            if (url) {
+                const command = `curl -u "${userName}:${token}" -H "Content-Type: application/json" -d '{"name": "${appName}", "private": true}' ${url}`;
+                execSync(command, { stdio: 'pipe' });
+            } else {
+                throw new Error('Missing GitHub username or organization name');
+            }
+            // Initialize git and push to repository
+            execCommand('git init');
+            execCommand('git add .');
+            execCommand('git commit -m "Initial commit"');
+            execCommand('git branch -M main');
+            if (!orgName && userName) {
+                console.log('orgName: if', orgName);
+                execCommand(`git remote add origin https://github.com/${userName}/${appName}.git`)
+            } else if (orgName && userName) {
+                console.log('orgName: else', orgName);
+                execCommand(`git remote add origin https://github.com/${orgName}/${appName}.git`)
+            } else {
+                repoSetupError = true;
+            }
+            execCommand('git push -u origin main');
+            return repoSetupError;
+        } catch (error) {
+            console.log('Failed to setup repository:', error);
+            repoSetupError = true;
+            return repoSetupError;
+        }
+    }
+
+    async destroyApp(appName: string, userName: string, token: string, orgName: string) {
+        try {
+            const execCommand = (command: string) => execSync(command, { cwd: `${process.cwd()}/../${appName}`, stdio: 'inherit' });
+            const url = (orgName && userName) ? `https://api.github.com/repos/${orgName}/${appName}` : (!orgName && userName) ? `https://api.github.com/repos/${userName}/${appName}` : '';
+            if (url) {
+                console.log('Deleting repository for...', url)
+                const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
+                const result = execSync(command, { stdio: 'pipe' });
+                console.log('Repository deleted successfully:', result.toString());
+                console.log('Removing repository for...', url)
+                rmdirSync(`../${appName}`, { recursive: true });
+            } else {
+                throw new Error('Missing GitHub username or organization name');
+            }
+        } catch (error) {
+            console.error('Failed to delete repository:', error);
         }
     }
 }
