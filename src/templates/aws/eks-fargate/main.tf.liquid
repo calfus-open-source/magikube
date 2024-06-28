@@ -24,12 +24,12 @@ module "eks" {
     cluster_version         = "${ var.cluster_version }"
 }
 
-module "route53" {
+{% comment %} module "route53" {
     source = "./modules/route53"
     name = "${ var.project_name }"
     environment = "${ var.environment }"
     domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
-}
+} {% endcomment %}
 
 {% if domain %}
 module "acm" {
