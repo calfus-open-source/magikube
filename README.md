@@ -8,13 +8,10 @@ magikube
 
 
 <!-- toc -->
-- [magikube](#magikube)
-- [Get Ready](#get-ready)
-- [Quick Install](#quick-install)
-- [What you will need to start](#what-you-will-need-to-start)
-- [Commands](#commands)
-  - [`magikube destroy NAME`](#magikube-destroy-name)
-  - [`magikube new NAME`](#magikube-new-name)
+* [Get Ready](#get-ready)
+* [Quick Install](#quick-install)
+* [What you will need to start](#what-you-will-need-to-start)
+* [Commands](#commands)
 <!-- tocstop -->
 # Get Ready
 <!-- getready -->
@@ -58,13 +55,8 @@ Magikube will need a few things to be able to setup environment for you.
 
 # Commands
 <!-- commands -->
-- [magikube](#magikube)
-- [Get Ready](#get-ready)
-- [Quick Install](#quick-install)
-- [What you will need to start](#what-you-will-need-to-start)
-- [Commands](#commands)
-  - [`magikube destroy NAME`](#magikube-destroy-name)
-  - [`magikube new NAME`](#magikube-new-name)
+* [`magikube destroy NAME`](#magikube-destroy-name)
+* [`magikube new NAME`](#magikube-new-name)
 
 ## `magikube destroy NAME`
 
