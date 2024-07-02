@@ -138,6 +138,14 @@ const githubPrompts: any[] = [
   },
 ];
 
+enum ApplicationType {
+  REACT = "react",
+  NEXT = "next",
+  NEST = "nest",
+  NODE_EXPRESS = "node-express",
+  NODE = "node",
+}
+
 export default class PromptGenerator {
   getCloudProvider(): any[] {
     return [
@@ -186,5 +194,100 @@ export default class PromptGenerator {
 
   getVersionControlPrompts(versionControl: string): any[] {
     return versionControl === VersionControl.GITHUB ? githubPrompts : [];
+  }
+
+  getFrontendApplicationType(): any[] {
+    return [
+      {
+        choices: [
+          ApplicationType.REACT,
+          ApplicationType.NEXT,
+        ],
+        message: "Select a frontend application type:",
+        name: "frontend_app_type",
+        type: "list",
+      },
+    ];
+  }
+
+  getBackendApplicationType(): any[] {
+    return [
+      {
+        choices: [
+          ApplicationType.NODE_EXPRESS,
+          ApplicationType.NEST,
+          ApplicationType.NODE,
+        ],
+        message: "Select a backend application type:",
+        name: "backend_app_type",
+        type: "list",
+      },
+    ];
+  }
+
+  getFrontendAppName(): any[] {
+    return [
+      {
+        type: 'input',
+        name: 'frontend_app_name',
+        message: 'What is your frontend app name?',
+        default: 'my-app-ui',
+      },
+    ];
+  }
+
+  getBackendAppName(): any[] {
+    return [
+      {
+        type: 'input',
+        name: 'backend_app_name',
+        message: 'What is your backend app name?',
+        default: 'my-app-backend',
+      },
+    ];
+  }
+
+  getGitUserName(): any[] {
+    return [
+      {
+        type: 'input',
+        name: 'git_user_name',
+        message: 'What is your git user name?',
+        default: '',
+      },
+    ];
+  }
+
+  getAppRouterPrompts(): any[] {
+    return [
+      {
+        message: "Would you like to use App Router? (recommended)",
+        name: "app_router",
+        type: "confirm",
+        default: false,
+      },
+    ];
+  }
+
+  getFrontendPrompts(): any[] {
+    return [
+      {
+        message: "Would you like to create frontend application? (recommended)",
+        name: "frontend_app",
+        type: "confirm",
+        default: false,
+      },
+    ];
+  }
+
+  getBackendPrompts(): any[] {
+    return [
+      {
+        message: "Would you like to create backend application? (recommended)",
+        name: "backend_app",
+        type: "confirm",
+        default: false,
+      },
+    ];
   }
 }
