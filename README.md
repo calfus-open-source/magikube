@@ -12,6 +12,7 @@ magikube
 * [Quick Install](#quick-install)
 * [What you will need to start](#what-you-will-need-to-start)
 * [Commands](#commands)
+* [Documentation](#documentation)
 <!-- tocstop -->
 # Get Ready
 <!-- getready -->
@@ -102,3 +103,8 @@ EXAMPLES
   Creating a new infrastructure as code project named 'sample' in the current directory
 ```
 <!-- commandsstop -->
+
+# Documentation
+Detailed documentation can be found [here](http://calfus-open-source.github.io/magikube-docs/) which includes:
+1. [Introduction](https://calfus-open-source.github.io/magikube-docs/docs/intro)
+2. [How to Guides](https://calfus-open-source.github.io/magikube-docs/docs/category/how-to-guides)
