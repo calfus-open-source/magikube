@@ -8,24 +8,30 @@ magikube
 
 
 <!-- toc -->
-- [magikube](#magikube)
-- [Get Ready](#get-ready)
-- [Quick Install](#quick-install)
-- [What you will need to start](#what-you-will-need-to-start)
-- [Commands](#commands)
-  - [`magikube help`](#magikube-help)
-  - [`magikube new PROJECT_NAME`](#magikube-new-project_name)
+* [Get Ready](#get-ready)
+* [Quick Install](#quick-install)
+* [What you will need to start](#what-you-will-need-to-start)
+* [Commands](#commands)
 <!-- tocstop -->
 # Get Ready
 <!-- getready -->
-1. Install homebrew from https://brew.sh
-2. Lets install tfenv now
+1. Node.js version 18.0 or above
+2. homebrew from https://brew.sh
+3. Python 3.12
+   ```bash
+   brew install python@3.12
+   ```
+4. tfenv
    ```bash 
    brew install tfenv
    ```
-3. Install 1.8.2 version of Terraform
+5. Terraform 1.8.2
    ```bash 
    tfenv install 1.8.2
+   ```
+6. Ansible
+   ```bash
+   brew install ansible@10
    ```
 You are all set for magikube now.
 <!-- getreadystop -->
@@ -33,7 +39,7 @@ You are all set for magikube now.
 # Quick Install
 With npm:
 ```bash
-npm i magikube
+npm i -g magikube
 ```
 <!-- quickinstallstop -->
 
@@ -48,32 +54,51 @@ Magikube will need a few things to be able to setup environment for you.
 <!-- needsstop -->
 
 # Commands
-<!-- commands -->  
-## `magikube help`
+<!-- commands -->
+* [`magikube destroy NAME`](#magikube-destroy-name)
+* [`magikube new NAME`](#magikube-new-name)
 
-When you need to find what magikube can do for you and how.
+## `magikube destroy NAME`
 
-```
-USAGE
-  $ magikube help
-```
-
-## `magikube new PROJECT_NAME`
-
-This is the auto-mode where we have pre-selected a lot of options for you which will get you production ready in few minutes 🚀🚀. You answer a few prompts and magikube does the rest.
+Destroy infrastructure as code project
 
 ```
 USAGE
-  $ magikube new PROJECT_NAME
+  $ magikube destroy NAME [-d]
 
 ARGUMENTS
-  PROJECT_NAME
+  NAME  Infrastructure project name to be destroyed
+
+FLAGS
+  -d, --dryrun  Dry run the destroy operation
 
 DESCRIPTION
-  Create a new cluster in auto mode. PROJECT_NAME will be the folder in which files will be created before execution.
+  Destroy infrastructure as code project
 
 EXAMPLES
-  $ magikube new my_awesome_project
-  
+  $ magikube destroy sample 
+  Destroying infrastructure as code project named 'sample' in the current directory
+```
+
+## `magikube new NAME`
+
+Create a new infrastructure as code project
+
+```
+USAGE
+  $ magikube new NAME [-d]
+
+ARGUMENTS
+  NAME  Infrastructure project name to be created
+
+FLAGS
+  -d, --dryrun  Dry run the create operation
+
+DESCRIPTION
+  Create a new infrastructure as code project
+
+EXAMPLES
+  $ magikube new sample 
+  Creating a new infrastructure as code project named 'sample' in the current directory
 ```
 <!-- commandsstop -->
