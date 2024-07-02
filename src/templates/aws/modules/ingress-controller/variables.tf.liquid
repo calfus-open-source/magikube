@@ -53,7 +53,15 @@ variable "cluster_token" {
   description = "cluster token"
 }
 
-variable "fargate_profiles" {
-  description = "fargate profiles"
-}
+  {% if cluster_type == 'eks-fargate' %}
+  variable "fargate_profiles" {
+    description = "fargate profiles"
+  }
+  {% endif %}
+
+  {% if cluster_type == 'eks-nodegroup' %}
+  variable "cluster_node_group_name" {
+    description = "cluster node group name"
+  }
+  {% endif %}
 {% endif %}

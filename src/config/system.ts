@@ -44,6 +44,18 @@ class SystemConfig {
         "system_reserved_memory": "200Mi",
         "eviction_memory_threshold": "100Mi",
     };
+
+    private eksNodeGroupSystemConfig: any = {
+        "node_host_ami_owner": "099720109477",
+        "node_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
+        "node_host_ami_virtualization_type": "hvm",
+        "node_instance_type": "t3.medium",
+        "node_desired_size": "2",
+        "node_max_size": "3",
+        "node_min_size": "1",
+        "ebs_volume_size": "100",
+        "ebs_volume_type": "gp2",
+    };
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
@@ -117,6 +129,7 @@ class SystemConfig {
             ...this.masterSystemConfig,
             ...this.workerSystemConfig,
             ...this.kubernetesSystemConfig,
+            ...this.eksNodeGroupSystemConfig,
         }, null, 4);
         fs.writeFileSync(path, data);
     }
