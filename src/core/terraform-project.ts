@@ -2,7 +2,6 @@ import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 import EKSFargateProject from './aws/aws-eks-fargate.js';
 import AWSK8SProject from './aws/aws-k8s.js';
-import EKSNodeGrpClusterProject from './aws/aws-nodegrp-cluster.js';
 import AWSProject from './aws/aws-project.js';
 import EKSNodeGrpClusterProject from './aws/aws-nodegrp-cluster.js';
 
