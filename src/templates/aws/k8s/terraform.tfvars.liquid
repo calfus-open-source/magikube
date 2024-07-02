@@ -1,2 +1,13 @@
 region = "{{ aws_region }}"
+project_id = "{{ project_id }}"
 project_name = "{{ project_name }}"
+environment = "{{ environment }}"
+vpc_cidr = "{{ aws_vpc_cidr }}"
+source_code_repository = "{{ source_code_repository }}"
+{% if source_code_repository == 'github' %}
+github_access_token = "{{ github_access_token }}"
+github_owner = "{{ github_owner }}"
+{% endif %}
+{% if domain %}
+domain_name = "{{ domain }}"
+{% endif %}

@@ -80,21 +80,22 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
   cidr_ipv4        = "0.0.0.0/0"
   depends_on       = [module.vpc]
 }
+
 resource "aws_vpc_security_group_ingress_rule" "allow_internal_traffic" {
   security_group_id = module.vpc.default_security_group_id
   description      = "Allow access to all ports from internal network"
   from_port        = 0
   to_port          = 65535
   ip_protocol      = "tcp"
-  cidr_ipv4        = "{{ aws_vpc_cidr}}"
+  cidr_ipv4        = var.cidr
   depends_on       = [module.vpc]
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_external_traffic" {
   security_group_id = module.vpc.default_security_group_id
   description      = "Allow all traffic"
-  from_port        = 0
-  to_port          = 0
+  from_port        = "-1"
+  to_port          = "-1"
   ip_protocol      = "-1"
   cidr_ipv4        =  "0.0.0.0/0"
   depends_on       = [module.vpc]

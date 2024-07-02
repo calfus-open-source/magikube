@@ -247,17 +247,6 @@ export default class PromptGenerator {
     ];
   }
 
-  getOrganizationName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'organization_name',
-        message: 'What is your git organization name?',
-        default: 'my-org',
-      },
-    ];
-  }
-
   getGitUserName(): any[] {
     return [
       {

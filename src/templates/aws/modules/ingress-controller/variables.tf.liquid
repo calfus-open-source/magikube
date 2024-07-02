@@ -10,9 +10,11 @@ variable "region" {
   description = "the AWS region in which resources are created, you must set the availability_zones variable as well if you define this value to something other than the default"
 }
 
+{% if cluster_type == "k8s" %}
 variable "master_ip" {
   description = "the IP address of the master node"
 }
+{% endif %}
 
 variable "vpc_id" {
   description = "VPC Id"
@@ -49,5 +51,9 @@ variable "oidc_provider" {
 
 variable "cluster_token" {
   description = "cluster token"
+}
+
+variable "fargate_profiles" {
+  description = "fargate profiles"
 }
 {% endif %}

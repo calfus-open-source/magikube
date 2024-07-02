@@ -1,12 +1,11 @@
 import BaseProject from '../base-project.js';
 import AWSTerraformBackend from "./aws-tf-backend.js";
 import AWSPolicies from "./aws-iam.js";
-import { spawn, execSync, exec } from 'child_process';
-import fs, { rm, rmdirSync } from 'fs';
+import { spawn, execSync } from 'child_process';
+import fs, { rmdirSync } from 'fs';
 import * as path from 'path';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
-import SystemConfig from '../../config/system.js';
 let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
@@ -32,14 +31,27 @@ export default class AWSProject extends BaseProject {
     }
 
     async destroyProject(name: string, path: string): Promise<void> {
-        let awsStatus = true;
+        let awsStatus = false;
+        if (this.config.cloud_provider === 'aws') {
+            awsStatus = true;
+        }
+        
         if (!this.config.dryrun) {
+            // Once the prompts are accepted at the start, these parameters will be accessible
+            const  {frontend_app_name, backend_app_name, git_user_name, github_access_token, github_owner} = this.config;
+            await this.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name);
+            
+            if (awsStatus) {
+                await super.destroyProject(name, path);
+            }
+
             const status = await AWSPolicies.delete(
                 this,
                 this.config.aws_region,
                 this.config.aws_access_key_id,
                 this.config.aws_secret_access_key
             );
+
 
             if (status) {
                 awsStatus = await AWSTerraformBackend.delete(
@@ -56,9 +68,6 @@ export default class AWSProject extends BaseProject {
             super.destroyProject(name, path);
         }
 
-        // Once the prompts are accepted at the start, these parameters will be accessible
-        const  {app_name, git_user_name, github_access_token, organization_name} = this.config;
-        await this.destroyApp(app_name, git_user_name, github_access_token, organization_name);
     }
 
     async createCommon(): Promise<void> {
@@ -124,27 +133,27 @@ export default class AWSProject extends BaseProject {
         });
 
         sshProcess.unref();
-        console.log('SSH process started in the background.');
+        this.command.log('SSH process started in the background.');
     }
 
     async stopSSHProcess() {
         if (sshProcess) {
             sshProcess.kill();
-            console.log('SSH process stopped.');
+            this.command.log('SSH process stopped.');
         } else {
-            console.log('No SSH process is running.');
+            this.command.log('No SSH process is running.');
         }
     }
 
     // Function to run terraform init command
-    async runTerraformInit(projectPath: string):Promise<void> {
-        console.log('Running terraform init...', projectPath);
+    async runTerraformInit(projectPath: string, backend: string):Promise<void> {
+        this.command.log('Running terraform init...', projectPath);
         try {
-            execSync('terraform init', {
+            execSync(`terraform init -backend-config=${backend}`, {
                 cwd: projectPath,
                 stdio: 'inherit'
             });
-            console.log('Terraform init completed successfully.');
+            this.command.log('Terraform init completed successfully.');
         } catch (error) {
             console.error('Failed to initialize terraform process:', error);
         }
@@ -164,29 +173,51 @@ export default class AWSProject extends BaseProject {
     }
 
     // Function to run terraform apply command
-    async runTerraformApply(projectPath: string, module?: string): Promise<void> {
-        console.log('Running terraform apply...', projectPath);
+    async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
+        this.command.log('Running terraform apply...', projectPath);
         try {
-            console.log('Running terraform apply...');
-            const command = module 
+            this.command.log('Running terraform apply...');
+            let command = module 
                 ? `terraform apply -target=${module} -auto-approve` 
                 : 'terraform apply -auto-approve';
+            if (varFile) {
+                command += ` -var-file=${varFile}`;
+            }    
             execSync(command, {
                 cwd: projectPath,
                 stdio: 'inherit'
             });
-            console.log('Terraform apply completed successfully.');
+            this.command.log('Terraform apply completed successfully.');
         } catch (error) {
             console.error('Failed to apply terraform process:', error);
         }
     }
     
-    async runTerraform(projectPath: string, module?: string): Promise<void> {
+    async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
         try {
-            await this.runTerraformInit(projectPath);
-            await this.runTerraformApply(projectPath, module);
+            await this.runTerraformInit(projectPath, backend);
+            await this.runTerraformApply(projectPath, module, varFile);
         } catch (error) {
             console.error('Terraform process failed:', error);
+        }
+    }
+
+    async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
+        this.command.log('Running terraform destroy...', projectPath);
+        try {
+            let command = module 
+                ? `terraform destroy -target=${module} -auto-approve` 
+                : 'terraform destroy -auto-approve';
+            if (varFile) {
+                command += ` -var-file=${varFile}`;
+            }
+            execSync(command, {
+                cwd: projectPath,
+                stdio: 'inherit'
+            });
+            this.command.log('Terraform destroy completed successfully.');
+        } catch (error) {
+            console.error('Failed to destroy terraform process:', error);
         }
     }
 
@@ -274,33 +305,59 @@ export default class AWSProject extends BaseProject {
         // Write the updated YAML content back to the kubeconfig file
         fs.writeFileSync(kubeconfigFilePath, newKubeconfigYaml, 'utf8');
 
-        console.log('New cluster added to the kubeconfig file.');
+        this.command.log('New cluster added to the kubeconfig file.');
     }
 
     async runAnsiblePlaybook1(projectPath: string) {
-        try{
-            console.log('Running ansible playbook...', projectPath);
-            execSync('ansible-playbook ../playbooks/create-k8s-cluster.yml', {
-                cwd: projectPath+'/templates/aws/ansible/environments',
-                stdio: 'inherit'
-            });
-            console.log('Kubernetes cluster completed successfully.');    
-
-        } catch (error) {
-            console.error('Function not implemented.', error);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+    
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                this.command.log(`Running ansible playbook... Attempt ${attempt}`, projectPath);
+                execSync('ansible-playbook ../playbooks/create-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit'
+                });
+                this.command.log('Kubernetes cluster created successfully.');
+                success = true;
+            } catch (error) {
+                console.error('An error occurred while running the Ansible playbook.', error);
+                if (attempt >= maxRetries) {
+                    console.error('Max retries reached. Exiting...');
+                    throw error;
+                } else {
+                    this.command.log(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
         }
-    }
-
+    }    
     async runAnsiblePlaybook2(projectPath: string) {
-        try{
-            console.log('Running ansible playbook...', projectPath+'/templates/aws/environments');
-            execSync('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {
-                cwd: projectPath+'/templates/aws/environments',
-                stdio: 'inherit'
-            });
-            console.log('Kubernetes cluster configuration completed successfully.');
-        } catch (error) {
-            console.error('Function not implemented.', error);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+    
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                this.command.log(`Running ansible playbook... Attempt ${attempt}`, projectPath);
+                execSync('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit'
+                });
+                this.command.log('Kubernetes cluster configuration completed successfully.');
+                success = true;
+            } catch (error) {
+                console.error('An error occurred while running the Ansible playbook.', error);
+                if (attempt >= maxRetries) {
+                    console.error('Max retries reached. Exiting...');
+                    throw error;
+                } else {
+                    this.command.log(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
         }
     }
 
@@ -312,26 +369,27 @@ export default class AWSProject extends BaseProject {
             appName = projectConfig['backend_app_name'];
             const token = this.config['github_access_token'];
             const userName = projectConfig['git_user_name'];
-            const orgName = projectConfig['organization_name'];
-            await this.createFile('app.ts', '../magikube-templates/express/app.ts.liquid', `../${appName}/src`);
-            await this.createFile('.gitignore', '../magikube-templates/express/gitignore.liquid', `../${appName}`);
+            const orgName = projectConfig['github_owner'];
+            await this.createFile('app.ts', '../magikube-templates/express/app.ts.liquid', `./${appName}/src`);
+            await this.createFile('.gitignore', '../magikube-templates/express/gitignore.liquid', `./${appName}`);
             const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml', 'deployment.yml'];
             for (const file of files) {
-                await this.createFile(file, `../magikube-templates/express/${file}.liquid`, `../${appName}`);
-            }
+                await this.createFile(file, `../magikube-templates/express/${file}.liquid`, `./${appName}`);
+                }
             // Run npm install
             execSync('npm install', {
-                cwd: `${process.cwd()}/../${appName}`,
+                cwd: `${process.cwd()}/${this.config.project_name}/${appName}`,
                 stdio: 'inherit'
             });
+
             repoSetupError = await this.setupRepo(appName, userName, token, orgName);
-            console.log('Node Express app created successfully.');
+            this.command.log('Node Express app created successfully.');
         } catch (error) {
             console.error('Failed to create Node Express app:', error);
             appSetupError = true;
             if (!repoSetupError && appSetupError) {
-                console.log(`Error occured, cleaning up the ${appName} directory...`);
-                rmdirSync(`../${appName}`, { recursive: true });
+                this.command.log(`Error occured, cleaning up the ${appName} directory...`);
+                rmdirSync(`./${this.config.project_name}/${appName}`, { recursive: true });
             }
         }
     }
@@ -345,32 +403,31 @@ export default class AWSProject extends BaseProject {
             appName = projectConfig['frontend_app_name'];
             const token = this.config['github_access_token'];
             const userName = projectConfig['git_user_name'];
-            const orgName = projectConfig['organization_name'];
-            console.log('app name is', appName);    
-            console.log('app router is', appRouter);   
+            const orgName = projectConfig['github_owner'];
+            this.command.log('app name is', appName);    
             const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json', 'deployment.yml'];
             const appRouterFiles = appRouter ? ['page.tsx', 'layout.tsx', 'global.css'] : [];
             const nonAppRouterFiles = !appRouter ? ['_app.tsx', 'index.tsx', 'Home.module.css', 'global.css'] : [];
             const files = [...commonFiles, ...appRouterFiles, ...nonAppRouterFiles];
             for (const file of files) {
-            const path = appRouterFiles.includes(file) ? `../${appName}/app` : nonAppRouterFiles.includes(file) ? `../${appName}/src/${file.includes('.css') ? 'styles' : 'pages'}` : `../${appName}`;
+            const path = appRouterFiles.includes(file) ? `./${appName}/app` : nonAppRouterFiles.includes(file) ? `./${appName}/src/${file.includes('.css') ? 'styles' : 'pages'}` : `./${appName}`;
                 await this.createFile(file, `../magikube-templates/next/${file}.liquid`, path);
             }
-            await this.createFile('.gitignore', `../magikube-templates/next/gitignore.liquid`, `../${appName}`);
+            await this.createFile('.gitignore', `../magikube-templates/next/gitignore.liquid`, `./${appName}`);
     
             execSync(`npm i`, {
-            cwd: `${process.cwd()}/../${appName}`,
-            stdio: 'inherit'
+                cwd: `${process.cwd()}/${this.config.project_name}/${appName}`,
+                stdio: 'inherit'
             });
             repoSetupError = await this.setupRepo(appName, userName, token, orgName);
-            console.log('Next.js application created successfully.');
+            this.command.log('Next.js application created successfully.');
         } catch (error) {
             console.error('Failed to create Next.js app:', error);
             appSetupError = true;
         } finally {
             if (!repoSetupError && appSetupError) {
-                console.log('Deleting created files and folders...');
-                rmdirSync(`../${appName}`, { recursive: true });           
+                this.command.log('Deleting created files and folders...');
+                rmdirSync(`./${this.config.project_name}/${appName}`, { recursive: true });           
             }
         }
     }
@@ -378,7 +435,7 @@ export default class AWSProject extends BaseProject {
     async setupRepo(appName: string, userName: string, token: string, orgName: string) {
         let repoSetupError: boolean = false;
         try {
-            const execCommand = (command: string) => execSync(command, { cwd: `${process.cwd()}/../${appName}`, stdio: 'inherit' });
+            const execCommand = (command: string) => execSync(command, { cwd: `${process.cwd()}/${this.config.project_name}/${appName}`, stdio: 'inherit' });
             
             // Create repository
             const url = (orgName && userName) ? `https://api.github.com/orgs/${orgName}/repos` : (!orgName && userName) ? 'https://api.github.com/user/repos' : '';
@@ -394,10 +451,8 @@ export default class AWSProject extends BaseProject {
             execCommand('git commit -m "Initial commit"');
             execCommand('git branch -M main');
             if (!orgName && userName) {
-                console.log('orgName: if', orgName);
                 execCommand(`git remote add origin https://github.com/${userName}/${appName}.git`)
             } else if (orgName && userName) {
-                console.log('orgName: else', orgName);
                 execCommand(`git remote add origin https://github.com/${orgName}/${appName}.git`)
             } else {
                 repoSetupError = true;
@@ -405,25 +460,30 @@ export default class AWSProject extends BaseProject {
             execCommand('git push -u origin main');
             return repoSetupError;
         } catch (error) {
-            console.log('Failed to setup repository:', error);
+            this.command.log('Failed to setup repository:', error);
             repoSetupError = true;
             return repoSetupError;
         }
     }
 
-    async destroyApp(appName: string, userName: string, token: string, orgName: string) {
-        try {
-            const execCommand = (command: string) => execSync(command, { cwd: `${process.cwd()}/../${appName}`, stdio: 'inherit' });
-            const url = (orgName && userName) ? `https://api.github.com/repos/${orgName}/${appName}` : (!orgName && userName) ? `https://api.github.com/repos/${userName}/${appName}` : '';
-            if (url) {
-                console.log('Deleting repository for...', url)
-                const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
-                const result = execSync(command, { stdio: 'pipe' });
-                console.log('Repository deleted successfully:', result.toString());
-                console.log('Removing repository for...', url)
-                rmdirSync(`../${appName}`, { recursive: true });
-            } else {
-                throw new Error('Missing GitHub username or organization name');
+    async destroyApp(userName: string, token: string, orgName: string, frontendAppName: string, backendAppName: string) {
+        try {        
+            const appNames = [];
+            if (frontendAppName) appNames.push(frontendAppName);
+            if (backendAppName) appNames.push(backendAppName);
+            this.command.log('Repos to be deleted:--------->', appNames);
+            for (const appName of appNames) {
+                const url = (orgName && userName) ? `https://api.github.com/repos/${orgName}/${appName}` : (!orgName && userName) ? `https://api.github.com/repos/${userName}/${appName}` : '';
+                if (url) {
+                    this.command.log('Deleting repository for...', url)
+                    const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
+                    const result = execSync(command, { stdio: 'pipe' });
+                    this.command.log('Repository deleted successfully:', result.toString());
+                    this.command.log('Removing repository for...', url)
+                    rmdirSync(`./${this.config.project_name}/${appName}`, { recursive: true });
+                } else {
+                    throw new Error('Missing GitHub username or organization name');
+                }
             }
         } catch (error) {
             console.error('Failed to delete repository:', error);
