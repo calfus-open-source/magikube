@@ -132,7 +132,7 @@ class SystemConfig {
             ...this.eksNodeGroupSystemConfig,
         }, null, 4);
         fs.writeFileSync(path, data);
-    }    
+    }
 }
 
 export default SystemConfig;

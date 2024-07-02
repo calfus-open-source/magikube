@@ -69,11 +69,5 @@ module "ingress-controller" {
     oidc_provider_arn        = module.eks.oidc_provider_arn
     oidc_provider            = module.eks.oidc_provider
     cluster_token            = data.aws_eks_cluster_auth.eks_cluster_auth.token
-{% if cluster_type == 'eks-fargate' %}
-    fargate_profiles         = module.eks.fargate_profiles
-{% endif %}
- 
-{% if cluster_type == 'eks-nodegroup' %}
     cluster_node_group_name  = module.eks.eks_managed_node_groups
-{% endif %}
 }

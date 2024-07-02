@@ -9,6 +9,7 @@ import SystemConfig from '../../config/system.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { execSync } from 'child_process';
 
 export default class CreateProject extends BaseCommand {  
   static args = {
@@ -78,6 +79,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
 
     const promptGenerator = new PromptGenerator();
     const awsProfileCreds = this.parseAwsCredentialsFile();
+    let appRouter;
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);
       responses = { ...responses, ...resp };
@@ -121,6 +123,63 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         //   responses = { ...responses, ...resp };
         // }
       }
+
+      for (const prompt of promptGenerator.getFrontendPrompts()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
+      for (const prompt of promptGenerator.getBackendPrompts()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
+
+      // After cluster setups are done
+      if (responses['frontend_app'] == true || responses['backend_app'] == true) {
+        const dir = `${process.cwd()}/../magikube-templates`;
+        if (!fs.existsSync(dir)) {
+          execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
+              cwd: `${process.cwd()}/..`,
+              stdio: 'inherit'
+          });
+        }
+        execSync('npm run copy-app-templates', {
+          cwd: `${process.cwd()}`,
+          stdio: 'inherit'
+        });
+
+        for (const prompt of promptGenerator.getGitUserName()) {
+          const resp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...resp };
+        }
+      }
+
+      // Asking for the frontend and backend prompts
+      if(responses['frontend_app'] == true) {
+        for (const prompt of promptGenerator.getFrontendApplicationType()) {
+          const resp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...resp };
+        }
+        for (const prompt of promptGenerator.getFrontendAppName()) {
+          const resp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...resp };
+        }
+        for (const prompt of promptGenerator.getAppRouterPrompts()) {
+          const resp = await inquirer.prompt(prompt);
+          appRouter = resp['app_router'];
+          this.log(`App router type is => ${appRouter}` );
+        }
+      } 
+
+      if(responses['backend_app'] == true) {
+        for (const prompt of promptGenerator.getBackendApplicationType()) {
+          const resp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...resp };
+        }
+        for (const prompt of promptGenerator.getBackendAppName()) {
+          const resp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...resp };
+        }
+      }
     }
 
     this.log(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)
@@ -133,7 +192,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
       // Delay of 5 seconds to allow the user to review the terraform files
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 15000));
       await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
       if (responses['cluster_type'] === 'k8s') {
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -145,6 +204,14 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
         terraform?.stopSSHProcess();
       } 
+
+      // Running the actual app setups
+      if (responses['backend_app_type'] === 'node-express') {
+        terraform?.createNodeExpressApp(responses);
+      } 
+      if (responses['frontend_app_type'] === 'next') {
+        terraform?.createNextApp(appRouter, responses);
+      }
     }
   }
 }
