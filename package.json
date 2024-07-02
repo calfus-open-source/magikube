@@ -66,11 +66,11 @@
   "oclif": {
     "bin": "magikube",
     "dirname": "magikube",
-    "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-help",
-      "@oclif/plugin-plugins"
-    ],
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/index.js",
+      "identifier": "COMMANDS"
+    },
     "topicSeparator": " ",
     "topics": {
       "hello": {
