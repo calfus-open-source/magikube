@@ -253,7 +253,7 @@ export default class PromptGenerator {
         type: 'input',
         name: 'organization_name',
         message: 'What is your git organization name?',
-        default: 'calfus-test-org',
+        default: 'my-org',
       },
     ];
   }
@@ -264,7 +264,7 @@ export default class PromptGenerator {
         type: 'input',
         name: 'git_user_name',
         message: 'What is your git user name?',
-        default: 'sanketcalfus',
+        default: '',
       },
     ];
   }
