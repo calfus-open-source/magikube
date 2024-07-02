@@ -63,11 +63,6 @@ export default class AWSProject extends BaseProject {
                 );
             }
         }
-
-        if (awsStatus) {
-            super.destroyProject(name, path);
-        }
-
     }
 
     async createCommon(): Promise<void> {
