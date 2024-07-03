@@ -14,8 +14,8 @@ enum CloudProvider {
 
 enum VersionControl {
   GITHUB = "github",
-  CODECOMMIT = "codecommit",
-  BITBUCKET = "bitbucket",
+  // CODECOMMIT = "codecommit",
+  // BITBUCKET = "bitbucket",
 }
 
 const productionPrompts: any[] = [
@@ -62,12 +62,12 @@ const awsPrompts: any[] = [
     name: "source_code_repository",
     type: "list",
     choices: [
-      VersionControl.CODECOMMIT,
+      // VersionControl.CODECOMMIT,
       VersionControl.GITHUB,
-      VersionControl.BITBUCKET,
+      // VersionControl.BITBUCKET,
     ],
     default:
-      VersionControl.CODECOMMIT ||
+      VersionControl.GITHUB ||
       SystemConfig.getInstance().getConfig().source_code_repository,
   },
 ];
@@ -200,7 +200,7 @@ export default class PromptGenerator {
     return [
       {
         choices: [
-          ApplicationType.REACT,
+          // ApplicationType.REACT,
           ApplicationType.NEXT,
         ],
         message: "Select a frontend application type:",
@@ -215,8 +215,8 @@ export default class PromptGenerator {
       {
         choices: [
           ApplicationType.NODE_EXPRESS,
-          ApplicationType.NEST,
-          ApplicationType.NODE,
+          // ApplicationType.NEST,
+          // ApplicationType.NODE,
         ],
         message: "Select a backend application type:",
         name: "backend_app_type",

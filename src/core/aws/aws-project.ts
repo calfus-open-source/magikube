@@ -140,13 +140,19 @@ export default class AWSProject extends BaseProject {
         }
     }
 
+    async AWSProfileActivate(profileName: string) {
+        process.env.AWS_PROFILE = profileName;
+        this.command.log('AWS profile activated successfully.');
+    }
+
     // Function to run terraform init command
     async runTerraformInit(projectPath: string, backend: string):Promise<void> {
         this.command.log('Running terraform init...', projectPath);
         try {
             execSync(`terraform init -backend-config=${backend}`, {
                 cwd: projectPath,
-                stdio: 'inherit'
+                stdio: 'inherit',
+                env: process.env
             });
             this.command.log('Terraform init completed successfully.');
         } catch (error) {
@@ -157,7 +163,9 @@ export default class AWSProject extends BaseProject {
     async getMasterIp(projectPath: string): Promise<string> {
         try {
             const output = execSync('terraform output -json master_ip', {
-                cwd: projectPath});
+                cwd: projectPath,
+                env: process.env
+            });
             this.command.log(output.toString());
             const masterIp = JSON.parse(output.toString());
             return masterIp;
@@ -180,7 +188,8 @@ export default class AWSProject extends BaseProject {
             }    
             execSync(command, {
                 cwd: projectPath,
-                stdio: 'inherit'
+                stdio: 'inherit',
+                env: process.env
             });
             this.command.log('Terraform apply completed successfully.');
         } catch (error) {
@@ -208,7 +217,8 @@ export default class AWSProject extends BaseProject {
             }
             execSync(command, {
                 cwd: projectPath,
-                stdio: 'inherit'
+                stdio: 'inherit',
+                env: process.env
             });
             this.command.log('Terraform destroy completed successfully.');
         } catch (error) {
@@ -314,7 +324,8 @@ export default class AWSProject extends BaseProject {
                 this.command.log(`Running ansible playbook... Attempt ${attempt}`, projectPath);
                 execSync('ansible-playbook ../playbooks/create-k8s-cluster.yml', {
                     cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit'
+                    stdio: 'inherit',
+                    env: process.env
                 });
                 this.command.log('Kubernetes cluster created successfully.');
                 success = true;
@@ -340,7 +351,8 @@ export default class AWSProject extends BaseProject {
                 this.command.log(`Running ansible playbook... Attempt ${attempt}`, projectPath);
                 execSync('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {
                     cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit'
+                    stdio: 'inherit',
+                    env: process.env
                 });
                 this.command.log('Kubernetes cluster configuration completed successfully.');
                 success = true;

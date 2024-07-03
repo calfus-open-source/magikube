@@ -46,7 +46,11 @@ Destroying infrastructure as code project named 'sample' in the current director
     // Get the project name from the command line arguments
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
-    if (terraform)
+    if (terraform) {
+      if (responses['cloud_provider'] === 'aws') {
+        await terraform.AWSProfileActivate(responses['aws_profile']);
+      }
       await terraform.destroyProject(projectName, process.cwd());
+    }
   }
 }

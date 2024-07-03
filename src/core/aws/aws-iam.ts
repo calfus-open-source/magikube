@@ -35,7 +35,7 @@ export default class AWSPolicies {
         });
 
         const account = await AWSAccount.getAccountId(accessKeyId, secretAccessKey, region);
-        console.log(account);
+        console.log('Working with AWS Account Number:', account);
 
         const createPolicy = async (policyName: string, policyDocument: string) => {
             try {
