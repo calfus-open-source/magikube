@@ -10,8 +10,9 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
+import { AppLogger } from '../../logger/appLogger.js';
 
-export default class CreateProject extends BaseCommand {  
+export default class CreateProject extends BaseCommand {
   static args = {
     name: Args.string({description: 'Infrastructure project name to be created', required: true}),
   }
@@ -70,6 +71,8 @@ Creating a new infrastructure as code project named 'sample' in the current dire
   }
 
   async run(): Promise<void> {
+    AppLogger.configureLogger();
+    AppLogger.info('Logger Started ...');
     const {args, flags} = await this.parse(CreateProject);
     let responses: Answers = { 
       "project_name": args.name, 
@@ -91,13 +94,13 @@ Creating a new infrastructure as code project named 'sample' in the current dire
       const awsProfileCredsResult = await awsProfileCreds;
       if(awsProfileCredsResult.profiles.some((profile: { profileName: any; }) => profile.profileName === responses['aws_profile'])) {
         // AWS profile exists and set the keys from the file
-        this.log('AWS Profile exists');
+        AppLogger.debug('AWS Profile exists');
         responses['aws_access_key_id'] = awsProfileCredsResult.profiles.find((profile: { profileName: any; }) => profile.profileName === responses['aws_profile']).awsAccessKey;
         responses['aws_secret_access_key'] = awsProfileCredsResult.profiles.find((profile: { profileName: any; }) => profile.profileName === responses['aws_profile']).awsSecretAccessKey;
       } else {
         //Ask for the awsCreds prompt
-        this.log('AWS Profile does not exist');
-        this.log('Adding AWS Profile to the file');
+        AppLogger.debug('AWS Profile does not exist');
+        AppLogger.debug('Adding AWS Profile to the file');
         for (const prompt of promptGenerator.getAWSCredentials()) {
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
@@ -166,7 +169,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         for (const prompt of promptGenerator.getAppRouterPrompts()) {
           const resp = await inquirer.prompt(prompt);
           appRouter = resp['app_router'];
-          this.log(`App router type is => ${appRouter}` );
+          AppLogger.debug(`App router type is => ${appRouter}` );
         }
       } 
 
@@ -182,7 +185,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
       }
     }
 
-    this.log(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)
+    AppLogger.debug(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
 
     // Get the project name from the command line arguments

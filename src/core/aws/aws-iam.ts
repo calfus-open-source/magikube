@@ -16,6 +16,7 @@ import * as fs from "fs";
 import { join } from "path";
 import SystemConfig from "../../config/system.js";
 import AWSAccount from "./aws-account.js";
+import { AppLogger } from "../../logger/appLogger.js";
 
 export default class AWSPolicies {
 
@@ -35,7 +36,7 @@ export default class AWSPolicies {
         });
 
         const account = await AWSAccount.getAccountId(accessKeyId, secretAccessKey, region);
-        console.log('Working with AWS Account Number:', account);
+        AppLogger.debug(`Working with AWS Account Number:, ${account}`);
 
         const createPolicy = async (policyName: string, policyDocument: string) => {
             try {
@@ -104,7 +105,7 @@ export default class AWSPolicies {
         });
         
         const account = await AWSAccount.getAccountId(accessKeyId, secretAccessKey, region);
-        console.log(account);
+        AppLogger.debug(account);
 
         //Get list of filenames in a directory
         const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));

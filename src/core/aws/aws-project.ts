@@ -6,6 +6,7 @@ import fs, { rmdirSync } from 'fs';
 import * as path from 'path';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
+import { AppLogger } from '../../logger/appLogger.js';
 let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
@@ -427,13 +428,13 @@ export default class AWSProject extends BaseProject {
                 stdio: 'inherit'
             });
             repoSetupError = await this.setupRepo(appName, userName, token, orgName);
-            this.command.log('Next.js application created successfully.');
+            AppLogger.debug('Next.js application created successfully.');
         } catch (error) {
             console.error('Failed to create Next.js app:', error);
             appSetupError = true;
         } finally {
             if (!repoSetupError && appSetupError) {
-                this.command.log('Deleting created files and folders...');
+                AppLogger.debug('Deleting created files and folders...');
                 rmdirSync(`./${this.config.project_name}/${appName}`, { recursive: true });           
             }
         }
@@ -467,7 +468,7 @@ export default class AWSProject extends BaseProject {
             execCommand('git push -u origin main');
             return repoSetupError;
         } catch (error) {
-            this.command.log('Failed to setup repository:', error);
+            AppLogger.error(`Failed to setup repository: ${error}`);
             repoSetupError = true;
             return repoSetupError;
         }
@@ -478,22 +479,22 @@ export default class AWSProject extends BaseProject {
             const appNames = [];
             if (frontendAppName) appNames.push(frontendAppName);
             if (backendAppName) appNames.push(backendAppName);
-            this.command.log('Repos to be deleted:--------->', appNames);
+            AppLogger.debug(`Repos to be deleted: ${appNames}`);
             for (const appName of appNames) {
                 const url = (orgName && userName) ? `https://api.github.com/repos/${orgName}/${appName}` : (!orgName && userName) ? `https://api.github.com/repos/${userName}/${appName}` : '';
                 if (url) {
-                    this.command.log('Deleting repository for...', url)
+                    AppLogger.debug(`Deleting repository for..., ${url}`);
                     const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
                     const result = execSync(command, { stdio: 'pipe' });
-                    this.command.log('Repository deleted successfully:', result.toString());
-                    this.command.log('Removing repository for...', url)
+                    AppLogger.debug(`Repository deleted successfully:, ${result.toString()}`);
+                    AppLogger.debug(`Removing repository for..., ${url}`);
                     rmdirSync(`./${this.config.project_name}/${appName}`, { recursive: true });
                 } else {
                     throw new Error('Missing GitHub username or organization name');
                 }
             }
         } catch (error) {
-            console.error('Failed to delete repository:', error);
+            AppLogger.error(`Failed to delete repository: ${error}`);
         }
     }
 }
