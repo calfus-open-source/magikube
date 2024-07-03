@@ -29,7 +29,7 @@ export default class AWSTerraformBackend {
   ): Promise<boolean> {
 
     const bucketName = `${projectName}-tfstate`;
-    AWSTerraformBackend.createBucket(
+    await AWSTerraformBackend.createBucket(
       project,
       bucketName,
       region,
@@ -38,7 +38,7 @@ export default class AWSTerraformBackend {
     );
 
     const tableName = `${projectName}-tfstate-lock`;
-    AWSTerraformBackend.createDynamoDBTable(
+    await AWSTerraformBackend.createDynamoDBTable(
       project,
       tableName,
       region,
@@ -58,7 +58,7 @@ export default class AWSTerraformBackend {
   ): Promise<boolean> {
       
       const bucketName = `${projectName}-tfstate`;
-      AWSTerraformBackend.deleteBucket(
+      await AWSTerraformBackend.deleteBucket(
         project,
         bucketName,
         region,
@@ -67,7 +67,7 @@ export default class AWSTerraformBackend {
       );
   
       const tableName = `${projectName}-tfstate-lock`;
-      AWSTerraformBackend.deleteDynamoDBTable(
+      await AWSTerraformBackend.deleteDynamoDBTable(
         project,
         tableName,
         region,
@@ -119,7 +119,6 @@ export default class AWSTerraformBackend {
     try {
       if (await tableExists(tableName)) {
         project.command.log(`Table ${tableName} already exists`);
-        console.log(`Table ${tableName} already exists`);
         return false;
       }
     } catch (err) {
@@ -156,7 +155,6 @@ export default class AWSTerraformBackend {
     try {
       if (await bucketExists(bucketName)) {
         project.command.log(`Bucket ${bucketName} already exists`);
-        console.log(`Bucket ${bucketName} already exists`);
         return false;
       }
       const data = await s3Client.send(

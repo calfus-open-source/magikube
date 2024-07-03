@@ -31,7 +31,7 @@ module "route53" {
     domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
 }
 
-{% if domain %}
+{% comment %} {% if domain %}
 module "acm" {
     source = "./modules/acm"
     name = "${ var.project_name }"
@@ -50,7 +50,7 @@ module "gitops" {
     github_owner = "${ var.github_owner }"
 }
 {% endif %}
-
+ {% endcomment %}
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
     name = module.eks.cluster_name
 }
