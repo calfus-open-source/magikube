@@ -200,8 +200,8 @@ export default class PromptGenerator {
     return [
       {
         choices: [
-          // ApplicationType.REACT,
           ApplicationType.NEXT,
+          ApplicationType.REACT,
         ],
         message: "Select a frontend application type:",
         name: "frontend_app_type",

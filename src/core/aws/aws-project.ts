@@ -401,6 +401,45 @@ export default class AWSProject extends BaseProject {
         }
     }
 
+    // create React application
+    async createReactApp(projectConfig: any){
+        // This method creates React app using liquid files.
+        let appName;
+        let repoSetupError: boolean = false;
+        let appSetupError: boolean = false;
+        try {
+            appName = projectConfig['frontend_app_name'];
+            const token = this.config['github_access_token'];
+            const userName = projectConfig['git_user_name'];
+            const orgName = projectConfig['github_owner'];
+
+            // Prepare React App using liquid files
+            await this.createFile('index.html', '../magikube-templates/react/index.html.liquid', `./${appName}/public`);
+            await this.createFile('App.tsx', '../magikube-templates/react/app.tsx.liquid', `./${appName}/src`);
+            await this.createFile('index.tsx', '../magikube-templates/react/index.tsx.liquid', `./${appName}/src`);
+            const react_files = ['package.json', 'tsconfig.json', 'Dockerfile'];
+            for (const file of react_files) {
+                await this.createFile(file, `../magikube-templates/react/${file}.liquid`, `./${appName}`);
+            }
+
+            // Run npm install
+            execSync('npm install', {
+                cwd: `${process.cwd()}/${this.config.project_name}/${appName}`,
+                stdio: 'inherit'
+            });
+
+            repoSetupError = await this.setupRepo(appName, userName, token, orgName);
+            this.command.log('React app created successfully.');
+        } catch (error) {
+            console.error('Failed to create React app:', error);
+            appSetupError = true;
+            if (!repoSetupError && appSetupError) {
+                this.command.log(`Error occured, cleaning up the ${appName} directory...`);
+                rmdirSync(`./${this.config.project_name}/${appName}`, { recursive: true });
+            }
+        }
+    }
+
     //create Next.js application
     async createNextApp(appRouter: string, projectConfig: any) {
         let appSetupError: boolean = false;
