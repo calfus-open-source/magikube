@@ -11,7 +11,12 @@ enum CloudProvider {
   AZURE = "azure",
   ON_PREMISES = "on-premises",
 }
-
+enum Colours {
+  colorReset = "\x1b[0m",
+  redColor = "\x1b[31m",
+  greenColor = "\x1b[32m",
+  boldText = "\x1b[1m",
+}
 enum VersionControl {
   GITHUB = "github",
   // CODECOMMIT = "codecommit",
@@ -44,6 +49,19 @@ const awsPrompts: any[] = [
       process.env.AWS_REGION ||
       SystemConfig.getInstance().getConfig().aws_region,
     type: "input",
+    // Validate the input
+    validate: function(input: string) {
+      const awsRegions = ['us-east-1', 'us-east-2', 'us-west-1',
+                          'us-west-2', 'af-south-1', 'ap-east-1', 'ap-south-1', 'ap-northeast-3',
+                          'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
+                          'ca-central-1', 'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-south-1',
+                          'eu-west-3', 'eu-north-1', 'me-south-1', 'sa-east-1'];
+      if (awsRegions.includes(input)) {
+          return true;
+      } else {
+          return `${Colours.boldText}${Colours.redColor}\n Invalid Region. Please enter existing region.${Colours.colorReset}`;
+      }
+  },
   },
   {
     choices: ["eks-fargate", "eks-nodegroup", "k8s"],
@@ -185,8 +203,16 @@ export default class PromptGenerator {
   }
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
-    return cloudProvider === CloudProvider.AWS ? awsPrompts : [];
+    if (cloudProvider === CloudProvider.AWS) {
+      return awsPrompts;
+    }
+    else {
+      // Handle unknown cloud providers or invalid input
+      console.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
+      process.exit(1);
   }
+  }
+
 
   getClusterPrompts(clusterType: string): any[] {
     return clusterType === "k8s" ? k8sPrompts : [];
