@@ -24,7 +24,9 @@
     "inquirer": "^9.2.21",
     "js-yaml": "^4.1.0",
     "liquidjs": "^10.13.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "winston": "^3.13.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@oclif/prettier-config": "^0.2.1",

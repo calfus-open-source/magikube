@@ -6,6 +6,7 @@ import SystemConfig from '../../config/system.js';
 
 import * as fs from 'fs';
 import { join } from 'path';
+import { AppLogger } from '../../logger/appLogger.js';
 
 export default class DestroyProject extends BaseCommand {  
   static args = {
@@ -34,14 +35,15 @@ Destroying infrastructure as code project named 'sample' in the current director
   }
 
   async run(): Promise<void> {
+    AppLogger.configureLogger();
     const {args, flags} = await this.parse(DestroyProject);
     //read config and responses form project level config
     const responses = await this.readProjectConfig(args.name, process.cwd());
     responses['dryrun'] = flags.dryrun || false;
 
-    this.log(`Destroying infrastructure as code project named '${args.name}' in the current directory`)
+    AppLogger.debug(`Destroying infrastructure as code project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
-    this.log('Config:', SystemConfig.getInstance().getConfig());
+    AppLogger.debug(`Config:, ${SystemConfig.getInstance().getConfig()}`);
 
     // Get the project name from the command line arguments
     const projectName = args.name;
