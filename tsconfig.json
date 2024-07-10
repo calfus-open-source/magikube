@@ -8,7 +8,9 @@
     "target": "es2022",
     "moduleResolution": "node16"
   },
-  "include": ["./src/**/*"],
+  "include": [
+    "./src/**/*"
+  ],
   "ts-node": {
     "esm": true
   }

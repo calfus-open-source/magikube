@@ -11,6 +11,7 @@ import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
+import CreateApplication from '../../core/setup-application.js';
 
 export default class CreateProject extends BaseCommand {
   static args = {
@@ -210,12 +211,14 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         terraform?.stopSSHProcess();
       } 
 
+      let command: BaseCommand | undefined;
+      const createApp = new CreateApplication(command as BaseCommand, {})
       // Running the actual app setups
       if (responses['backend_app_type'] === 'node-express') {
-        terraform?.createNodeExpressApp(responses);
+        createApp?.createNodeExpressApp(responses);
       } 
       if (responses['frontend_app_type'] === 'next') {
-        terraform?.createNextApp(appRouter, responses);
+        createApp?.createNextApp(appRouter, responses);
       }
     }
   }

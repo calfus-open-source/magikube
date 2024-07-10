@@ -44,9 +44,9 @@ export default class AWSPolicies {
                     PolicyName: policyName,
                     PolicyDocument: policyDocument
                 }));
-                project.command.log(`Policy ${policyName} created`, data);
+                AppLogger.info(`Policy ${policyName} created, ${JSON.stringify(data)}`);
             } catch (err) {
-                project.command.error(`Error creating policy ${policyName}, ${err}`);
+                AppLogger.error(`Error creating policy ${policyName}, ${err}`, true);
             }
         };
 
@@ -55,9 +55,9 @@ export default class AWSPolicies {
                 const data = await iamClient.send(new CreateGroupCommand({
                     GroupName: groupName
                 }));
-                project.command.log(`Group ${groupName} created`, data);
+                AppLogger.info(`Group ${groupName} created, ${JSON.stringify(data)}`);
             } catch (err) {
-                project.command.error(`Error creating group ${groupName}, ${err}`);
+                AppLogger.error(`Error creating group ${groupName}, ${err}`, true);
             }
         };
 
@@ -67,9 +67,9 @@ export default class AWSPolicies {
                     GroupName: groupName,
                     PolicyArn: policyArn
                 }));
-                project.command.log(`Policy ${policyArn} attached to group ${groupName}`, data);
+                AppLogger.info(`Policy ${policyArn} attached to group ${groupName} ${JSON.stringify(data)}`);
             } catch (err) {
-                project.command.error(`Error attaching policy ${policyArn} to group ${groupName}, ${err}`);
+                AppLogger.error(`Error attaching policy ${policyArn} to group ${groupName}, ${err}`, true);
             }
         };
 
@@ -112,31 +112,31 @@ export default class AWSPolicies {
 
         for (const file of files) {
             const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;
-            project.command.log(`Deleting policy: ${policyName}`);
+            AppLogger.info(`Deleting policy: ${policyName}`);
             try {
                 const data = await iamClient.send(new DetachGroupPolicyCommand({
                     GroupName: policyName,
                     PolicyArn: `arn:aws:iam::${account}:policy/${policyName}`
                 }));
-                project.command.log(`Policy ${policyName} detached`, data);
+                AppLogger.info(`Policy ${policyName} detached, ${JSON.stringify(data)}`);
             } catch (err) {
-                project.command.error(`Error detaching policy ${policyName}, ${err}`);
+                AppLogger.error(`Error detaching policy ${policyName}, ${err}`, true);
             }
             try {
                 const data = await iamClient.send(new DeleteGroupCommand({
                     GroupName: policyName
                 }));
-                project.command.log(`Group ${policyName} deleted`, data);
+                AppLogger.info(`Group ${policyName} deleted, ${JSON.stringify(data)}`);
             } catch (err) {
-                project.command.error(`Error deleting group ${policyName}, ${err}`);
+                AppLogger.error(`Error deleting group ${policyName}, ${err}`, true);
             }
             try {
                 const data = await iamClient.send(new DeletePolicyCommand({
                     PolicyArn: `arn:aws:iam::${account}:policy/${policyName}`
                 }));
-                project.command.log(`Policy ${policyName} created`, data);
+                AppLogger.info(`Policy ${policyName} created, ${JSON.stringify(data)}`);
             } catch (err) {
-                project.command.error(`Error creating policy ${policyName}, ${err}`);
+                AppLogger.error(`Error creating policy ${policyName}, ${err}`, true);
             }
         }
         

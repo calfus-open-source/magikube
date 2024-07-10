@@ -43,7 +43,7 @@ Destroying infrastructure as code project named 'sample' in the current director
 
     AppLogger.debug(`Destroying infrastructure as code project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
-    AppLogger.debug(`Config:, ${SystemConfig.getInstance().getConfig()}`);
+    AppLogger.debug(`Config:, ${JSON.stringify(SystemConfig.getInstance().getConfig(), null, 4)}`);
 
     // Get the project name from the command line arguments
     const projectName = args.name;
