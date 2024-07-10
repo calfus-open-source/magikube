@@ -1,27 +1,5 @@
 import SystemConfig from "../config/system.js";
-
-enum Environment {
-  PRODUCTION = "production",
-  NON_PRODUCTION = "non-production",
-}
-
-enum CloudProvider {
-  AWS = "aws",
-  GCP = "gcp",
-  AZURE = "azure",
-  ON_PREMISES = "on-premises",
-}
-enum Colours {
-  colorReset = "\x1b[0m",
-  redColor = "\x1b[31m",
-  greenColor = "\x1b[32m",
-  boldText = "\x1b[1m",
-}
-enum VersionControl {
-  GITHUB = "github",
-  // CODECOMMIT = "codecommit",
-  // BITBUCKET = "bitbucket",
-}
+import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
 
 const productionPrompts: any[] = [
   {
@@ -87,26 +65,6 @@ const awsPrompts: any[] = [
     default:
       VersionControl.GITHUB ||
       SystemConfig.getInstance().getConfig().source_code_repository,
-  },
-];
-
-const awsCreds: any[] = [
-  {
-    message: "Enter AWS Access Key ID: ",
-    name: "aws_access_key_id",
-    type: "input",
-    default:
-      process.env.AWS_ACCESS_KEY_ID ||
-      SystemConfig.getInstance().getConfig().aws_secret_access_key,
-
-  },
-  {
-    message: "Enter AWS Secret Access Key: ",
-    name: "aws_secret_access_key",
-    type: "password",
-    default:
-      process.env.AWS_SECRET_ACCESS_KEY ||
-      SystemConfig.getInstance().getConfig().aws_secret_access_key,
   },
 ];
 
@@ -190,10 +148,6 @@ export default class PromptGenerator {
         type: "list",
       },
     ];
-  }
-
-  getAWSCredentials(): any[] {
-    return awsCreds;
   }
 
   getLifecycles(environment: Environment): any[] {

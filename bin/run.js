@@ -9,7 +9,7 @@ clear();
 
 console.log(
   chalk.cyan(
-    figlet.textSync('Magikube', { horizontalLayout: 'full' })
+    figlet.textSync('magikube', { horizontalLayout: 'full' })
   )
 );
 

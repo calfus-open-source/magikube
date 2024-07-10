@@ -1,4 +1,4 @@
-import {Args, Command, Flags} from '@oclif/core'
+import {Args, Flags} from '@oclif/core'
 import BaseCommand from '../base.js'
 import inquirer, { Answers } from 'inquirer';
 
@@ -7,68 +7,25 @@ import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
 import SystemConfig from '../../config/system.js';
 import fs from 'fs';
-import os from 'os';
-import path from 'path';
 import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
+import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 
 export default class CreateProject extends BaseCommand {
   static args = {
-    name: Args.string({description: 'Infrastructure project name to be created', required: true}),
+    name: Args.string({description: 'Project name to be created', required: true}),
   }
   
   static flags = {
-    dryrun: Flags.boolean({char: 'd', description: 'Dry run the create operation'})
+    dryrun: Flags.boolean({char: 'd', description: 'Simulates execution of the command, showing what would happen without making any real changes to the system.'})
   }
 
-  static description = 'Create a new infrastructure as code project'
+  static description = 'Create new magikube project'
   static examples = [
     `<%= config.bin %> <%= command.id %> sample 
-Creating a new infrastructure as code project named 'sample' in the current directory
+Creating a new magikube project named 'sample' in the current directory
 `,
   ]
-
-  async parseAwsCredentialsFile(): Promise<any> {
-    const credentialsFilePath = `${os.homedir()}/.aws/credentials`;
-    if (fs.existsSync(credentialsFilePath)) {
-      const credentialsFileContent = fs.readFileSync(credentialsFilePath, 'utf8');
-      const profileRegex = /\[([^\]]+)\]/g;
-      const profiles = [];
-      let match;
-      while ((match = profileRegex.exec(credentialsFileContent))) {
-        const profileName = match[1];
-        const profileContent = credentialsFileContent.substring(match.index + match[0].length);
-        const awsAccessKey = /aws_access_key_id = (\S+)/.exec(profileContent)?.[1] || '';
-        const awsSecretAccessKey = /aws_secret_access_key = (\S+)/.exec(profileContent)?.[1] || '';
-        profiles.push({ profileName, awsAccessKey, awsSecretAccessKey });
-      }
-      return { profiles };
-    }
-    return { profiles: [] };
-  }
-
-  async addAwsCredentialsToFile(profileName: string, awsAccessKey: string, awsSecretAccessKey: string): Promise<void> {
-    const awsDirectoryPath = path.join(os.homedir(), '.aws');
-    const credentialsFilePath = path.join(awsDirectoryPath, 'credentials');
-
-    // Create the .aws directory if it doesn't exist
-    if (!fs.existsSync(awsDirectoryPath)) {
-      fs.mkdirSync(awsDirectoryPath);
-    }
-
-    // Create the credentials file if it doesn't exist
-    if (!fs.existsSync(credentialsFilePath)) {
-      fs.writeFileSync(credentialsFilePath, '');
-    }
-
-    const credentialsFileContent = fs.readFileSync(credentialsFilePath, 'utf8');
-    const newProfile = `[${profileName}]
-  aws_access_key_id = ${awsAccessKey}
-  aws_secret_access_key = ${awsSecretAccessKey}
-  `;
-
-    fs.writeFileSync(credentialsFilePath, `${credentialsFileContent}\n${newProfile}`);
-  }
 
   async run(): Promise<void> {
     AppLogger.configureLogger();
@@ -81,7 +38,8 @@ Creating a new infrastructure as code project named 'sample' in the current dire
     };    
 
     const promptGenerator = new PromptGenerator();
-    const awsProfileCreds = this.parseAwsCredentialsFile();
+    const credentialsPrompts = new CredentialsPrompts();
+
     let appRouter;
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);
@@ -91,22 +49,12 @@ Creating a new infrastructure as code project named 'sample' in the current dire
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
       }
-      const awsProfileCredsResult = await awsProfileCreds;
-      if(awsProfileCredsResult.profiles.some((profile: { profileName: any; }) => profile.profileName === responses['aws_profile'])) {
-        // AWS profile exists and set the keys from the file
-        AppLogger.debug('AWS Profile exists');
-        responses['aws_access_key_id'] = awsProfileCredsResult.profiles.find((profile: { profileName: any; }) => profile.profileName === responses['aws_profile']).awsAccessKey;
-        responses['aws_secret_access_key'] = awsProfileCredsResult.profiles.find((profile: { profileName: any; }) => profile.profileName === responses['aws_profile']).awsSecretAccessKey;
-      } else {
-        //Ask for the awsCreds prompt
-        AppLogger.debug('AWS Profile does not exist');
-        AppLogger.debug('Adding AWS Profile to the file');
-        for (const prompt of promptGenerator.getAWSCredentials()) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
-        this.addAwsCredentialsToFile(responses['aws_profile'], responses['aws_access_key_id'], responses['aws_secret_access_key']);
+
+      for( const prompt of credentialsPrompts.getCredentialsPrompts(resp['cloud_provider'], responses)) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };        
       }
+      credentialsPrompts.saveCredentials(responses)
 
       for (const prompt of promptGenerator.getVersionControlPrompts(responses['source_code_repository'])) {
         const resp = await inquirer.prompt(prompt);
@@ -121,10 +69,6 @@ Creating a new infrastructure as code project named 'sample' in the current dire
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
         }
-        // for (const prompt of promptGenerator.getClusterPrompts(responses['cluster_type'])) {
-        //   const resp = await inquirer.prompt(prompt);
-        //   responses = { ...responses, ...resp };
-        // }
       }
 
       for (const prompt of promptGenerator.getFrontendPrompts()) {
@@ -185,7 +129,7 @@ Creating a new infrastructure as code project named 'sample' in the current dire
       }
     }
 
-    AppLogger.debug(`Creating a new infrastructure as code project named '${args.name}' in the current directory`)
+    AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
 
     // Get the project name from the command line arguments
