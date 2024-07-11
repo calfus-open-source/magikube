@@ -161,6 +161,9 @@ Creating a new magikube project named 'sample' in the current directory
       if (responses['frontend_app_type'] === 'next') {
         terraform?.createNextApp(appRouter, responses);
       }
+      if (responses['frontend_app_type'] === 'react') {
+        terraform?.createReactApp(responses);
+      }
     }
   }
 }
