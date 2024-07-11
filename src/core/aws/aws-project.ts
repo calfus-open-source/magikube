@@ -44,8 +44,19 @@ export default class AWSProject extends BaseProject {
         const createApplication = new CreateApplication(command as BaseCommand, this.config)
         if (!this.config.dryrun) {
             // Once the prompts are accepted at the start, these parameters will be accessible
-            const  {frontend_app_name, backend_app_name, git_user_name, github_access_token, github_owner} = this.config;
-            await createApplication.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name);
+            const  {git_user_name, github_access_token, github_owner, project_name} = this.config;
+            let frontend_app_name;
+            let backend_app_name;
+            if(this.config.frontend_app_type == "react") {
+                frontend_app_name = this.config.react_app_name;
+            }
+            if (this.config.frontend_app_type == "next") {
+                frontend_app_name = this.config.next_app_name;
+            }
+            if (this.config.backend_app_type == "node-express") {
+                backend_app_name = this.config.node_app_name;
+            }
+            await createApplication.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name, project_name);
             
             if (awsStatus) {
                 await super.destroyProject(name, path);
@@ -229,29 +240,52 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-    // Function to run terraform apply command
     async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
         AppLogger.debug(`Running terraform apply..., ${projectPath}`);
-        try {
-            AppLogger.info('Running terraform apply...', true);
-            let command = module 
-                ? `terraform apply -target=${module} -auto-approve` 
-                : 'terraform apply -auto-approve';
-            if (varFile) {
-                command += ` -var-file=${varFile}`;
+        return new Promise((resolve, reject) => {
+            try {
+                AppLogger.info('Running terraform apply...', true);
+                let args = ['apply', '-no-color', '-auto-approve'];
+                if (module) {
+                    args.unshift(`-target=${module}`);
+                }
+                if (varFile) {
+                    args.push(`-var-file=${varFile}`);
+                }
+
+                const terraformProcess = spawn('terraform', args, {
+                    cwd: projectPath,
+                    env: process.env
+                });
+    
+                terraformProcess.stdout.on('data', (data) => {
+                    AppLogger.info(`stdout: ${data.toString()}`);
+                });
+    
+                terraformProcess.stderr.on('data', (data) => {
+                    AppLogger.error(`stderr: ${data.toString()}`);
+                });
+    
+                terraformProcess.on('close', (code) => {
+                    if (code === 0) {
+                        AppLogger.debug('Terraform apply completed successfully.', true);
+                        resolve();
+                    } else {
+                        AppLogger.error(`Terraform apply process exited with code ${code}`, true);
+                        reject(new Error(`Terraform apply process exited with code ${code}`));
+                    }
+                });
+    
+                terraformProcess.on('error', (err) => {
+                    AppLogger.error(`Failed to apply terraform process: ${err}`, true);
+                    reject(err);
+                });
+    
+            } catch (error) {
+                AppLogger.error(`Failed to apply terraform process: ${error}`, true);
+                reject(error);
             }
-            // Start the progress bar
-            const tfResult = execSync(command, {
-                cwd: projectPath,
-                stdio: 'pipe',
-                env: process.env
-            });
-            const output = tfResult.toString();
-            AppLogger.debug(`'Terraform apply result, ${output}`);
-            AppLogger.debug('Terraform apply completed successfully.', true);
-        } catch (error) {
-            AppLogger.error(`Failed to apply terraform process:${error}`, true);
-        }
+        });
     }
     
     async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
@@ -387,9 +421,9 @@ export default class AWSProject extends BaseProject {
                 AppLogger.debug('Kubernetes cluster created successfully.');
                 success = true;
             } catch (error) {
-                console.error('An error occurred while running the Ansible playbook.', error);
+                AppLogger.error(`An error occurred while running the Ansible playbook - ${error}`, true);
                 if (attempt >= maxRetries) {
-                    console.error('Max retries reached. Exiting...');
+                    AppLogger.error('Max retries reached. Exiting...', true);
                     throw error;
                 } else {
                     AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);

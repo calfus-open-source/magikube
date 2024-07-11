@@ -53,7 +53,7 @@ module "eks" {
         "${var.name}-${var.environment}-${element(split("-", local.azs[i]), 2)}" => {
           name = "${var.name}-${var.environment}-${element(split("-", local.azs[i]), 2)}"
           selectors = [
-            { namespace = "${var.name}-${var.environment}-*" },
+            { namespace = "${replace(var.name, "_", "-")}-${var.environment}-*" },
           ]
 
           # We want to create a profile per AZ for high availability

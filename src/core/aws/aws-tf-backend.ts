@@ -17,6 +17,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 
 import BaseProject from "../base-project.js";
+import { AppLogger } from "../../logger/appLogger.js";
 
 export default class AWSTerraformBackend {
 
@@ -118,11 +119,11 @@ export default class AWSTerraformBackend {
 
     try {
       if (await tableExists(tableName)) {
-        project.command.log(`Table ${tableName} already exists`);
+        AppLogger.info(`Table ${tableName} already exists`, true);
         return false;
       }
     } catch (err) {
-      project.command.error(`Error creating table ${tableName}, ${err}`);
+      AppLogger.error(`Error creating table ${tableName}, ${err}`, true);
     }
 
     return true;
@@ -154,15 +155,15 @@ export default class AWSTerraformBackend {
 
     try {
       if (await bucketExists(bucketName)) {
-        project.command.log(`Bucket ${bucketName} already exists`);
+        AppLogger.info(`Bucket ${bucketName} already exists`, true);
         return false;
       }
       const data = await s3Client.send(
         new CreateBucketCommand({ Bucket: bucketName })
       );
-      project.command.log(`Bucket ${bucketName} created`, data);
+      AppLogger.info(`Bucket ${bucketName} created, ${data}`, true);
     } catch (err) {
-      project.command.error(`Error creating bucket ${bucketName}, ${err}`);
+      AppLogger.error(`Error creating bucket ${bucketName}, ${err}`, true);
     }
 
     return true;
@@ -187,9 +188,9 @@ export default class AWSTerraformBackend {
       await dynamoDBClient.send(
         new DeleteTableCommand({ TableName: tableName })
       );
-      project.command.log(`Table ${tableName} deleted`);
+      AppLogger.info(`Table ${tableName} deleted`, true);
     } catch (err) {
-      project.command.error(`Error deleting table ${tableName}, ${err}`);
+      AppLogger.error(`Error deleting table ${tableName}, ${err}`, true);
     }
 
     return true;
@@ -227,9 +228,9 @@ export default class AWSTerraformBackend {
       const data = await s3Client.send(
         new DeleteBucketCommand({ Bucket: bucketName })
       );
-      project.command.log(`Bucket ${bucketName} deleted`, data);
+      AppLogger.info(`Bucket ${bucketName} deleted ${data}`, true);
     } catch (err) {
-      project.command.error(`Error deleting bucket ${bucketName}, ${err}`);
+      AppLogger.error(`Error deleting bucket ${bucketName}, ${err}`, true);
     }
 
     return true;

@@ -1,22 +1,6 @@
 import SystemConfig from "../config/system.js";
-
-enum Environment {
-  PRODUCTION = "production",
-  NON_PRODUCTION = "non-production",
-}
-
-enum CloudProvider {
-  AWS = "aws",
-  GCP = "gcp",
-  AZURE = "azure",
-  ON_PREMISES = "on-premises",
-}
-
-enum VersionControl {
-  GITHUB = "github",
-  // CODECOMMIT = "codecommit",
-  // BITBUCKET = "bitbucket",
-}
+import { AppLogger } from "../logger/appLogger.js";
+import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
 
 const productionPrompts: any[] = [
   {
@@ -44,6 +28,19 @@ const awsPrompts: any[] = [
       process.env.AWS_REGION ||
       SystemConfig.getInstance().getConfig().aws_region,
     type: "input",
+    // Validate the input
+    validate: function(input: string) {
+      const awsRegions = ['us-east-1', 'us-east-2', 'us-west-1',
+                          'us-west-2', 'af-south-1', 'ap-east-1', 'ap-south-1', 'ap-northeast-3',
+                          'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
+                          'ca-central-1', 'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-south-1',
+                          'eu-west-3', 'eu-north-1', 'me-south-1', 'sa-east-1'];
+      if (awsRegions.includes(input)) {
+          return true;
+      } else {
+          return `${Colours.boldText}${Colours.redColor}\n Invalid Region. Please enter existing region.${Colours.colorReset}`;
+      }
+  },
   },
   {
     choices: ["eks-fargate", "eks-nodegroup", "k8s"],
@@ -69,26 +66,6 @@ const awsPrompts: any[] = [
     default:
       VersionControl.GITHUB ||
       SystemConfig.getInstance().getConfig().source_code_repository,
-  },
-];
-
-const awsCreds: any[] = [
-  {
-    message: "Enter AWS Access Key ID: ",
-    name: "aws_access_key_id",
-    type: "input",
-    default:
-      process.env.AWS_ACCESS_KEY_ID ||
-      SystemConfig.getInstance().getConfig().aws_secret_access_key,
-
-  },
-  {
-    message: "Enter AWS Secret Access Key: ",
-    name: "aws_secret_access_key",
-    type: "password",
-    default:
-      process.env.AWS_SECRET_ACCESS_KEY ||
-      SystemConfig.getInstance().getConfig().aws_secret_access_key,
   },
 ];
 
@@ -174,10 +151,6 @@ export default class PromptGenerator {
     ];
   }
 
-  getAWSCredentials(): any[] {
-    return awsCreds;
-  }
-
   getLifecycles(environment: Environment): any[] {
     return environment === Environment.PRODUCTION
       ? productionPrompts
@@ -185,8 +158,16 @@ export default class PromptGenerator {
   }
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
-    return cloudProvider === CloudProvider.AWS ? awsPrompts : [];
+    if (cloudProvider === CloudProvider.AWS) {
+      return awsPrompts;
+    }
+    else {
+      // Handle unknown cloud providers or invalid input
+      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
+      process.exit(1);
   }
+  }
+
 
   getClusterPrompts(clusterType: string): any[] {
     return clusterType === "k8s" ? k8sPrompts : [];
@@ -200,7 +181,7 @@ export default class PromptGenerator {
     return [
       {
         choices: [
-          // ApplicationType.REACT,
+          ApplicationType.REACT,
           ApplicationType.NEXT,
         ],
         message: "Select a frontend application type:",
@@ -225,28 +206,6 @@ export default class PromptGenerator {
     ];
   }
 
-  getFrontendAppName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'frontend_app_name',
-        message: 'What is your frontend app name?',
-        default: 'my-app-ui',
-      },
-    ];
-  }
-
-  getBackendAppName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'backend_app_name',
-        message: 'What is your backend app name?',
-        default: 'my-app-backend',
-      },
-    ];
-  }
-
   getGitUserName(): any[] {
     return [
       {
@@ -254,39 +213,6 @@ export default class PromptGenerator {
         name: 'git_user_name',
         message: 'What is your git user name?',
         default: '',
-      },
-    ];
-  }
-
-  getAppRouterPrompts(): any[] {
-    return [
-      {
-        message: "Would you like to use App Router? (recommended)",
-        name: "app_router",
-        type: "confirm",
-        default: false,
-      },
-    ];
-  }
-
-  getFrontendPrompts(): any[] {
-    return [
-      {
-        message: "Would you like to create frontend application? (recommended)",
-        name: "frontend_app",
-        type: "confirm",
-        default: false,
-      },
-    ];
-  }
-
-  getBackendPrompts(): any[] {
-    return [
-      {
-        message: "Would you like to create backend application? (recommended)",
-        name: "backend_app",
-        type: "confirm",
-        default: false,
       },
     ];
   }

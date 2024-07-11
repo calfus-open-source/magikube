@@ -1,4 +1,4 @@
-import {Args, Command, Flags} from '@oclif/core'
+import {Args, Flags} from '@oclif/core'
 import BaseCommand from '../base.js'
 
 import TerraformProject from '../../core/terraform-project.js';
@@ -10,18 +10,18 @@ import { AppLogger } from '../../logger/appLogger.js';
 
 export default class DestroyProject extends BaseCommand {  
   static args = {
-    name: Args.string({description: 'Infrastructure project name to be destroyed', required: true}),
+    name: Args.string({description: 'Project name to be destroyed', required: true}),
   }
 
   static flags = {
-    dryrun: Flags.boolean({char: 'd', description: 'Dry run the destroy operation'})
+    dryrun: Flags.boolean({char: 'd', description: 'Simulates execution of the command, showing what would happen without making any real changes to the system.'})
   }
 
-  static description = 'Destroy infrastructure as code project'
+  static description = 'Destroy magikube project'
 
   static examples = [
     `<%= config.bin %> <%= command.id %> sample 
-Destroying infrastructure as code project named 'sample' in the current directory
+Destroying magikube project named 'sample' in the current directory
 `,
   ]
 
@@ -41,7 +41,7 @@ Destroying infrastructure as code project named 'sample' in the current director
     const responses = await this.readProjectConfig(args.name, process.cwd());
     responses['dryrun'] = flags.dryrun || false;
 
-    AppLogger.debug(`Destroying infrastructure as code project named '${args.name}' in the current directory`)
+    AppLogger.debug(`Destroying magikube project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
     AppLogger.debug(`Config:, ${JSON.stringify(SystemConfig.getInstance().getConfig(), null, 4)}`);
 

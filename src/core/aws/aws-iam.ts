@@ -78,7 +78,7 @@ export default class AWSPolicies {
 
         for (const file of files) {
             const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;
-            project.command.log(`Creating policy: ${policyName}`);
+            AppLogger.info(`Creating policy: ${policyName}`, true);
             const policyDocument = await project.generateContent(`../templates/aws/policies/${file}`);
             await createPolicy(policyName, policyDocument);
             await createGroup(policyName);

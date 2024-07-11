@@ -28,7 +28,6 @@ export default abstract class BaseProject {
 
     async terraformDestroy(): Promise<void> {
         // Run terraform destroy
-        // this.command.log(`Running terraform destroy in the path`);
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         // Check if it has multiple modules
@@ -105,7 +104,7 @@ export default abstract class BaseProject {
         const destFullPath = join(this.projectPath, destination);
         
         if (!fs.existsSync(fullPath)) {
-            this.command.error(`Source path ${fullPath} does not exist`);
+            AppLogger.error(`Source path ${fullPath} does not exist`);
             return;
         }
         
