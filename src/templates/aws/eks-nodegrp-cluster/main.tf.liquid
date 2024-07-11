@@ -51,6 +51,15 @@ module "gitops" {
 }
 {% endif %}
  {% endcomment %}
+{% if source_code_repository == 'codecommit' %}
+module "gitops" {
+    source = "./modules/gitops"
+    name = "${ var.project_name }"
+    frontend_repo_codecommit = "${ var.frontend_repo_codecommit }"
+    backend_repo_codecommit = "${ var.backend_repo_codecommit }"
+    environment = "${ var.environment }"
+}
+{% endif %}
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
     name = module.eks.cluster_name
 }

@@ -29,3 +29,13 @@ variable "source_code_repository" {
 variable "github_access" {
     description = "The github access"
 }
+
+{% if source_code_repository == 'codecommit' %}
+variable "frontend_repo_codecommit" {
+    description = "frontend repo name"
+}
+
+variable "backend_repo_codecommit" {
+    description = "backend repo name"
+}
+{% endif %}

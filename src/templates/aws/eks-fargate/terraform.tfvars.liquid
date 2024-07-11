@@ -12,3 +12,7 @@ github_owner = "{{ github_owner }}"
 {% if domain %}
 domain_name = "{{ domain }}"
 {% endif %}
+{% if source_code_repository == 'codecommit' %}
+frontend_repo_codecommit = "{{ frontend_repo_codecommit }}"
+backend_repo_codecommit = "{{ backend_repo_codecommit }}"
+{% endif %}

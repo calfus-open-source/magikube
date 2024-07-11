@@ -59,9 +59,9 @@ const awsPrompts: any[] = [
     name: "source_code_repository",
     type: "list",
     choices: [
-      // VersionControl.CODECOMMIT,
       VersionControl.GITHUB,
-      // VersionControl.BITBUCKET,
+      VersionControl.CODECOMMIT,
+      VersionControl.BITBUCKET,
     ],
     default:
       VersionControl.GITHUB ||
@@ -114,6 +114,22 @@ const githubPrompts: any[] = [
       SystemConfig.getInstance().getConfig().github_access_token,
   },
 ];
+
+const codeCommitPrompts: any[] = [
+  {
+    message: "Enter Name for Frontend Repo: ",
+    name: "frontend_repo_codecommit",
+    type: "input",
+    default: "frontend_app"
+  },
+  {
+    message: "Enter Name for Backend Repo: ",
+    name: "backend_repo_codecommit",
+    type: "input",
+    default: "backend_app"
+  },
+];
+
 
 enum ApplicationType {
   REACT = "react",
@@ -174,7 +190,17 @@ export default class PromptGenerator {
   }
 
   getVersionControlPrompts(versionControl: string): any[] {
-    return versionControl === VersionControl.GITHUB ? githubPrompts : [];
+    if (versionControl === VersionControl.GITHUB) {
+      return githubPrompts;
+    }
+    else if (versionControl === VersionControl.CODECOMMIT) {
+      return codeCommitPrompts;
+    }
+    else {
+      // Handle unknown cloud providers or invalid input
+      console.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
+      process.exit(1);
+    }
   }
 
   getFrontendApplicationType(): any[] {
