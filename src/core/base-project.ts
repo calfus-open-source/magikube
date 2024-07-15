@@ -4,6 +4,7 @@ import { dirname, join } from 'path';
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 import TerraformProject from './terraform-project.js';
+import { AppLogger } from '../logger/appLogger.js';
 
 export default abstract class BaseProject {    
     protected config: any = {};
@@ -20,14 +21,14 @@ export default abstract class BaseProject {
         //initialize terraform in the path
         this.projectPath = join(path, name);
         // Run terraform destroy
-        this.command.log(`Destroying project '${name}' in the path`);
+        AppLogger.debug(`Destroying project '${name}' in the path`, true);
         await this.terraformDestroy();
         await this.deleteFolder();
     }
 
     async terraformDestroy(): Promise<void> {
         // Run terraform destroy
-        this.command.log(`Running terraform destroy in the path`);
+        AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
@@ -43,10 +44,10 @@ export default abstract class BaseProject {
 
     async deleteFolder(): Promise<void> {
         if (fs.existsSync(this.projectPath)) {
-            this.command.log(`Removing folder '${this.projectPath}'`);
+            AppLogger.debug(`Removing folder '${this.projectPath}'`, true);
             fs.rmSync(this.projectPath, { recursive: true });
         } else {
-            this.command.log(`Folder '${this.projectPath}' does not exist in the path`);
+            AppLogger.debug(`Folder '${this.projectPath}' does not exist in the path`, true);
         }
     }
 
@@ -56,7 +57,7 @@ export default abstract class BaseProject {
         await this.createFolder();
 
         const projectConfigFile = join(this.projectPath, '.magikube');
-        this.command.log(`Creating project '${name}' in the path`);
+        AppLogger.debug(`Creating project '${name}' in the path`, true);
         fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
 
         await this.createProviderFile();
@@ -66,10 +67,10 @@ export default abstract class BaseProject {
         //create a folder with the name in the path
 
         if (fs.existsSync(this.projectPath)) {
-            this.command.log(`Folder '${this.projectPath}' already exists in the path`);
-            this.command.error(`Folder '${this.projectPath}' already exists in the path`);
+            AppLogger.debug(`Folder '${this.projectPath}' already exists in the path`);
+            AppLogger.error(`Folder '${this.projectPath}' already exists in the path`);
         } else {
-            this.command.log(`Creating folder '${this.projectPath}' in the path`);
+            AppLogger.debug(`Creating folder '${this.projectPath}' in the path`);
             fs.mkdirSync(this.projectPath);
         }
     }
@@ -82,7 +83,7 @@ export default abstract class BaseProject {
     async createFile(filename: string, templateFilename: string, folderName: string = '.'): Promise<void> {
         //create a file in the path
 
-        this.command.log(`Creating ${filename} file`);
+        AppLogger.debug(`Creating ${filename} file`);
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
         const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
         const folderPath = join(this.projectPath, folderName);
@@ -93,7 +94,7 @@ export default abstract class BaseProject {
     }   
 
     async generateContent(templateFilename: string): Promise<any> {
-        this.command.log(`Creating content from ${templateFilename}`);
+        AppLogger.debug(`Creating content from ${templateFilename}`);
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
         return await this.engine.parseAndRender(templateFile, { ...this.config } );
     }   
@@ -103,7 +104,7 @@ export default abstract class BaseProject {
         const destFullPath = join(this.projectPath, destination);
         
         if (!fs.existsSync(fullPath)) {
-            this.command.error(`Source path ${fullPath} does not exist`);
+            AppLogger.error(`Source path ${fullPath} does not exist`);
             return;
         }
         

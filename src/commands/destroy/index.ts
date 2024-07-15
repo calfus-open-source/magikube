@@ -43,7 +43,7 @@ Destroying magikube project named 'sample' in the current directory
 
     AppLogger.debug(`Destroying magikube project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
-    AppLogger.debug(`Config:, ${SystemConfig.getInstance().getConfig()}`);
+    AppLogger.debug(`Config:, ${JSON.stringify(SystemConfig.getInstance().getConfig(), null, 4)}`);
 
     // Get the project name from the command line arguments
     const projectName = args.name;

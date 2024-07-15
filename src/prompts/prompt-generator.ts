@@ -1,4 +1,5 @@
 import SystemConfig from "../config/system.js";
+import { AppLogger } from "../logger/appLogger.js";
 import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
 
 const productionPrompts: any[] = [
@@ -162,7 +163,7 @@ export default class PromptGenerator {
     }
     else {
       // Handle unknown cloud providers or invalid input
-      console.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
+      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
       process.exit(1);
   }
   }
@@ -180,7 +181,7 @@ export default class PromptGenerator {
     return [
       {
         choices: [
-          // ApplicationType.REACT,
+          ApplicationType.REACT,
           ApplicationType.NEXT,
         ],
         message: "Select a frontend application type:",
@@ -205,28 +206,6 @@ export default class PromptGenerator {
     ];
   }
 
-  getFrontendAppName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'frontend_app_name',
-        message: 'What is your frontend app name?',
-        default: 'my-app-ui',
-      },
-    ];
-  }
-
-  getBackendAppName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'backend_app_name',
-        message: 'What is your backend app name?',
-        default: 'my-app-backend',
-      },
-    ];
-  }
-
   getGitUserName(): any[] {
     return [
       {
@@ -234,39 +213,6 @@ export default class PromptGenerator {
         name: 'git_user_name',
         message: 'What is your git user name?',
         default: '',
-      },
-    ];
-  }
-
-  getAppRouterPrompts(): any[] {
-    return [
-      {
-        message: "Would you like to use App Router? (recommended)",
-        name: "app_router",
-        type: "confirm",
-        default: false,
-      },
-    ];
-  }
-
-  getFrontendPrompts(): any[] {
-    return [
-      {
-        message: "Would you like to create frontend application? (recommended)",
-        name: "frontend_app",
-        type: "confirm",
-        default: false,
-      },
-    ];
-  }
-
-  getBackendPrompts(): any[] {
-    return [
-      {
-        message: "Would you like to create backend application? (recommended)",
-        name: "backend_app",
-        type: "confirm",
-        default: false,
       },
     ];
   }

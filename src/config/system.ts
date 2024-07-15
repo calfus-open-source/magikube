@@ -56,6 +56,19 @@ class SystemConfig {
         "ebs_volume_size": "100",
         "ebs_volume_type": "gp2",
     };
+
+    private nextAppConfig: any = {
+        'next_app_name': "my-next-app"
+    }
+
+    private nodeAppConfig: any = {
+        "node_app_name": "my-node-app"
+    }
+
+    private reactAppConfig: any = {
+        "react_app_name": "my-react-app"
+    }
+
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
@@ -130,6 +143,9 @@ class SystemConfig {
             ...this.workerSystemConfig,
             ...this.kubernetesSystemConfig,
             ...this.eksNodeGroupSystemConfig,
+            ...this.nextAppConfig,
+            ...this.nodeAppConfig,
+            ...this.reactAppConfig
         }, null, 4);
         fs.writeFileSync(path, data);
     }

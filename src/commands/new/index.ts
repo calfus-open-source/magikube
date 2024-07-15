@@ -9,6 +9,7 @@ import SystemConfig from '../../config/system.js';
 import fs from 'fs';
 import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
+import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 
 export default class CreateProject extends BaseCommand {
@@ -71,63 +72,34 @@ Creating a new magikube project named 'sample' in the current directory
         }
       }
 
-      for (const prompt of promptGenerator.getFrontendPrompts()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
-      for (const prompt of promptGenerator.getBackendPrompts()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
-
-      // After cluster setups are done
-      if (responses['frontend_app'] == true || responses['backend_app'] == true) {
-        const dir = `${process.cwd()}/../magikube-templates`;
-        if (!fs.existsSync(dir)) {
-          execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
-              cwd: `${process.cwd()}/..`,
-              stdio: 'inherit'
-          });
-        }
-        execSync('npm run copy-app-templates', {
-          cwd: `${process.cwd()}`,
-          stdio: 'inherit'
+      const dir = `${process.cwd()}/../magikube-templates`;
+      if (!fs.existsSync(dir)) {
+        execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
+            cwd: `${process.cwd()}/..`,
+            stdio: 'inherit'
         });
+      }
+      const copyTemplateResult = execSync('npm run copy-app-templates', {
+        cwd: `${process.cwd()}`,
+        stdio: 'pipe'
+      });
+      AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
 
-        for (const prompt of promptGenerator.getGitUserName()) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
+      for (const prompt of promptGenerator.getGitUserName()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
       }
 
       // Asking for the frontend and backend prompts
-      if(responses['frontend_app'] == true) {
-        for (const prompt of promptGenerator.getFrontendApplicationType()) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
-        for (const prompt of promptGenerator.getFrontendAppName()) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
-        for (const prompt of promptGenerator.getAppRouterPrompts()) {
-          const resp = await inquirer.prompt(prompt);
-          appRouter = resp['app_router'];
-          AppLogger.debug(`App router type is => ${appRouter}` );
-        }
-      } 
-
-      if(responses['backend_app'] == true) {
-        for (const prompt of promptGenerator.getBackendApplicationType()) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
-        for (const prompt of promptGenerator.getBackendAppName()) {
-          const resp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...resp };
-        }
+      for (const prompt of promptGenerator.getFrontendApplicationType()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
       }
-    }
+      for (const prompt of promptGenerator.getBackendApplicationType()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
 
     AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
@@ -154,12 +126,18 @@ Creating a new magikube project named 'sample' in the current directory
         terraform?.stopSSHProcess();
       } 
 
+      let command: BaseCommand | undefined;
+      const createApp = new CreateApplication(command as BaseCommand, {})
       // Running the actual app setups
+      const projectConfig = SystemConfig.getInstance().getConfig();
       if (responses['backend_app_type'] === 'node-express') {
-        terraform?.createNodeExpressApp(responses);
+        createApp?.createNodeExpressApp(projectConfig);
       } 
       if (responses['frontend_app_type'] === 'next') {
-        terraform?.createNextApp(appRouter, responses);
+        createApp?.createNextApp(projectConfig);
+      }
+      if (responses['frontend_app_type'] === 'react') {
+        createApp?.createReactApp(projectConfig);
       }
     }
   }
