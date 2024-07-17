@@ -84,11 +84,6 @@ Creating a new magikube project named 'sample' in the current directory
         stdio: 'pipe'
       });
       AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
-
-      for (const prompt of promptGenerator.getGitUserName()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
       }
 
       // Asking for the frontend and backend prompts

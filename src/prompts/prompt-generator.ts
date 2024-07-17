@@ -59,7 +59,7 @@ const awsPrompts: any[] = [
     name: "source_code_repository",
     type: "list",
     choices: [
-      // VersionControl.CODECOMMIT,
+      VersionControl.CODECOMMIT,
       VersionControl.GITHUB,
       // VersionControl.BITBUCKET,
     ],
@@ -113,6 +113,14 @@ const githubPrompts: any[] = [
       process.env.GITHUB_ACCESS_TOKEN ||
       SystemConfig.getInstance().getConfig().github_access_token,
   },
+  {
+    type: 'input',
+    name: 'git_user_name',
+    message: 'What is your git user name?',
+    default:
+      process.env.GIT_USER_NAME ||
+      SystemConfig.getInstance().getConfig().git_user_name,
+  }
 ];
 
 enum ApplicationType {
@@ -202,17 +210,6 @@ export default class PromptGenerator {
         message: "Select a backend application type:",
         name: "backend_app_type",
         type: "list",
-      },
-    ];
-  }
-
-  getGitUserName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'git_user_name',
-        message: 'What is your git user name?',
-        default: '',
       },
     ];
   }
