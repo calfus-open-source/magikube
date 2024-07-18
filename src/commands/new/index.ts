@@ -11,6 +11,9 @@ import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
 import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
+import ServiceUtils from '../../core/utils/service-utils.js';
+import TerraformUtils from '../../core/utils/terraform-utils.js';
+import AnsibleUtils from '../../core/utils/ansible-utils.js';
 
 export default class CreateProject extends BaseCommand {
   static args = {
@@ -38,10 +41,10 @@ Creating a new magikube project named 'sample' in the current directory
       "dryrun": flags.dryrun || false,
     };    
 
+// ---------------------------------------PROMPTS-------------------------------------------
     const promptGenerator = new PromptGenerator();
     const credentialsPrompts = new CredentialsPrompts();
 
-    let appRouter;
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);
       responses = { ...responses, ...resp };
@@ -55,7 +58,7 @@ Creating a new magikube project named 'sample' in the current directory
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };        
       }
-      credentialsPrompts.saveCredentials(responses)
+      credentialsPrompts.saveCredentials(responses);
 
       for (const prompt of promptGenerator.getVersionControlPrompts(responses['source_code_repository'])) {
         const resp = await inquirer.prompt(prompt);
@@ -101,11 +104,17 @@ Creating a new magikube project named 'sample' in the current directory
         responses = { ...responses, ...resp };
       }
 
+// ---------------------------------------END OF PROMPTS-------------------------------------------
     AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
+    // Consolidating the configuration of the project
     SystemConfig.getInstance().mergeConfigs(responses);
 
     // Get the project name from the command line arguments
     const projectName = args.name;
+    const serviceUtils = new ServiceUtils(this, this.config);
+    const terraformUtils = new TerraformUtils();
+    const ansibleUtils = new AnsibleUtils(this, this.config);
+
     const terraform = await TerraformProject.getProject(this);
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
@@ -114,30 +123,21 @@ Creating a new magikube project named 'sample' in the current directory
       }
       // Delay of 15 seconds to allow the user to review the terraform files
       await new Promise(resolve => setTimeout(resolve, 15000));
-      await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
+      await terraformUtils?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
       if (responses['cluster_type'] === 'k8s') {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
-        await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
-        terraform?.startSSHProcess();
-        const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
-        await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
-        await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
-        terraform?.stopSSHProcess();
+        await terraform.k8sPreProcessing(ansibleUtils, terraformUtils, responses, projectName);
       } 
 
-      let command: BaseCommand | undefined;
-      const createApp = new CreateApplication(command as BaseCommand, {})
       // Running the actual app setups
       const projectConfig = SystemConfig.getInstance().getConfig();
       if (responses['backend_app_type'] === 'node-express') {
-        createApp?.createNodeExpressApp(projectConfig);
+        serviceUtils?.createNodeExpressApp(responses);
       } 
       if (responses['frontend_app_type'] === 'next') {
-        createApp?.createNextApp(projectConfig);
+        serviceUtils?.createNextApp(responses);
       }
       if (responses['frontend_app_type'] === 'react') {
-        createApp?.createReactApp(projectConfig);
+        serviceUtils?.createReactApp(projectConfig);
       }
     }
   }

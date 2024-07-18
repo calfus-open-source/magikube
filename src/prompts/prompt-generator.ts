@@ -191,6 +191,21 @@ export default class PromptGenerator {
     ];
   }
 
+  getApplicationType(): any[] {
+    return [
+      {
+        choices: [
+          'Backend',
+          'Frontend',
+        ],
+        message: "Select the application type:",
+        name: "application_type",
+        type: "list",
+      },
+    ];
+
+  }
+
   getBackendApplicationType(): any[] {
     return [
       {

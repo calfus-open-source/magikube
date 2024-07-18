@@ -4,6 +4,9 @@ import { dirname, join } from 'path';
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 import TerraformProject from './terraform-project.js';
+import TerraformUtils from './utils/terraform-utils.js';
+import AnsibleUtils from './utils/ansible-utils.js';
+import ServiceUtils from './utils/service-utils.js';
 import { AppLogger } from '../logger/appLogger.js';
 
 export default abstract class BaseProject {    
@@ -11,10 +14,16 @@ export default abstract class BaseProject {
     public command: BaseCommand;
     protected engine = new Liquid();
     protected projectPath: string = '';
-    
+    protected terraformUtils: TerraformUtils;
+    // protected ansibleUtils: AnsibleUtils;
+    // protected serviceUtils: ServiceUtils;
+
     constructor(command: BaseCommand, config: any) {
         this.config = config;
         this.command = command;
+        this.terraformUtils = new TerraformUtils();
+        // this.ansibleUtils = new AnsibleUtils(this.command, this.config);
+        // this.serviceUtils = new ServiceUtils(this.command, this.config);
     }
 
     async destroyProject(name: string, path: string): Promise<void> {
@@ -33,13 +42,13 @@ export default abstract class BaseProject {
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            await terraform?.runTerraformInit(this.projectPath+'/k8s_config', `../${this.config.environment}-config.tfvars`);
-            terraform?.startSSHProcess();
-            // Destroy the ingress and other helm modules
-            await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `../terraform.tfvars`);
-            terraform?.stopSSHProcess();
+            await this.terraformUtils.runTerraformInit(this.projectPath+'/k8s_config', `../${this.config.environment}-config.tfvars`);
+            // await this.ansibleUtils.startSSHProcess();
+            // // Destroy the ingress and other helm modules
+            // await this.terraformUtils?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `../terraform.tfvars`);
+            // this.ansibleUtils?.stopSSHProcess();
         }
-        await terraform?.runTerraformDestroy(this.projectPath);
+        await this.terraformUtils?.runTerraformDestroy(this.projectPath);
     }
 
     async deleteFolder(): Promise<void> {
