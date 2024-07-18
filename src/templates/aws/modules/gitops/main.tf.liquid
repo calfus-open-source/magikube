@@ -66,20 +66,9 @@ resource "aws_iam_user_ssh_key" "user" {
   public_key = tls_private_key.gitops_ssh_key.public_key_openssh
 }
 
-resource "aws_codecommit_repository" "gitops_codecommit_frontend" {
-  repository_name = "${var.frontend_repo_codecommit}"
-  description     = "CodeCommit repository for ${var.frontend_repo_codecommit}"
-  tags = {
-    "product"        = var.name
-    "environment"    = var.environment
-    "role"           = "cicd"
-    "terraform"      = "true"
-  }
-}
-
-resource "aws_codecommit_repository" "gitops_codecommit_backend" {
-  repository_name = "${var.backend_repo_codecommit}"
-  description     = "CodeCommit repository for ${var.backend_repo_codecommit}"
+resource "aws_codecommit_repository" "gitops_codecommit" {
+  repository_name = "${var.repository_name}"
+  description     = "CodeCommit repository for ${var.repository_name}"
   tags = {
     "product"        = var.name
     "environment"    = var.environment
@@ -96,19 +85,10 @@ output "gitops_user_private_key" {
   value = tls_private_key.gitops_ssh_key.private_key_pem
 }
 
-output "frontend_repo_url_ssh" {
-  value = aws_codecommit_repository.gitops_codecommit_frontend.clone_url_ssh
+output "repo_url_ssh" {
+  value = aws_codecommit_repository.gitops_codecommit.clone_url_ssh
 }
 
-output "frontend_repo_url_http" {
-  value = aws_codecommit_repository.gitops_codecommit_frontend.clone_url_http
+output "repo_url_http" {
+  value = aws_codecommit_repository.gitops_codecommit.clone_url_http
 }
-
-output "backend_repo_url_ssh" {
-  value = aws_codecommit_repository.gitops_codecommit_backend.clone_url_ssh
-}
-
-output "backend_repo_url_http" {
-  value = aws_codecommit_repository.gitops_codecommit_backend.clone_url_http
-}
-

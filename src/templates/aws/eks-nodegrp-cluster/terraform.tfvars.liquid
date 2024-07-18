@@ -10,8 +10,7 @@ github_access_token = "{{ github_access_token }}"
 github_owner = "{{ github_owner }}"
 {% endif %}
 {% if source_code_repository == 'codecommit' %}
-frontend_repo_codecommit = "{{ frontend_repo_codecommit }}"
-backend_repo_codecommit = "{{ backend_repo_codecommit }}"
+repository_names = ["{{ frontend_repo_codecommit }}", "{{ backend_repo_codecommit }}"]
 {% endif %}
 {% if domain %}
 domain_name = "{{ domain }}"

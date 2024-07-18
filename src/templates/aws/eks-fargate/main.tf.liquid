@@ -52,11 +52,19 @@ module "gitops" {
 {% endif %} {% endcomment %}
 
 {% if source_code_repository == 'codecommit' %}
-module "gitops" {
+locals {
+  repositories = [
+    for repo_name in var.repository_names : {
+      repository_name = repo_name
+      description     = "Repository for ${repo_name}"
+    }
+  ]
+}
+module "codecommit_repo" {
     source = "./modules/gitops"
+    count = length(local.repositories)
     name = "${ var.project_name }"
-    frontend_repo_codecommit = "${ var.frontend_repo_codecommit }"
-    backend_repo_codecommit = "${ var.backend_repo_codecommit }"
+    repository_name = local.repositories[count.index].repository_name
     environment = "${ var.environment }"
 }
 {% endif %}
