@@ -130,6 +130,8 @@ Creating a new magikube project named 'sample' in the current directory
       const createApp = new CreateApplication(command as BaseCommand, {})
       // Running the actual app setups
       const projectConfig = SystemConfig.getInstance().getConfig();
+      await createApp.setupKeyCloak(projectConfig);
+      await createApp.setupAuthenticationService(projectConfig);
       if (responses['backend_app_type'] === 'node-express') {
         createApp?.createNodeExpressApp(projectConfig);
       } 

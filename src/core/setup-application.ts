@@ -114,6 +114,59 @@ export default class CreateApplication extends BaseProject {
         }
     }
     
+    async setupKeyCloak(projectConfig: any) {
+        try {
+            const appName = 'keycloak'
+            const { project_name: projectName } = projectConfig;
+            const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh', 'docker-compose.yml', 'deployment.yml', 'Dockerfile']
+            for (const file of keyCloakSetuopFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak/${file}.liquid`, `./${projectName}/${appName}`);
+            }
+            // './config.sh'
+            const commands = ['docker-compose build'];
+            commands.forEach(command => {
+                execSync(command, {
+                    cwd: `${process.cwd()}/${projectName}/${appName}`,
+                    stdio: 'inherit'
+                });
+            })
+        } catch (error) {
+            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
+        }
+    }
+
+    async setupAuthenticationService(projectConfig: any) {
+        try {
+            const appName = 'auth-service'
+            const { project_name: projectName } = projectConfig;
+            const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts'];
+            const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
+            const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];            
+            for (const file of keyCloakBaseFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}`);
+            }
+            for (const file of keyCloakHealthFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}/src/health`);
+            }
+            for (const file of keyCloakFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}/src/keycloak`);
+            }
+            execSync('npm install', {
+                cwd: `${process.cwd()}/${projectName}/${appName}`,
+                stdio: 'inherit'
+            });
+            // const commands = ['docker-compose build', 'docker-compose up -d', './config.sh'];
+            // commands.forEach(command => {
+            //     execSync(command, {
+            //         cwd: `${process.cwd()}/${projectName}/${appName}`,
+            //         stdio: 'inherit'
+            //     });
+            // })
+        } catch (error) {
+            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
+        }
+    }
+
     async setupRepo(appName: string, userName: string, token: string, orgName: string, projectName: string) {
         let repoSetupError: boolean = false;
             const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
