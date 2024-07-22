@@ -59,9 +59,9 @@ const awsPrompts: any[] = [
     name: "source_code_repository",
     type: "list",
     choices: [
-      VersionControl.CODECOMMIT,
       VersionControl.GITHUB,
-      // VersionControl.BITBUCKET,
+      VersionControl.CODECOMMIT,
+      VersionControl.BITBUCKET,
     ],
     default:
       VersionControl.GITHUB ||
@@ -182,7 +182,17 @@ export default class PromptGenerator {
   }
 
   getVersionControlPrompts(versionControl: string): any[] {
-    return versionControl === VersionControl.GITHUB ? githubPrompts : [];
+    if (versionControl === VersionControl.GITHUB) {
+      return githubPrompts;
+    }
+    else if (versionControl === VersionControl.CODECOMMIT) {
+      return [];
+    }
+    else {
+      // Handle unknown cloud providers or invalid input
+      console.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
+      process.exit(1);
+    }
   }
 
   getFrontendApplicationType(): any[] {

@@ -40,3 +40,10 @@ variable "github_owner" {
     description = "The github owner"
 }
 {% endif %}
+
+{% if source_code_repository == 'codecommit' %}
+ variable "appType" {
+   description = "List of app names"
+   type        = list(string)
+ }
+ {% endif %}

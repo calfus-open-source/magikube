@@ -1,6 +1,7 @@
 import BaseCommand from "../../commands/base.js";
 import gitOpsProject from "../gitops/common-gitops.js";
 import AWSProject from "./aws-project.js";
+import repositoryProject from "../code-repository/common-repository.js";
 
 export default class EKSFargateProject extends AWSProject {
   private path:string | undefined
@@ -16,6 +17,7 @@ export default class EKSFargateProject extends AWSProject {
   async createMainFile(): Promise<void> {
     let command: BaseCommand | undefined;
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
+    const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     
     this.createFile("main.tf", "../templates/aws/eks-fargate/main.tf.liquid");
     this.createFile(
@@ -34,6 +36,7 @@ export default class EKSFargateProject extends AWSProject {
     this.createCommon();
     this.createEKS();
     gitOpsInstance.createGitOps(this.path, this.name);
+    repositoryInstance.createrepository(this.path, this.name);
   }
 
   async createEKS(): Promise<void> {

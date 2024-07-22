@@ -20,5 +20,5 @@ export enum Colours {
 export enum VersionControl {
   GITHUB = "github",
   CODECOMMIT = "codecommit",
-  // BITBUCKET = "bitbucket",
+  BITBUCKET = "bitbucket",
 }

@@ -58,6 +58,23 @@ module "gitops" {
     name = "${ var.project_name }"
     environment = "${ var.environment }"
 }
+
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for ${repo_name}"
+     }
+   ]
+ }
+ module "codecommit_repo" {
+     source = "./modules/code-repository"
+     count = length(local.repositories)
+     name = "${ var.project_name }"
+     appType = local.repositories[count.index].appType
+     environment = "${ var.environment }"
+ }
+
 {% endif %}
 
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
