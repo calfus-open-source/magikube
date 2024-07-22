@@ -113,6 +113,14 @@ const githubPrompts: any[] = [
       process.env.GITHUB_ACCESS_TOKEN ||
       SystemConfig.getInstance().getConfig().github_access_token,
   },
+  {
+    type: 'input',
+    name: 'git_user_name',
+    message: 'What is your git user name?',
+    default:
+      process.env.GIT_USER_NAME ||
+      SystemConfig.getInstance().getConfig().git_user_name,
+  }
 ];
 
 const codeCommitPrompts: any[] = [
@@ -194,7 +202,7 @@ export default class PromptGenerator {
       return githubPrompts;
     }
     else if (versionControl === VersionControl.CODECOMMIT) {
-      return codeCommitPrompts;
+      return [];
     }
     else {
       // Handle unknown cloud providers or invalid input

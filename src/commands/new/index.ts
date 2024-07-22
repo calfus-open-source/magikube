@@ -11,6 +11,7 @@ import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
 import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
+import { ConfigObject } from '../../core/interface.js';
 
 export default class CreateProject extends BaseCommand {
   static args = {
@@ -84,11 +85,6 @@ Creating a new magikube project named 'sample' in the current directory
         stdio: 'pipe'
       });
       AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
-
-      for (const prompt of promptGenerator.getGitUserName()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
       }
 
       // Asking for the frontend and backend prompts
@@ -126,18 +122,30 @@ Creating a new magikube project named 'sample' in the current directory
         terraform?.stopSSHProcess();
       } 
 
-      let command: BaseCommand | undefined;
-      const createApp = new CreateApplication(command as BaseCommand, {})
-      // Running the actual app setups
       const projectConfig = SystemConfig.getInstance().getConfig();
-      if (responses['backend_app_type'] === 'node-express') {
-        createApp?.createNodeExpressApp(projectConfig);
-      } 
-      if (responses['frontend_app_type'] === 'next') {
-        createApp?.createNextApp(projectConfig);
+      let command: BaseCommand | undefined;
+      const createApp = new CreateApplication(command as BaseCommand, projectConfig)
+      // Running the actual app setups
+      const  { github_access_token: token, git_user_name: userName, github_owner: orgName, 
+        source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey, aws_secret_access_key: awsSecretKey} = projectConfig;
+      
+      const configObject: ConfigObject = {
+        token,
+        userName,
+        orgName,
+        sourceCodeRepo,
+        region,
+        projectName,
+        awsAccessKey,
+        awsSecretKey
+      };
+      
+      if (responses['backend_app_type']) {
+        await createApp.handleAppCreation(responses['backend_app_type'], configObject);
       }
-      if (responses['frontend_app_type'] === 'react') {
-        createApp?.createReactApp(projectConfig);
+      
+      if (responses['frontend_app_type']) {
+        await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
       }
     }
   }

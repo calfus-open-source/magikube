@@ -69,6 +69,11 @@ class SystemConfig {
         "react_app_name": "my-react-app"
     }
 
+    private repoNameConfig: any = {
+        "frontend_repo_codecommit": "my-app-ui",
+        "backend_repo_codecommit": "my-app-backend",
+    }
+
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
@@ -145,7 +150,8 @@ class SystemConfig {
             ...this.eksNodeGroupSystemConfig,
             ...this.nextAppConfig,
             ...this.nodeAppConfig,
-            ...this.reactAppConfig
+            ...this.reactAppConfig,
+            ...this.repoNameConfig
         }, null, 4);
         fs.writeFileSync(path, data);
     }
