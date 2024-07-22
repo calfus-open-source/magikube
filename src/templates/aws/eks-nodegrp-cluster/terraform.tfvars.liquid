@@ -15,3 +15,6 @@ repository_names = ["{{ frontend_repo_codecommit }}", "{{ backend_repo_codecommi
 {% if domain %}
 domain_name = "{{ domain }}"
 {% endif %}
+{% if source_code_repository == 'codecommit' %}
+ appType = ["{{ frontend_app_type }}", "{{ backend_app_type }}"]
+ {% endif %}

@@ -40,6 +40,7 @@ module "acm" {
     route53_zoneid = module.route53.zone_id
 } 
 {% endif %}
+{% endcomment %}
 
 {% if source_code_repository == 'github' %}
 module "gitops" {
@@ -50,24 +51,29 @@ module "gitops" {
     github_owner = "${ var.github_owner }"
 }
 {% endif %}
- {% endcomment %}
 
 {% if source_code_repository == 'codecommit' %}
-locals {
-  repositories = [
-    for repo_name in var.repository_names : {
-      repository_name = repo_name
-      description     = "Repository for ${repo_name}"
-    }
-  ]
-}
-module "codecommit_repo" {
+module "gitops" {
     source = "./modules/gitops"
-    count = length(local.repositories)
     name = "${ var.project_name }"
-    repository_name = local.repositories[count.index].repository_name
     environment = "${ var.environment }"
 }
+
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for ${repo_name}"
+     }
+   ]
+ }
+ module "codecommit_repo" {
+     source = "./modules/code-repository"
+     count = length(local.repositories)
+     name = "${ var.project_name }"
+     appType = local.repositories[count.index].appType
+     environment = "${ var.environment }"
+ }
 {% endif %}
 
 data "aws_eks_cluster_auth" "eks_cluster_auth" {

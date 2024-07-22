@@ -239,15 +239,4 @@ export default class PromptGenerator {
       },
     ];
   }
-
-  getGitUserName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'git_user_name',
-        message: 'What is your git user name?',
-        default: '',
-      },
-    ];
-  }
 }

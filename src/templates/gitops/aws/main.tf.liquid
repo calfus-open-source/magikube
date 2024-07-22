@@ -1,0 +1,94 @@
+resource "tls_private_key" "gitops_ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_iam_policy" "gitops_user_policy" {
+  name        = "${var.name}-${var.environment}-gitops-policy"
+  description = "Grant access to codecommit to gitops user"
+
+  # Specify the policy document using JSON syntax
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "iam:*"
+        ],
+        "Resource": "arn:aws:iam::*:user/$${aws:username}"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "iam:GetAccountSummary",
+          "iam:ListAccountAliases"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": "codecommit:*",
+        "Resource": "*"
+      },
+      {
+        "Effect": "Deny",
+        "Resource": "*",
+        "Action": [
+          "codecommit:CreateRepository",
+          "codecommit:DeleteRepository"
+        ]
+      }
+    ]  
+}
+EOF
+}
+
+resource "aws_iam_user" "gitops_user" {
+  name = "${var.name}.${var.environment}.gitops"
+  tags = {
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "cicd"
+    "terraform"      = "true"    
+  }  
+}
+
+resource "aws_iam_user_policy_attachment" "gitops_user_policy" {
+  user       = aws_iam_user.gitops_user.name
+  policy_arn = aws_iam_policy.gitops_user_policy.arn
+}
+
+resource "aws_iam_user_ssh_key" "user" {
+  username   = aws_iam_user.gitops_user.name
+  encoding   = "SSH"
+  public_key = tls_private_key.gitops_ssh_key.public_key_openssh
+}
+
+resource "aws_codecommit_repository" "gitops_codecommit" {
+  repository_name = "${var.name}.${var.environment}.gitops"
+  description     = "Git Ops repository for ${var.name}, Environment: ${var.environment}"
+  tags = {
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "cicd"
+    "terraform"      = "true"    
+  }  
+}
+
+output "gitops_user_ssh_key_id" {
+  value = aws_iam_user_ssh_key.user.ssh_public_key_id
+}
+
+output "gitops_user_private_key" {
+  value = tls_private_key.gitops_ssh_key.private_key_pem
+}
+
+output "gitops_repo_url_ssh" {
+  value = aws_codecommit_repository.gitops_codecommit.clone_url_ssh
+}
+
+output "gitops_repo_url_http" {
+  value = aws_codecommit_repository.gitops_codecommit.clone_url_http
+}

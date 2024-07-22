@@ -31,8 +31,8 @@ variable "github_access" {
 }
 
 {% if source_code_repository == 'codecommit' %}
-variable "repository_names" {
-  description = "List of repository names"
-  type        = list(string)
-}
-{% endif %}
+ variable "appType" {
+   description = "List of app names"
+   type        = list(string)
+ }
+ {% endif %}
