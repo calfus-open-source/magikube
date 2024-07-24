@@ -19,7 +19,7 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
 
-    this.createFile("main.tf", "../templates/aws/eks-nodegrp-cluster/main.tf.liquid");
+    this.createFile("main.tf", "../templates/aws/eks-nodegroup/main.tf.liquid");
     this.createFile(
       "terraform.tfvars",
       "../templates/aws/eks-nodegroup/terraform.tfvars.liquid"
