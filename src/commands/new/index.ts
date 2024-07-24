@@ -51,12 +51,15 @@ Creating a new magikube project named 'sample' in the current directory
         responses = { ...responses, ...resp };
       }
 
-      for( const prompt of credentialsPrompts.getCredentialsPrompts(resp['cloud_provider'], responses)) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };        
+      const prompts = credentialsPrompts.getCredentialsPrompts(resp['cloud_provider'], responses);
+      if (prompts.length > 0) {
+        for( const prompt of prompts) {
+          const resp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...resp };        
+        }
+        credentialsPrompts.saveCredentials(responses);
       }
-      credentialsPrompts.saveCredentials(responses)
-
+       
       for (const prompt of promptGenerator.getVersionControlPrompts(responses['source_code_repository'])) {
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
