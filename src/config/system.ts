@@ -131,7 +131,7 @@ class SystemConfig {
         const data = JSON.stringify({
             "terraform_version": "1.8.2",
             "github_provider_version": "~> 6.0",
-            "aws_provider_version": "5.57.0",
+            "aws_provider_version": "~> 5.58.0",
             "aws_vpc_module_version": "5.5.1",
             "aws_eks_module_version": "~> 20.0",
             "aws_eks_cluster_version": "1.30",
