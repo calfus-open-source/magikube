@@ -11,7 +11,7 @@ const awsCreds: any[] = [
       type: "input",
       default:
         process.env.AWS_ACCESS_KEY_ID ||
-        SystemConfig.getInstance().getConfig().aws_secret_access_key,  
+        SystemConfig.getInstance().getConfig().aws_access_key_id,  
     },
     {
       message: "Enter AWS Secret Access Key: ",
