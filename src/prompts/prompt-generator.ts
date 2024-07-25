@@ -59,9 +59,9 @@ const awsPrompts: any[] = [
     name: "source_code_repository",
     type: "list",
     choices: [
-      // VersionControl.CODECOMMIT,
       VersionControl.GITHUB,
-      // VersionControl.BITBUCKET,
+      VersionControl.CODECOMMIT,
+      VersionControl.BITBUCKET,
     ],
     default:
       VersionControl.GITHUB ||
@@ -113,6 +113,14 @@ const githubPrompts: any[] = [
       process.env.GITHUB_ACCESS_TOKEN ||
       SystemConfig.getInstance().getConfig().github_access_token,
   },
+  {
+    type: 'input',
+    name: 'git_user_name',
+    message: 'What is your git user name?',
+    default:
+      process.env.GIT_USER_NAME ||
+      SystemConfig.getInstance().getConfig().git_user_name,
+  }
 ];
 
 enum ApplicationType {
@@ -174,7 +182,17 @@ export default class PromptGenerator {
   }
 
   getVersionControlPrompts(versionControl: string): any[] {
-    return versionControl === VersionControl.GITHUB ? githubPrompts : [];
+    if (versionControl === VersionControl.GITHUB) {
+      return githubPrompts;
+    }
+    else if (versionControl === VersionControl.CODECOMMIT) {
+      return [];
+    }
+    else {
+      // Handle unknown cloud providers or invalid input
+      console.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
+      process.exit(1);
+    }
   }
 
   getFrontendApplicationType(): any[] {
@@ -202,17 +220,6 @@ export default class PromptGenerator {
         message: "Select a backend application type:",
         name: "backend_app_type",
         type: "list",
-      },
-    ];
-  }
-
-  getGitUserName(): any[] {
-    return [
-      {
-        type: 'input',
-        name: 'git_user_name',
-        message: 'What is your git user name?',
-        default: '',
       },
     ];
   }

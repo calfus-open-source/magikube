@@ -1,0 +1,18 @@
+resource "aws_codecommit_repository" "gitops_codecommit" {
+  repository_name = "${var.name}.${var.environment}.gitops"
+  description     = "Git Ops repository for ${var.name}, Environment: ${var.environment}"
+  tags = {
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "cicd"
+    "terraform"      = "true"    
+  }  
+}
+
+output "gitops_repo_url_ssh" {
+  value = aws_codecommit_repository.gitops_codecommit.clone_url_ssh
+}
+
+output "gitops_repo_url_http" {
+  value = aws_codecommit_repository.gitops_codecommit.clone_url_http
+}

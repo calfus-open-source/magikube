@@ -1,0 +1,18 @@
+resource "aws_codecommit_repository" "codecommit_repo" {
+  repository_name = "${var.name}-${var.appType}-app"
+  description     = "CodeCommit repository for ${var.appType}"
+  tags = {
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "cicd"
+    "terraform"      = "true"
+  }
+}
+
+output "repo_url_ssh" {
+  value = aws_codecommit_repository.codecommit_repo.clone_url_ssh
+}
+
+output "repo_url_http" {
+  value = aws_codecommit_repository.codecommit_repo.clone_url_http
+}
