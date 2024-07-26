@@ -145,7 +145,7 @@ class SystemConfig {
             ...this.eksNodeGroupSystemConfig,
             ...this.nextAppConfig,
             ...this.nodeAppConfig,
-            ...this.reactAppConfig,
+            ...this.reactAppConfig
         }, null, 4);
         fs.writeFileSync(path, data);
     }
