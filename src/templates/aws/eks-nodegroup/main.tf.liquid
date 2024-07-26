@@ -16,7 +16,7 @@ module "vpc" {
 }
 
 module "eks" {
-    source                  = "./modules/eks-nodegrp-cluster"
+    source                  = "./modules/eks-nodegroup"
     name                    = "${ var.project_name }"
     environment             = "${ var.environment }"
     vpc_id                  = module.vpc.id
