@@ -9,13 +9,13 @@ export class ManageRepository {
         let repoSetupError: boolean = false;
         const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
         const projectPath = `${process.cwd()}/${projectName}/${appName}`;
-        // const repoName = `${projectName}-${appType}-app`;
-        let repoName;
-        if(appType == 'node-express') {
-            repoName = 'my-app-backend';
-        } else {
-            repoName = 'my-app-ui';
-        }
+        const repoName = `${projectName}-${appType}-app`;
+        // let repoName;
+        // if(appType == 'node-express') {
+        //     repoName = 'my-app-backend';
+        // } else {
+        //     repoName = 'my-app-ui';
+        // }
         const execAndLog = (command: string, description: string): string => {
             try {
             const result = execCommand(command, projectPath);
@@ -38,7 +38,8 @@ export class ManageRepository {
             // remoteRepoUrl = `https://${accessKeyId}:${secretKeyId}@git-codecommit.${region}.amazonaws.com/v1/repos/${repoName}`;
             remoteRepoUrl = `https://${encodedUserName}:${encodedPassword}@git-codecommit.${region}.amazonaws.com/v1/repos/${repoName}`;
         } else if (sourceCodeRepo == "github") {
-            remoteRepoUrl = `https://github.com/${orgName}/${appName}.git`;
+            remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
+            // remoteRepoUrl = `https://github.com/${orgName}/${appName}.git`;
         }
 
         // Define commands and messages

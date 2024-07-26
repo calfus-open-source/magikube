@@ -55,13 +55,12 @@ export default class CreateApplication extends BaseProject {
             AppLogger.error(`Failed to create Node Express app: ${error}`, true);
             AppLogger.error(`Error occured, cleaning up the ${nodeAppName} directory...`, true);
                 fs.rmdirSync(`./${projectConfig.project_name}/${nodeAppName}`, { recursive: true });
-            // }
             return false;
         }
     }
     
     //create Next.js application
-    async createNextApp(projectConfig: any) {
+    createNextApp = async (projectConfig: any) => {
         let nextAppName;
         try {
             AppLogger.info('Creating next app!', true);
@@ -92,7 +91,7 @@ export default class CreateApplication extends BaseProject {
     }
 
     // create React application
-    async createReactApp(projectConfig: any){
+    createReactApp = async (projectConfig: any) => {
         let reactAppName;
         try {
             AppLogger.info('Creating react app!', true);
