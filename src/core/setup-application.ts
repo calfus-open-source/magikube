@@ -123,16 +123,25 @@ export default class CreateApplication extends BaseProject {
         }
     }
     
+    // Wrapper for app creation and repo setup
     async handleAppCreation(appType: string, configObject: ConfigObject) {
-        const projectConfig = SystemConfig.getInstance().getConfig();
-        const appConfig = this.appTypeMap[appType];
-        if (appConfig) {
-            configObject.appName = projectConfig[appConfig.appNameKey];
-            configObject.appType = projectConfig[appConfig.appTypeKey];
-            const appStatus = await appConfig.createAppFunction(configObject);
-            if (appStatus) {
-                ManageRepository.pushCode(configObject);
+        try {
+            const projectConfig = SystemConfig.getInstance().getConfig();
+            const appConfig = this.appTypeMap[appType];
+            if (appConfig) {
+                configObject.appName = projectConfig[appConfig.appNameKey];
+                configObject.appType = projectConfig[appConfig.appTypeKey];
+                const appStatus = await appConfig.createAppFunction(configObject);
+                // After app creation, repository setup initiates
+                if (appStatus) {
+                    const repoSetupError = await ManageRepository.pushCode(configObject);
+                    if (repoSetupError) {
+                        throw new Error('Repo Setup Error');
+                    }
+                }
             }
+        } catch (error) {
+            AppLogger.error('Error occured while setting up the repository', true)
         }
     }
     

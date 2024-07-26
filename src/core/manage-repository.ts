@@ -2,6 +2,8 @@ import { execSync } from "child_process";
 import { AppLogger } from "../logger/appLogger.js";
 import { ProgressBar } from "../logger/progressLogger.js";
 import { ConfigObject } from "./interface.js";
+import SystemConfig from "../config/system.js";
+import fs from 'fs-extra';
 
 export class ManageRepository {
     static async pushCode(configObject: ConfigObject) {
@@ -10,12 +12,7 @@ export class ManageRepository {
         const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
         const projectPath = `${process.cwd()}/${projectName}/${appName}`;
         const repoName = `${projectName}-${appType}-app`;
-        // let repoName;
-        // if(appType == 'node-express') {
-        //     repoName = 'my-app-backend';
-        // } else {
-        //     repoName = 'my-app-ui';
-        // }
+        // Function to execute command and log it
         const execAndLog = (command: string, description: string): string => {
             try {
             const result = execCommand(command, projectPath);
@@ -28,20 +25,17 @@ export class ManageRepository {
         };
         let remoteRepoUrl;
         if (sourceCodeRepo == "codecommit") {
-            // const accessKeyId = configObject?.awsAccessKey;
-            // const secretKeyId = configObject?.awsSecretKey;
-            const userName: string = '';
-            const password: string = '';
-            const encodedUserName = encodeURIComponent(userName || '');
-            const encodedPassword = encodeURIComponent(password || '');
-            // remoteRepoUrl = `https://git-codecommit.${region}.amazonaws.com/v1/repos/${repoName}`;
-            // remoteRepoUrl = `https://${accessKeyId}:${secretKeyId}@git-codecommit.${region}.amazonaws.com/v1/repos/${repoName}`;
+            // Accessing credentials and encoding them
+            const dotMagikubePath = `${process.cwd()}/${SystemConfig.getInstance().getConfig().project_name}/.magikube`;
+            const credentialsFileContent = fs.readFileSync(dotMagikubePath, 'utf8');
+            const credentials = JSON.parse(credentialsFileContent);
+            const encodedUserName = encodeURIComponent(credentials?.codecommit_git_username || '');
+            const encodedPassword = encodeURIComponent(credentials?.codecommit_git_password || '');
             remoteRepoUrl = `https://${encodedUserName}:${encodedPassword}@git-codecommit.${region}.amazonaws.com/v1/repos/${repoName}`;
         } else if (sourceCodeRepo == "github") {
+            // TODO: AFTER GIT REPO CODE MERGES, THIS CAN BE TESTED
             remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
-            // remoteRepoUrl = `https://github.com/${orgName}/${appName}.git`;
         }
-
         // Define commands and messages
         const commands = [
             { cmd: 'git init', message: 'Initializing Git repository...' },
