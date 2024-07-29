@@ -45,6 +45,11 @@ export default class CreateApplication extends BaseProject {
             for (const file of files) {
                 await this.createFile(file, `../magikube-templates/express/${file}.liquid`, `./${projectName}/${nodeAppName}`);
             }
+            await this.createFile('AppConfig.ts', `../magikube-templates/express/AppConfig.ts.liquid`, `./${projectName}/${nodeAppName}/src/config`)
+            await this.createFile('auth-guard.service.ts', `../magikube-templates/express/auth-guard.service.ts.liquid`, `./${projectName}/${nodeAppName}/src/middlewares`)
+            await this.createFile('auth-guard.ts', `../magikube-templates/express/auth-guard.ts.liquid`, `./${projectName}/${nodeAppName}/src/middlewares`)
+            await this.createFile('index.ts', `../magikube-templates/express/index.ts.liquid`, `./${projectName}/${nodeAppName}/src/routes`)
+            await this.createFile('protected.ts', `../magikube-templates/express/index.ts.liquid`, `./${projectName}/${nodeAppName}/src/routes`)
             execSync('npm install', {
                 cwd: `${process.cwd()}/${projectName}/${nodeAppName}`,
                 stdio: 'inherit'
@@ -66,8 +71,8 @@ export default class CreateApplication extends BaseProject {
             AppLogger.info('Creating next app!', true);
             const { appName: nextAppName, projectName} = projectConfig;
             const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json', 'deployment.yml'];
-            const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css'];
-            const dotFiles = ['gitignore', 'eslintrc.json']
+            const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
+            const dotFiles = ['gitignore', 'eslintrc.json', 'env.local']
             const files = [...commonFiles, ...appRouterFiles];
             for (const file of files) {
             const path = appRouterFiles.includes(file) ? `./${projectName}/${nextAppName}/app` : `./${projectName}/${nextAppName}`;
@@ -76,6 +81,7 @@ export default class CreateApplication extends BaseProject {
             for (const file of dotFiles) {
                 await this.createFile(`.${file}`, `../magikube-templates/next/${file}.liquid`, `./${projectName}/${nextAppName}`);
             }
+            await this.createFile(`page.tsx`, `../magikube-templates/next/callback.tsx.liquid`, `./${projectName}/${nextAppName}/app/callback`);
             execSync(`npm i`, {
                 cwd: `${process.cwd()}/${projectName}/${nextAppName}`,
                 stdio: 'inherit'
@@ -101,11 +107,15 @@ export default class CreateApplication extends BaseProject {
             for (const file of reactAppFile) {
                 await this.createFile(file, `../magikube-templates/react/${file}.liquid`, `./${projectName}/${reactAppName}/src`);
             }
+            const reactAuthFiles = ['AuthGuard.tsx', 'AuthenticationProvider.tsx', 'Callback.tsx']
+                  for (const file of reactAuthFiles) {
+                await this.createFile(file, `../magikube-templates/react/${file}.liquid`, `./${projectName}/${reactAppName}/src/components`);
+            }
             const reactCommonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'nginx.conf'];
             for (const file of reactCommonFiles) {
                 await this.createFile(file, `../magikube-templates/react/${file}.liquid`, `./${projectName}/${reactAppName}`);
             }
-            const dotFiles = ['gitignore', 'eslintrc.json']
+            const dotFiles = ['gitignore', 'eslintrc.json','env.local','env.local']
             for (const file of dotFiles) {
                 await this.createFile(`.${file}`, `../magikube-templates/react/${file}.liquid`, `./${projectName}/${reactAppName}`);
             }
@@ -120,6 +130,63 @@ export default class CreateApplication extends BaseProject {
             AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
             fs.rmdirSync(`./${projectConfig.project_name}/${reactAppName}`, { recursive: true });
             return false;
+        }
+    }
+
+    async setupKeyCloak(projectConfig: any) {
+        try {
+            const appName = 'keycloak'
+            const { project_name: projectName } = projectConfig;
+            const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh', 'docker-compose.yml', 'deployment.yml', 'Dockerfile']
+            const tmemeSetupFiles = ['login.ftl','theme.properties', 'error.ftl' ]
+            for (const file of keyCloakSetuopFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak/${file}.liquid`, `./${projectName}/${appName}`);
+            }
+            for (const file of tmemeSetupFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak/${file}.liquid`, `./${projectName}/${appName}/themes/magikube/login`)
+            }
+            const commands = ['docker-compose build'];
+            commands.forEach(command => {
+                execSync(command, {
+                    cwd: `${process.cwd()}/${projectName}/${appName}`,
+                    stdio: 'inherit'
+                });
+            })
+        } catch (error) {
+            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
+        }
+    }
+
+    async setupAuthenticationService(projectConfig: any) {
+        try {
+            const appName = 'auth-service'
+            const { project_name: projectName } = projectConfig;
+            const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts', 'main.ts'];
+            const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
+            const dotFiles = ['env.local', 'gitignore']
+            const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];   
+            const commonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'tsconfig.build.json', 'nest-cli.json' ]         
+            for (const file of keyCloakBaseFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}/src`);
+            }
+            for (const file of keyCloakHealthFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}/src/health`);
+            }
+             for (const file of commonFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}`);
+            }
+             for (const file of dotFiles) {
+                await this.createFile(`.${file}`, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}`);
+            }
+            for (const file of keyCloakFiles) {
+                await this.createFile(file, `../magikube-templates/keycloak-auth-service/${file}.liquid`, `./${projectName}/${appName}/src/keycloak`);
+            }
+            execSync('npm install', {
+                cwd: `${process.cwd()}/${projectName}/${appName}`,
+                stdio: 'inherit'
+            });
+        } catch (error) {
+            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
         }
     }
     
