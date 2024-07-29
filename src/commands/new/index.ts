@@ -142,7 +142,8 @@ Creating a new magikube project named 'sample' in the current directory
         awsAccessKey,
         awsSecretKey
       };
-      
+      await createApp.setupKeyCloak(projectConfig);
+      await createApp.setupAuthenticationService(projectConfig);
       if (responses['backend_app_type']) {
         await createApp.handleAppCreation(responses['backend_app_type'], configObject);
       }
