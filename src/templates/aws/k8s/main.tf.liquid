@@ -106,13 +106,22 @@ output "vpc_private_subnets" {
 }
 
 {% if source_code_repository == 'github' %}
-  module "gitops" {
+module "gitops" {
       source = "./modules/gitops"
       name = "${ var.project_name }"
       environment = "${ var.environment }"
       github_token = "${ var.github_access_token }"
       github_owner = "${ github_owner }"
-  }
+}
+
+module "github_repo" {
+     source = "./modules/code-repository"
+     name = "${ var.project_name }"
+     appType = "${ var.appType }"
+     environment = "${ var.environment }"
+     github_token = "${ var.github_access_token }"
+     github_owner = "${ var.github_owner }"
+ }
 {% endif %}
 
 {% if source_code_repository == 'codecommit' %}

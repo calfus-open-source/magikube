@@ -33,7 +33,6 @@ export class ManageRepository {
             const encodedPassword = encodeURIComponent(credentials?.codecommit_git_password || '');
             remoteRepoUrl = `https://${encodedUserName}:${encodedPassword}@git-codecommit.${region}.amazonaws.com/v1/repos/${repoName}`;
         } else if (sourceCodeRepo == "github") {
-            // TODO: AFTER GIT REPO CODE MERGES, THIS CAN BE TESTED
             remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
         }
         // Define commands and messages
