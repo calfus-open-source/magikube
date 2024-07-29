@@ -123,6 +123,22 @@ const githubPrompts: any[] = [
   }
 ];
 
+const codeCommitPrompts: any[] = [
+  {
+    message: "Enter Name for Frontend Repo: ",
+    name: "frontend_repo_codecommit",
+    type: "input",
+    default: "frontend_app"
+  },
+  {
+    message: "Enter Name for Backend Repo: ",
+    name: "backend_repo_codecommit",
+    type: "input",
+    default: "backend_app"
+  },
+];
+
+
 enum ApplicationType {
   REACT = "react",
   NEXT = "next",

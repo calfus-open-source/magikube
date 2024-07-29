@@ -1,0 +1,51 @@
+# Terraform script to add gitops user in github and create a repository for gitops in github
+# Compare this snippet from magikube/sample/modules/gitops/main.tf:
+
+provider "github" {
+  token = var.github_token
+  owner = var.github_owner
+}
+
+data "github_user" "current_user" {
+  username = ""
+}
+
+resource "github_team" "github_repo_team" {
+  count       = length(var.appType)
+  name        = "${var.appType[count.index]}-team"
+  description = "Git Ops team for repo : ${var.appType[count.index]}-app"
+}
+
+resource "github_team_membership" "github_repo_team_membership" {
+  count    = length(var.appType)
+  team_id  = github_team.github_repo_team[count.index].id
+  username = data.github_user.current_user.login
+  role     = "maintainer"
+}
+
+resource "github_team_repository" "github_team_repo" {
+  count      = length(var.appType)
+  team_id    = github_team.github_repo_team[count.index].id
+  repository = github_repository.github_repo[count.index].name
+  permission = "admin"
+}
+resource "github_repository" "github_repo" {
+  count       = length(var.appType)
+  name        = "${var.name}-${var.appType[count.index]}-app"
+  description = "Repository created with name : ${var.appType[count.index]}"
+  visibility  = "private"
+  has_issues  = false
+  has_projects = false
+  has_wiki    = false
+  auto_init   = false
+  topics = ["gitops", "terraform", "cicd"]
+}
+
+output "gitops_repository_url" {
+  value = github_repository.github_repo[*].html_url
+}
+
+output "gitops_repository_clone_url" {
+  value = github_repository.github_repo[*].git_clone_url
+}
+

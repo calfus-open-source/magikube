@@ -26,13 +26,17 @@ variable "source_code_repository" {
     description = "The source code repository"
 }
 
+{% if source_code_repository == 'github' %}
 variable "github_access_token" {
     description = "The github access"
 }
 
-{% if source_code_repository == 'codecommit' %}
- variable "appType" {
+variable "github_owner" {
+    description = "The github owner"
+}
+{% endif %}
+
+variable "appType" {
    description = "List of app names"
    type        = list(string)
  }
- {% endif %}
