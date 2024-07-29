@@ -11,3 +11,6 @@ github_owner = "{{ github_owner }}"
 {% if domain %}
 domain_name = "{{ domain }}"
 {% endif %}
+{% if source_code_repository == 'codecommit' %}
+ appType = ["{{ frontend_app_type }}", "{{ backend_app_type }}"]
+ {% endif %}

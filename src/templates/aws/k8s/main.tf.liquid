@@ -105,7 +105,7 @@ output "vpc_private_subnets" {
   value = module.vpc.private_subnets
 }
 
-{% comment %} {% if source_code_repository == 'github' %}
+{% if source_code_repository == 'github' %}
   module "gitops" {
       source = "./modules/gitops"
       name = "${ var.project_name }"
@@ -113,4 +113,28 @@ output "vpc_private_subnets" {
       github_token = "${ var.github_access_token }"
       github_owner = "${ github_owner }"
   }
-{% endif %} {% endcomment %}
+{% endif %}
+
+{% if source_code_repository == 'codecommit' %}
+module "gitops" {
+    source = "./modules/gitops"
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+}
+
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for ${repo_name}"
+     }
+   ]
+ }
+ module "codecommit_repo" {
+     source = "./modules/code-repository"
+     count = length(local.repositories)
+     name = "${ var.project_name }"
+     appType = local.repositories[count.index].appType
+     environment = "${ var.environment }"
+ }
+{% endif %}
