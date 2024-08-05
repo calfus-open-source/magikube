@@ -14,4 +14,5 @@ console.log(
 );
 
 
+console.log(`import.meta.url: ${import.meta.url}`)
 await execute({dir: import.meta.url})
