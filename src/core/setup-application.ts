@@ -36,22 +36,23 @@ export default class CreateApplication extends BaseProject {
         try {
             AppLogger.info('Creating node-express app!', true);
             const { appName: nodeAppName, projectName} = projectConfig;
-            await this.createFile('app.ts', '../magikube-templates/express/app.ts.liquid', `./${projectName}/${nodeAppName}/src`);
+            const path = process.cwd();
+            await this.createFile('app.ts', `${path}/dist/express/app.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src`,true);
             const dotFiles = ['gitignore', 'eslintrc.json'];
             for (const file of dotFiles){
-                await this.createFile(`.${file}`, `../magikube-templates/express/${file}.liquid`, `./${projectName}/${nodeAppName}`)
+                await this.createFile(`.${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true)
             }
             const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml', 'deployment.yml'];
             for (const file of files) {
-                await this.createFile(file, `../magikube-templates/express/${file}.liquid`, `./${projectName}/${nodeAppName}`);
+                await this.createFile(file, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true);
             }
-            await this.createFile('AppConfig.ts', `../magikube-templates/express/AppConfig.ts.liquid`, `./${projectName}/${nodeAppName}/src/config`)
-            await this.createFile('auth-guard.service.ts', `../magikube-templates/express/auth-guard.service.ts.liquid`, `./${projectName}/${nodeAppName}/src/middlewares`)
-            await this.createFile('auth-guard.ts', `../magikube-templates/express/auth-guard.ts.liquid`, `./${projectName}/${nodeAppName}/src/middlewares`)
-            await this.createFile('index.ts', `../magikube-templates/express/index.ts.liquid`, `./${projectName}/${nodeAppName}/src/routes`)
-            await this.createFile('protected.ts', `../magikube-templates/express/index.ts.liquid`, `./${projectName}/${nodeAppName}/src/routes`)
+            await this.createFile('AppConfig.ts', `${path}/dist/express/AppConfig.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/config`,true)
+            await this.createFile('auth-guard.service.ts', `${path}/dist/express/auth-guard.service.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
+            await this.createFile('auth-guard.ts', `${path}/dist/express/auth-guard.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
+            await this.createFile('index.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
+            await this.createFile('protected.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
             execSync('npm install', {
-                cwd: `${process.cwd()}/${projectName}/${nodeAppName}`,
+                cwd: `${path}/${projectName}/${nodeAppName}`,
                 stdio: 'inherit'
             });
             AppLogger.info('Node Express app created successfully.');
@@ -234,5 +235,10 @@ export default class CreateApplication extends BaseProject {
         } catch (error) {
             AppLogger.error(`Failed to delete repository: ${error}`, true);
         }
+    }
+
+
+    async MoveFiles(Dirname :string){
+        
     }
 }
