@@ -1,5 +1,6 @@
 import fs from 'fs';
 import UserConfig from './user.js';
+import { AppLogger } from '../logger/appLogger.js';
 
 class SystemConfig {
     private config: any = {};
@@ -69,10 +70,15 @@ class SystemConfig {
         "react_app_name": "my-react-app"
     }
 
-    static getInstance(): SystemConfig {
+    static getInstance(magikube_config: any = {}): SystemConfig  {
+
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
             SystemConfig._instance.init();
+        }
+
+        if (magikube_config && Object.keys(magikube_config).length > 0) {
+            SystemConfig._instance.mergeConfigs(magikube_config);
         }
 
         return SystemConfig._instance;
