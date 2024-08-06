@@ -90,23 +90,23 @@ export default class AWSProject extends BaseProject {
     }
 
     async createVpc(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/vpc/main.tf.liquid', './modules/vpc');
-        this.createFile('variables.tf', '../templates/aws/modules/vpc/variables.tf.liquid', './modules/vpc');
+        this.createFile('main.tf', `${this.templatePath}/aws/modules/vpc/main.tf.liquid', './modules/vpc`);
+        this.createFile('variables.tf', `${this.templatePath}/aws/modules/vpc/variables.tf.liquid', './modules/vpc`);
     }
     
     async createRoute53(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/route53/main.tf.liquid', './modules/route53');
-        this.createFile('variables.tf', '../templates/aws/modules/route53/variables.tf.liquid', './modules/route53');
+        this.createFile('main.tf', `${this.templatePath}/aws/modules/route53/main.tf.liquid', './modules/route53`);
+        this.createFile('variables.tf', `${this.templatePath}/aws/modules/route53/variables.tf.liquid', './modules/route53`);
     }
 
     async createIngressController(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/ingress-controller/main.tf.liquid', './modules/ingress-controller');
-        this.createFile('variables.tf', '../templates/aws/modules/ingress-controller/variables.tf.liquid', './modules/ingress-controller');
+        this.createFile('main.tf', `${this.templatePath}/aws/modules/ingress-controller/main.tf.liquid', './modules/ingress-controller`);
+        this.createFile('variables.tf', `${this.templatePath}/aws/modules/ingress-controller/variables.tf.liquid', './modules/ingress-controller`);
     }
 
     async createACM(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/acm/main.tf.liquid', './modules/acm');
-        this.createFile('variables.tf', '../templates/aws/modules/acm/variables.tf.liquid', './modules/acm');
+        this.createFile('main.tf', `${this.templatePath}/aws/modules/acm/main.tf.liquid', './modules/acm`);
+        this.createFile('variables.tf', `${this.templatePath}/aws/modules/acm/variables.tf.liquid', './modules/acm`);
     }
 
     // Function to start the SSH process in the background

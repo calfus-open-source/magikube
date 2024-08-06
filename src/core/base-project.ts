@@ -11,10 +11,12 @@ export default abstract class BaseProject {
     public command: BaseCommand;
     protected engine = new Liquid();
     protected projectPath: string = '';
-    
+    protected templatePath: string = '../templates';
+
     constructor(command: BaseCommand, config: any) {
         this.config = config;
         this.command = command;
+        this.templatePath = `${SystemConfig.getInstance().getConfig().magikube_root}/dist/templates` || '../templates';
     }
 
     async destroyProject(name: string, path: string): Promise<void> {
@@ -77,14 +79,14 @@ export default abstract class BaseProject {
 
     async createProviderFile(): Promise<void> {
         //create a providers.tf file in the path
-        await this.createFile('providers.tf', '../templates/common/providers.tf.liquid');
+        await this.createFile('providers.tf', `${this.templatePath}/common/providers.tf.liquid`);
     }
 
     async createFile(filename: string, templateFilename: string, folderName: string = '.'): Promise<void> {
         //create a file in the path
 
         AppLogger.debug(`Creating ${filename} file`);
-        const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
+        const templateFile = fs.readFileSync(templateFilename, 'utf8');
         const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
         const folderPath = join(this.projectPath, folderName);
         if (!fs.existsSync(folderPath)) {
@@ -95,12 +97,12 @@ export default abstract class BaseProject {
 
     async generateContent(templateFilename: string): Promise<any> {
         AppLogger.debug(`Creating content from ${templateFilename}`);
-        const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
+        const templateFile = fs.readFileSync(templateFilename, 'utf8');
         return await this.engine.parseAndRender(templateFile, { ...this.config } );
     }   
     
     async copyFolderAndRender(source: string, destination: string): Promise<void> {
-        const fullPath = join(new URL('.', import.meta.url).pathname, source);
+        const fullPath = source;
         const destFullPath = join(this.projectPath, destination);
         
         if (!fs.existsSync(fullPath)) {

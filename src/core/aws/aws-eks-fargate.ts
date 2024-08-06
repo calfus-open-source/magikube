@@ -19,18 +19,18 @@ export default class EKSFargateProject extends AWSProject {
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     
-    this.createFile("main.tf", "../templates/aws/eks-fargate/main.tf.liquid");
+    this.createFile("main.tf", `${this.templatePath}/aws/eks-fargate/main.tf.liquid`);
     this.createFile(
       "terraform.tfvars",
-      "../templates/aws/eks-fargate/terraform.tfvars.liquid"
+      `${this.templatePath}/aws/eks-fargate/terraform.tfvars.liquid`
     );
     this.createFile(
       "variables.tf",
-      "../templates/aws/eks-fargate/variables.tf.liquid"
+      `${this.templatePath}/aws/eks-fargate/variables.tf.liquid`
     );
     this.createFile(
       `${this.config.environment}-config.tfvars`,
-      "../templates/aws/eks-fargate/backend-config.tfvars.liquid"
+      `${this.templatePath}/aws/eks-fargate/backend-config.tfvars.liquid`
     );
 
     this.createCommon();
@@ -42,12 +42,12 @@ export default class EKSFargateProject extends AWSProject {
   async createEKS(): Promise<void> {
     this.createFile(
       "main.tf",
-      "../templates/aws/modules/eks-fargate/main.tf.liquid",
+      `${this.templatePath}/aws/modules/eks-fargate/main.tf.liquid`,
       "./modules/eks-fargate"
     );
     this.createFile(
       "variables.tf",
-      "../templates/aws/modules/eks-fargate/variables.tf.liquid",
+      `${this.templatePath}/aws/modules/eks-fargate/variables.tf.liquid`,
       "./modules/eks-fargate"
     );
   }

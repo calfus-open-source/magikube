@@ -74,18 +74,24 @@ Creating a new magikube project named 'sample' in the current directory
         }
       }
 
-      const dir = `${process.cwd()}/../magikube-templates`;
-      if (!fs.existsSync(dir)) {
+      const templatesDir = SystemConfig.getInstance().getConfig().magikube_cache || `${process.cwd()}/..`;
+      if (!fs.existsSync(`${templatesDir}/magikube-templates`)) {
         execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
-            cwd: `${process.cwd()}/..`,
+            cwd: `${templatesDir}`,
+            stdio: 'inherit'
+        });
+      } else {
+        execSync('git pull', {
+            cwd: `${templatesDir}/magikube-templates`,
             stdio: 'inherit'
         });
       }
-      const copyTemplateResult = execSync('npm run copy-app-templates', {
-        cwd: `${process.cwd()}`,
-        stdio: 'pipe'
-      });
-      AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
+
+      // const copyTemplateResult = execSync('npm run copy-app-templates', {
+      //   cwd: `${process.cwd()}`,
+      //   stdio: 'pipe'
+      // });
+      // AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
       }
 
       // Asking for the frontend and backend prompts
@@ -105,24 +111,23 @@ Creating a new magikube project named 'sample' in the current directory
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
     if (terraform) {
-      await terraform.createProject(projectName, process.cwd());
-      if (responses['cloud_provider'] === 'aws') {
-        await terraform.AWSProfileActivate(responses['aws_profile']);
-      }
-      // Delay of 15 seconds to allow the user to review the terraform files
-      await new Promise(resolve => setTimeout(resolve, 15000));
-      await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
-      if (responses['cluster_type'] === 'k8s') {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
-        await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
-        terraform?.startSSHProcess();
-        const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
-        await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
-        await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
-        terraform?.stopSSHProcess();
-      } 
-
+       await terraform.createProject(projectName, process.cwd());
+    //   if (responses['cloud_provider'] === 'aws') {
+    //     await terraform.AWSProfileActivate(responses['aws_profile']);
+    //   }
+    //   // Delay of 15 seconds to allow the user to review the terraform files
+    //   await new Promise(resolve => setTimeout(resolve, 15000));
+    //   await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
+    //   if (responses['cluster_type'] === 'k8s') {
+    //     await new Promise(resolve => setTimeout(resolve, 10000));
+    //     await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
+    //     await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
+    //     terraform?.startSSHProcess();
+    //     const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
+    //     await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
+    //     await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
+    //     terraform?.stopSSHProcess();
+    //   } 
       const projectConfig = SystemConfig.getInstance().getConfig();
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(command as BaseCommand, projectConfig)

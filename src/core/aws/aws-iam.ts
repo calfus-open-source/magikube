@@ -34,6 +34,7 @@ export default class AWSPolicies {
         secretAccessKey: string
     ): Promise<boolean> {
 
+        const templatePath = `${SystemConfig.getInstance().getConfig().magikube_root}/dist/templates` || '../templates';
         const iamClient: IAMClient = new IAMClient({
             region: region,
             credentials: {
@@ -104,12 +105,12 @@ export default class AWSPolicies {
         };
 
         //Get list of filenames in a directory
-        const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
+        const files = fs.readdirSync(`${templatePath}/aws/policies`);
 
         for (const file of files) {
             const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;
             AppLogger.info(`Creating policy, user, group and adding the user to the group: ${policyName}`, true);
-            const policyDocument = await project.generateContent(`../templates/aws/policies/${file}`);
+            const policyDocument = await project.generateContent(`${templatePath}/aws/policies/${file}`);
             await createPolicy(policyName, policyDocument);
             await createGroup(policyName);
             await attachGroupPolicy(policyName, `arn:aws:iam::${account}:policy/${policyName}`);
@@ -150,6 +151,7 @@ export default class AWSPolicies {
         secretAccessKey: string
     ): Promise<boolean> {
         //Delete all the policies and user groups created
+        const templatePath = `${SystemConfig.getInstance().getConfig().magikube_root}/dist/templates` || '../templates';
 
         const iamClient: IAMClient = new IAMClient({
             region: region,
@@ -163,7 +165,7 @@ export default class AWSPolicies {
         AppLogger.debug(`Working with AWS Account Number: ${account}`);
 
         //Get list of filenames in a directory
-        const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
+        const files = fs.readdirSync(`${templatePath}/aws/policies`);
 
         for (const file of files) {
             const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;
