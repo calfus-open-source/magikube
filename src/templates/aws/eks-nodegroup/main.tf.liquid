@@ -105,3 +105,20 @@ module "ingress-controller" {
     cluster_token            = data.aws_eks_cluster_auth.eks_cluster_auth.token
     cluster_node_group_name  = module.eks.eks_managed_node_groups
 }
+
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for ${repo_name}"
+     }
+   ]
+ }
+
+module "ecr-repo" {
+    source            = "./modules/ecr"
+    image_tag_mutability   = "MUTABLE"
+    count = length(local.repositories)
+    name = "${ var.project_name }"
+    appType = local.repositories[count.index].appType
+}

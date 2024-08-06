@@ -147,3 +147,20 @@ locals {
      environment = "${ var.environment }"
  }
 {% endif %}
+
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for ${repo_name}"
+     }
+   ]
+ }
+
+module "ecr-repo" {
+    source            = "./modules/ecr"
+    image_tag_mutability   = "MUTABLE"
+    count = length(local.repositories)
+    name = "${ var.project_name }"
+    appType = local.repositories[count.index].appType
+}

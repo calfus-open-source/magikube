@@ -86,6 +86,7 @@ export default class AWSProject extends BaseProject {
         this.createVpc();
         this.createACM();
         this.createRoute53();
+        this.createECR();
         this.createIngressController();
     }
 
@@ -109,6 +110,10 @@ export default class AWSProject extends BaseProject {
         this.createFile('variables.tf', '../templates/aws/modules/acm/variables.tf.liquid', '/infrastructure/modules/acm');
     }
 
+    async createECR(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/ecr/main.tf.liquid', './modules/ecr');
+        this.createFile('variables.tf', '../templates/aws/modules/ecr/variables.tf.liquid', './modules/ecr');
+    }
     // Function to start the SSH process in the background
     async startSSHProcess() {
         const proxyName = this.config.project_name + '-' + this.config.environment + '-proxy';

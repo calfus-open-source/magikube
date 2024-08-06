@@ -60,7 +60,7 @@ const awsPrompts: any[] = [
     type: "list",
     choices: [
       VersionControl.GITHUB,
-      VersionControl.CODECOMMIT,
+      // VersionControl.CODECOMMIT,
       VersionControl.BITBUCKET,
     ],
     default:
