@@ -113,7 +113,7 @@ Creating a new magikube project named 'sample' in the current directory
       }
       // Delay of 15 seconds to allow the user to review the terraform files
       await new Promise(resolve => setTimeout(resolve, 15000));
-      await terraform?.runTerraform(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
+      await terraform?.runTerraform(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
       if (responses['cluster_type'] === 'k8s') {
         await new Promise(resolve => setTimeout(resolve, 10000));
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
