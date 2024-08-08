@@ -146,12 +146,14 @@ Creating a new magikube project named 'sample' in the current directory
         terraform?.stopSSHProcess();
       } 
 
-      // const projectConfig = SystemConfig.getInstance().getConfig();
-      // let command: BaseCommand | undefined;
-      // const createApp = new CreateApplication(command as BaseCommand, projectConfig)
+      const projectConfig = SystemConfig.getInstance().getConfig();
+      let command: BaseCommand | undefined;
+      const createApp = new CreateApplication(command as BaseCommand, projectConfig)
+
       // Running the actual app setups
       const  { github_access_token: token, git_user_name: userName, github_owner: orgName, 
-        source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey, aws_secret_access_key: awsSecretKey} = projectConfig;
+               source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey,
+               aws_secret_access_key: awsSecretKey} = projectConfig;
       
       const configObject: ConfigObject = {
         token,
@@ -172,12 +174,6 @@ Creating a new magikube project named 'sample' in the current directory
         await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
       }
     }
-
-    /**
-     * description : Move files after all process Done 
-      1: infrastructures 
-      2: applications  
-    */
 
       await createApp.MoveFiles(projectName)
 

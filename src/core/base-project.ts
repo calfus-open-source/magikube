@@ -83,9 +83,7 @@ export default abstract class BaseProject {
         await this.createFile('providers.tf', '../templates/common/providers.tf.liquid',"/infrastructure");
     }
 
-    async createFile(filename: string, templateFilename: string, folderName: string = '.',CreateProjectFile : boolean= false): Promise<void> {
-        //create a file in the path
-
+    async createFile(filename: string, templateFilename: string, folderName: string = '.', CreateProjectFile : boolean= false): Promise<void> {
         if(!CreateProjectFile){
         AppLogger.debug(`Creating ${filename} file`);
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
