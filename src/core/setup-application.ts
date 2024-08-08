@@ -42,7 +42,7 @@ export default class CreateApplication extends BaseProject {
             for (const file of dotFiles){
                 await this.createFile(`.${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true)
             }
-            const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml', 'deployment.yml'];
+            const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml'];
             for (const file of files) {
                 await this.createFile(file, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true);
             }
@@ -72,7 +72,7 @@ export default class CreateApplication extends BaseProject {
         try {
             AppLogger.info('Creating next app!', true);
             const { appName: nextAppName, projectName} = projectConfig;
-            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json', 'deployment.yml'];
+            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
             const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
             const dotFiles = ['gitignore', 'eslintrc.json', 'env.local']
             const files = [...commonFiles, ...appRouterFiles];
@@ -137,63 +137,68 @@ export default class CreateApplication extends BaseProject {
     }
 
     async setupKeyCloak(projectConfig: any) {
-        const path = process.cwd();
-        try {
-            const appName = 'keycloak'
-            const { project_name: projectName } = projectConfig;
-            const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh', 'docker-compose.yml', 'deployment.yml', 'Dockerfile']
-            const tmemeSetupFiles = ['login.ftl','theme.properties', 'error.ftl' ]
-            for (const file of keyCloakSetuopFiles) {
-                await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}`,true);
-            }
-            for (const file of tmemeSetupFiles) {
-                await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/themes/magikube/login`,true)
-            }
-            const commands = ['docker-compose build'];
-            commands.forEach(command => {
-                execSync(command, {
-                    cwd: `${path}/${projectName}/${appName}`,
-                    stdio: 'inherit'
-                });
-            })
-        } catch (error) {
-            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
-        }
-    }
+    const path = process.cwd();
+    try {
+        const appName = 'keycloak';
+        const { project_name: projectName } = projectConfig;
+        const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh','Dockerfile'];
+        const themeSetupFiles = ['login.ftl', 'theme.properties', 'error.ftl'];
 
-    async setupAuthenticationService(projectConfig: any) {
-        const path = process.cwd();
-        try {
-            const appName = 'auth-service'
-            const { project_name: projectName } = projectConfig;
-            const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts', 'main.ts'];
-            const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
-            const dotFiles = ['env.local', 'gitignore']
-            const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];   
-            const commonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'tsconfig.build.json', 'nest-cli.json' ]         
-            for (const file of keyCloakBaseFiles) {
-                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, ` ${path}/${projectName}/${appName}/src`,true);
-            }
-            for (const file of keyCloakHealthFiles) {
-                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/health`,true);
-            }
-             for (const file of commonFiles) {
-                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`,true);
-            }
-             for (const file of dotFiles) {
-                await this.createFile(`.${file}`, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`,true);
-            }
-            for (const file of keyCloakFiles) {
-                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`,true);
-            }
-            execSync('npm install', {
+        for (const file of keyCloakSetuopFiles) {
+            await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
+        }
+        for (const file of themeSetupFiles) {
+            await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/themes/magikube/login`, true);
+        }
+
+        const commands = ['docker-compose build'];
+        commands.forEach(command => {
+            execSync(command, {
                 cwd: `${path}/${projectName}/${appName}`,
                 stdio: 'inherit'
             });
+        });
         } catch (error) {
             AppLogger.error(`Failed to setup keycloak, ${error}`, true);
         }
+}
+
+async setupAuthenticationService(projectConfig: any) {
+    const path = process.cwd();
+    try {
+        const appName = 'auth-service';
+        const { project_name: projectName } = projectConfig;    
+        const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts', 'main.ts'];
+        const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
+        const dotFiles = ['env.local', 'gitignore'];
+        const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];
+        const commonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'tsconfig.build.json', 'nest-cli.json'];
+        for (const file of keyCloakBaseFiles) {
+            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src`, true);
+            }
+        for (const file of keyCloakHealthFiles) {
+            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/health`, true);
+        }
+        for (const file of commonFiles) {
+            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
+        }
+        for (const file of dotFiles) {
+            await this.createFile(`.${file}`, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
+        }
+        for (const file of keyCloakFiles) {
+            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
+        }
+
+        execSync('npm install', {
+            cwd: `${path}/${projectName}/${appName}`,
+            stdio: 'inherit'
+        });
+        
+    } catch (error) {
+        AppLogger.error(`Failed to setup authentication service, ${error}`, true);
     }
+}
+
     
     // Wrapper for app creation and repo setup
     async handleAppCreation(appType: string, configObject: ConfigObject) {
