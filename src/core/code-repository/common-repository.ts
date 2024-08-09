@@ -9,23 +9,23 @@ export default class repositoryProject extends BaseProject {
        this.createFile(
          "main.tf",
          "../templates/code-repository/aws/main.tf.liquid",
-         "./modules/code-repository"
+         "infrastructure/modules/code-repository"
        );
        this.createFile(
          "variables.tf",
          "../templates/code-repository/aws/variables.tf.liquid",
-         "./modules/code-repository"
+         "infrastructure/modules/code-repository"
        );
      } else if (this.config.source_code_repository === "github") {
          this.createFile(
              "main.tf",
              "../templates/code-repository/github/main.tf.liquid",
-             "./modules/code-repository",
+             "infrastructure/modules/code-repository",
          );
          this.createFile(
              "variables.tf",
              "../templates/code-repository/github/variables.tf.liquid",
-             "./modules/code-repository",
+             "infrastructure/modules/code-repository",
          );
      }
   }

@@ -24,41 +24,41 @@ export default class AWSK8SProject extends AWSProject {
         const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
         //Wait for all the files generation tasks to run and in parallel execution
         await Promise.all([
-            this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid'),
-            this.createFile('terraform.tfvars', '../templates/aws/k8s/terraform.tfvars.liquid'),
-            this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid'),
+            this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid', "/infrastructure"),
+            this.createFile('terraform.tfvars', '../templates/aws/k8s/terraform.tfvars.liquid' , "/infrastructure"),
+            this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid' , "/infrastructure"),
             this.createFile(
                 `${this.config.environment}-config.tfvars`,
-                "../templates/aws/k8s/backend-config.tfvars.liquid"
+                "../templates/aws/k8s/backend-config.tfvars.liquid" ,"/infrastructure"
             ),
-            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', 'k8s_config'),
-            this.createFile('variables.tf', '../templates/aws/k8s/k8s_config/variables.tf.liquid', 'k8s_config'),
+            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', '/infrastructure'),
+            this.createFile('variables.tf', '../templates/aws/k8s/k8s_config/variables.tf.liquid', '/infrastructure'),
             this.createCommon(),        
             this.createSSHKeyPair(),
             this.createBastionHost(),
             this.createMasterNode(),
             this.createWorkerNode(),
-            this.copyFolderAndRender('../templates/aws/ansible', 'templates/aws/ansible'),
-            this.createFile('ssh-config.tftpl', '../templates/aws/k8s/ssh-config.tftpl'),
+            this.copyFolderAndRender('../templates/aws/ansible', '/templates/aws/ansible'),
+            this.createFile('ssh-config.tftpl', '../templates/aws/k8s/ssh-config.tftpl', '/infrastructure'),
             gitOpsInstance.createGitOps(this.path, this.projectName),
             repositoryInstance.createrepository(this.path, this.projectName)
         ]);
     }    
     
     async createSSHKeyPair() {
-        this.createFile('main.tf', '../templates/aws/k8s/ssh-key/main.tf.liquid', 'modules/ssh-key');
-        this.createFile('variables.tf', '../templates/aws/k8s/ssh-key/variables.tf.liquid', 'modules/ssh-key');
+        this.createFile('main.tf', '../templates/aws/k8s/ssh-key/main.tf.liquid', '/infrastructure/modules/ssh-key');
+        this.createFile('variables.tf', '../templates/aws/k8s/ssh-key/variables.tf.liquid', '/infrastructure/modules/ssh-key');
     }
     async createBastionHost() {
-        this.createFile('main.tf', '../templates/aws/k8s/bastion/main.tf.liquid', 'modules/bastion');
-        this.createFile('variables.tf', '../templates/aws/k8s/bastion/variables.tf.liquid', 'modules/bastion');
+        this.createFile('main.tf', '../templates/aws/k8s/bastion/main.tf.liquid', '/infrastructure/modules/bastion');
+        this.createFile('variables.tf', '../templates/aws/k8s/bastion/variables.tf.liquid', '/infrastructure/modules/bastion');
     } 
     async createMasterNode() {
-        this.createFile('main.tf', '../templates/aws/k8s/master/main.tf.liquid', 'modules/master');
-        this.createFile('variables.tf', '../templates/aws/k8s/master/variables.tf.liquid', 'modules/master');
+        this.createFile('main.tf', '../templates/aws/k8s/master/main.tf.liquid', '/infrastructure/modules/master');
+        this.createFile('variables.tf', '../templates/aws/k8s/master/variables.tf.liquid', '/infrastructure/modules/master');
     }
     async createWorkerNode() {
-        this.createFile('main.tf', '../templates/aws/k8s/worker/main.tf.liquid', 'modules/worker');
-        this.createFile('variables.tf', '../templates/aws/k8s/worker/variables.tf.liquid', 'modules/worker');
+        this.createFile('main.tf', '../templates/aws/k8s/worker/main.tf.liquid', '/infrastructure/modules/worker');
+        this.createFile('variables.tf', '../templates/aws/k8s/worker/variables.tf.liquid', '/infrastructure/modules/worker');
     }
 }
