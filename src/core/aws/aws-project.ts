@@ -282,8 +282,6 @@ export default class AWSProject extends BaseProject {
     }
     
     async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
-        console.log(projectPath, "----------project path")
-        console.log(varFile, "----------project path")
 
         try {
             await this.runTerraformInit(projectPath, backend);
