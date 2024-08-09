@@ -93,17 +93,13 @@ Creating a new magikube project named 'sample' in the current directory
         }catch(error){
           
           throw error
-          }
-
-        
+          }      
       }
       const copyTemplateResult = execSync(`rsync -av magikube-templates/* dist/ --prune-empty-dirs`, {
         cwd: `${process.cwd()}`,
         stdio: 'pipe'
       });
-
       execSync(`rm -rf ${dir}`)
-
       AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
       }
 
