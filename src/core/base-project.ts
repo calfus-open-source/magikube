@@ -80,9 +80,8 @@ export default abstract class BaseProject {
         await this.createFile('providers.tf', '../templates/common/providers.tf.liquid');
     }
 
-    async createFile(filename: string, templateFilename: string, folderName: string = '.'): Promise<void> {
-        //create a file in the path
-
+    async createFile(filename: string, templateFilename: string, folderName: string = '.', CreateProjectFile : boolean= false): Promise<void> {
+        if(!CreateProjectFile){
         AppLogger.debug(`Creating ${filename} file`);
         const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
         const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
@@ -91,6 +90,15 @@ export default abstract class BaseProject {
             fs.mkdirSync(folderPath, { recursive: true });
         }
         fs.writeFileSync(join(folderPath, filename), output);
+        }else{
+              const templateFile = fs.readFileSync(templateFilename, 'utf8');
+              const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
+              const folderPath = join(this.projectPath, folderName);
+              if (!fs.existsSync(folderPath)) {
+                fs.mkdirSync(folderPath, { recursive: true });
+            }
+            fs.writeFileSync(join(folderPath, filename), output);
+        }
     }   
 
     async generateContent(templateFilename: string): Promise<any> {

@@ -76,17 +76,29 @@ Creating a new magikube project named 'sample' in the current directory
         }
       }
 
-      const dir = `${process.cwd()}/../magikube-templates`;
+      const dir = `${process.cwd()}/magikube-templates`;
       if (!fs.existsSync(dir)) {
         execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
-            cwd: `${process.cwd()}/..`,
+            cwd: `${process.cwd()}`,
             stdio: 'inherit'
         });
       }
-      const copyTemplateResult = execSync('npm run copy-app-templates', {
+      if (!fs.existsSync(`${process.cwd()}/dist`)) {
+       try{
+        execSync("mkdir dist", 
+          {
+            cwd: `${process.cwd()}`,
+            stdio: 'inherit'
+          })
+        } catch(error){   
+            throw error
+          }      
+      }
+      const copyTemplateResult = execSync(`rsync -av magikube-templates/* dist/ --prune-empty-dirs`, {
         cwd: `${process.cwd()}`,
         stdio: 'pipe'
       });
+      execSync(`rm -rf ${dir}`)
       AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
       }
 
@@ -106,6 +118,9 @@ Creating a new magikube project named 'sample' in the current directory
     // Get the project name from the command line arguments
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
+    const projectConfig = SystemConfig.getInstance().getConfig();
+    let command: BaseCommand | undefined;
+    const createApp = new CreateApplication(command as BaseCommand, projectConfig)
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
       if (responses['cloud_provider'] === 'aws') {
@@ -128,9 +143,11 @@ Creating a new magikube project named 'sample' in the current directory
       const projectConfig = SystemConfig.getInstance().getConfig();
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(command as BaseCommand, projectConfig)
+
       // Running the actual app setups
       const  { github_access_token: token, git_user_name: userName, github_owner: orgName, 
-        source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey, aws_secret_access_key: awsSecretKey} = projectConfig;
+               source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey,
+               aws_secret_access_key: awsSecretKey} = projectConfig;
       
       const configObject: ConfigObject = {
         token,
@@ -147,10 +164,12 @@ Creating a new magikube project named 'sample' in the current directory
       if (responses['backend_app_type']) {
         await createApp.handleAppCreation(responses['backend_app_type'], configObject);
       }
-      
-      if (responses['frontend_app_type']) {
+         if (responses['frontend_app_type']) {
         await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
       }
     }
+
+      await createApp.MoveFiles(projectName)
+
   }
 }
