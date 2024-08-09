@@ -90,9 +90,8 @@ Creating a new magikube project named 'sample' in the current directory
             cwd: `${process.cwd()}`,
             stdio: 'inherit'
           })
-        }catch(error){
-          
-          throw error
+        } catch(error){   
+            throw error
           }      
       }
       const copyTemplateResult = execSync(`rsync -av magikube-templates/* dist/ --prune-empty-dirs`, {
@@ -121,7 +120,6 @@ Creating a new magikube project named 'sample' in the current directory
     const terraform = await TerraformProject.getProject(this);
     const projectConfig = SystemConfig.getInstance().getConfig();
     let command: BaseCommand | undefined;
-    console.log(projectConfig);
     const createApp = new CreateApplication(command as BaseCommand, projectConfig)
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
