@@ -1,7 +1,6 @@
 import {Args, Flags} from '@oclif/core'
 import BaseCommand from '../base.js'
 import inquirer, { Answers } from 'inquirer';
-
 import TerraformProject from '../../core/terraform-project.js';
 import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -167,6 +166,7 @@ Creating a new magikube project named 'sample' in the current directory
          if (responses['frontend_app_type']) {
         await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
       }
+      await createApp.setupGitops(projectConfig);
     }
 
       await createApp.MoveFiles(projectName)

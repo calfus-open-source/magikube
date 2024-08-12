@@ -160,35 +160,75 @@ export default class CreateApplication extends BaseProject {
     async setupAuthenticationService(projectConfig: any) {
         const path = process.cwd();
         try {
-        const appName = 'auth-service';
-        const { project_name: projectName } = projectConfig;    
-        const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts', 'main.ts'];
-        const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
-        const dotFiles = ['env.local', 'gitignore'];
-        const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];
-        const commonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'tsconfig.build.json', 'nest-cli.json'];
-        for (const file of keyCloakBaseFiles) {
-            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src`, true);
+            const appName = 'auth-service';
+            const { project_name: projectName } = projectConfig;    
+            const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts', 'main.ts'];
+            const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
+            const dotFiles = ['env.local', 'gitignore'];
+            const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];
+            const commonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'tsconfig.build.json', 'nest-cli.json'];
+            for (const file of keyCloakBaseFiles) {
+                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src`, true);
+                }
+            for (const file of keyCloakHealthFiles) {
+                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/health`, true);
             }
-        for (const file of keyCloakHealthFiles) {
-            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/health`, true);
-        }
-        for (const file of commonFiles) {
-            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
-        }
-        for (const file of dotFiles) {
-            await this.createFile(`.${file}`, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
-        }
-        for (const file of keyCloakFiles) {
-            await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
-        }
+            for (const file of commonFiles) {
+                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
+            }
+            for (const file of dotFiles) {
+                await this.createFile(`.${file}`, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
+            }
+            for (const file of keyCloakFiles) {
+                await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
+            }
 
-        execSync('npm install', {
-            cwd: `${path}/${projectName}/${appName}`,
-            stdio: 'inherit'
-        });
-
+            execSync('npm install', {
+                cwd: `${path}/${projectName}/${appName}`,
+                stdio: 'inherit'
+            });
         } catch (error) {
+            AppLogger.error(`Failed to setup authentication service, ${error}`, true);
+    }
+    }
+
+    //Setup Gitops 
+    async setupGitops(projectConfig:any){
+         const path = process.cwd();
+         try{
+             const appName = 'gitops';
+             const { project_name: projectName, frontend_app_type } = projectConfig;    
+             const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml']
+             const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml' ]
+             for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`,`${path}/${projectName}/gitops/auth-service/`, true);
+             }
+            
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/keycloak-gitops/${file}.liquid`,`${path}/${projectName}/gitops/keycloak-service/`, true);
+             }
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/express-gitops/${file}.liquid`,`${path}/${projectName}/gitops/express-service/`, true);
+             }
+             if(frontend_app_type == 'react'){
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/react-gitops/${file}.liquid`,`${path}/${projectName}/gitops/react-service/`, true);
+             }
+             await this.createFile('react.yml', `${path}/dist/gitops/common-gitops-files/react.yml.liquid`, `${path}/${projectName}/gitops`, true )
+            }
+            if(frontend_app_type == 'next'){
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/next-gitops/${file}.liquid`,`${path}/${projectName}/gitops/next-service/`, true);
+             }
+             await this.createFile('next.yml', `${path}/dist/gitops/common-gitops-files/next.yml.liquid`, `${path}/${projectName}/gitops`, true )
+            }
+              for(const file of commonGitopsFiles){
+                await this.createFile(`${file}`, `${path}/dist/gitops/common-gitops-files/${file}.liquid`, `${path}/${projectName}/gitops`, true)
+              }
+              AppLogger.info('Gitops setup is done.', true);
+              return true;
+        
+         }catch (error) {
         AppLogger.error(`Failed to setup authentication service, ${error}`, true);
     }
     }
