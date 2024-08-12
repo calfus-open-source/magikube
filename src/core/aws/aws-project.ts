@@ -292,7 +292,7 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
-        AppLogger.info(`Running terraform destroy..., ${projectPath}`, true);
+        AppLogger.info(`Running terraform destroy..., ${projectPath}/infrastructure`, true);
         try {
             let command = module 
                 ? `terraform destroy -target=${module} -auto-approve` 
@@ -301,7 +301,7 @@ export default class AWSProject extends BaseProject {
                 command += ` -var-file=${varFile}`;
             }
             execSync(command, {
-                cwd: projectPath,
+                cwd: `${projectPath}/infrastructure`,
                 stdio: 'inherit',
                 env: process.env
             });

@@ -28,15 +28,15 @@ export default abstract class BaseProject {
 
 
     async terraformDestroy(): Promise<void> {
-        console.log('@@@@@@@@@@@@@@@@@@',this.projectPath)
-        console.log('@@@@@@@config@@@@@@@@@@@',this.config)
         // Run terraform destroy
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            await terraform?.runTerraformInit(this.projectPath+'/k8s_config', `/infrastructure/${this.config.environment}-config.tfvars`);
+            console.log("this.projectPath",this.projectPath)
+            console.log("${this.config.environment}",this.config.environment)
+            await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`);
             terraform?.startSSHProcess();
             // Destroy the ingress and other helm modules
             await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `/infrastructure/terraform.tfvars`);
