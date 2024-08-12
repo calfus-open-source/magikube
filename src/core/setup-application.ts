@@ -40,6 +40,10 @@ export default class CreateApplication extends BaseProject {
             const path = process.cwd();
             await this.createFile('app.ts', `${path}/dist/express/app.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src`,true);
             const dotFiles = ['gitignore', 'eslintrc.json'];
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}/.github/workflows`, true);
+            }
             for (const file of dotFiles){
                 await this.createFile(`.${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true)
             }
@@ -77,14 +81,18 @@ export default class CreateApplication extends BaseProject {
             const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
             const dotFiles = ['gitignore', 'eslintrc.json', 'env.local']
             const files = [...commonFiles, ...appRouterFiles];
+            const githubActionFIles = [ 'ci-build.yml' ];
             for (const file of files) {
             const route = appRouterFiles.includes(file) ? `./${projectName}/${nextAppName}/app` : `${path}/${projectName}/${nextAppName}`;
                 await this.createFile(file, `${path}/dist/next/${file}.liquid`, route, true);
             }
             for (const file of dotFiles) {
-                await this.createFile(`.${file}`, `${path}/dist//next/${file}.liquid`, `${path}/${projectName}/${nextAppName}`,true);
+                await this.createFile(`.${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}`,true);
             }
-            await this.createFile(`page.tsx`, `${path}//dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
+            await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}/.github/workflows`, true);
+            }
             execSync(`npm i`, {
                 cwd: `${path}/${projectName}/${nextAppName}`,
                 stdio: 'inherit'
@@ -123,6 +131,10 @@ export default class CreateApplication extends BaseProject {
             for (const file of dotFiles) {
                 await this.createFile(`.${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}`,true);
             }
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/.github/workflows`, true);
+            }
             execSync('npm install', {
                 cwd: `${path}/${projectName}/${reactAppName}`,
                 stdio: 'inherit'
@@ -144,7 +156,10 @@ export default class CreateApplication extends BaseProject {
             const { project_name: projectName } = projectConfig;
             const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh','Dockerfile'];
             const themeSetupFiles = ['login.ftl', 'theme.properties', 'error.ftl'];
-
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/.github/workflows`, true);
+            }
             for (const file of keyCloakSetuopFiles) {
                 await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
             }
@@ -170,6 +185,10 @@ export default class CreateApplication extends BaseProject {
             const dotFiles = ['env.local', 'gitignore'];
             const keyCloakFiles = ['keycloak.controller.ts', 'keycloak.dto.ts', 'keycloak.module.ts', 'keycloak.service.ts'];
             const commonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'tsconfig.build.json', 'nest-cli.json'];
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/.github/workflows`, true);
+            }
             for (const file of keyCloakBaseFiles) {
                 await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src`, true);
                 }

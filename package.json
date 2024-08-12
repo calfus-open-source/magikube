@@ -15,6 +15,7 @@
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
+    "@octokit/rest": "18.12.0",
     "@types/uuid": "^9.0.8",
     "chalk": "^5.3.0",
     "clear": "^0.1.0",
@@ -38,11 +39,12 @@
     "@types/figlet": "^1.5.8",
     "@types/inquirer": "^9.0.7",
     "@types/js-yaml": "^4.0.9",
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/mocha": "^10",
     "@types/node": "^18",
     "chai": "^4",
     "copyfiles": "^2.4.1",
-    "eslint": "^8",
+    "eslint": "^9.9.0",
     "eslint-config-oclif": "^5",
     "eslint-config-oclif-typescript": "^3",
     "eslint-config-prettier": "^9",
@@ -50,7 +52,8 @@
     "oclif": "^4",
     "shx": "^0.3.3",
     "ts-node": "^10",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "^8.0.1"
   },
   "engines": {
     "node": ">=18.0.0"
