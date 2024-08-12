@@ -8,7 +8,7 @@ cluster_version = "{{ aws_eks_cluster_version }}"
 {% if source_code_repository == 'github' %}
 github_access_token = "{{ github_access_token }}"
 github_owner = "{{ github_owner }}"
-appType = ["{{ frontend_app_type }}", "{{ backend_app_type }}"]
+appType = ["{{ frontend_app_type }}", "{{ backend_app_type }}", "keycloak-service", "auth-service"]
 {% endif %}
 {% if domain %}
 domain_name = "{{ domain }}"
