@@ -34,8 +34,6 @@ export default abstract class BaseProject {
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            console.log("this.projectPath",this.projectPath)
-            console.log("${this.config.environment}",this.config.environment)
             await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`);
             terraform?.startSSHProcess();
             // Destroy the ingress and other helm modules
