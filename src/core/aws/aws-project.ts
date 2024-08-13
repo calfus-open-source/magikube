@@ -111,8 +111,8 @@ export default class AWSProject extends BaseProject {
     }
 
     async createECR(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/ecr/main.tf.liquid', './modules/ecr');
-        this.createFile('variables.tf', '../templates/aws/modules/ecr/variables.tf.liquid', './modules/ecr');
+        this.createFile('main.tf', '../templates/aws/modules/ecr/main.tf.liquid', '/infrastructure/modules/ecr');
+        this.createFile('variables.tf', '../templates/aws/modules/ecr/variables.tf.liquid', '/infrastructure/modules/ecr');
     }
     // Function to start the SSH process in the background
     async startSSHProcess() {
