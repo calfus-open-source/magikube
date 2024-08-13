@@ -11,6 +11,7 @@ import { AppLogger } from '../../logger/appLogger.js';
 import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 import { ConfigObject } from '../../core/interface.js';
+import { ManageRepository } from '../../core/manage-repository.js';
 
 export default class CreateProject extends BaseCommand {
   static args = {
@@ -158,15 +159,35 @@ Creating a new magikube project named 'sample' in the current directory
         awsAccessKey,
         awsSecretKey
       };
-      await createApp.setupAuthenticationService(projectConfig);
-      await createApp.setupKeyCloak(projectConfig);
+     const statusAuthenticationService = await createApp.setupAuthenticationService(projectConfig);
+     const statuskeyclockService = await createApp.setupKeyCloak(projectConfig);
+     const setupGitopsservicestatus =  await createApp.setupGitops(projectConfig);
+      if(statusAuthenticationService){
+                  configObject.appName = 'auth-service';
+                  configObject.appType = 'auth-service';
+        await ManageRepository.pushCode(configObject)
+
+      }
+      if(statuskeyclockService){
+                configObject.appName = 'keycloak';
+                configObject.appType = 'keycloak-service';
+            await ManageRepository.pushCode(configObject)
+
+          }
+
       if (responses['backend_app_type']) {
         await createApp.handleAppCreation(responses['backend_app_type'], configObject);
       }
-         if (responses['frontend_app_type']) {
+      if (responses['frontend_app_type']) {
         await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
       }
-      await createApp.setupGitops(projectConfig);
+
+      if(setupGitopsservicestatus){
+                        configObject.appName = 'gitops';
+                        configObject.appType = 'default';
+              await ManageRepository.pushCode(configObject)
+
+            }
     }
 
       await createApp.MoveFiles(projectName)
