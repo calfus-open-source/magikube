@@ -1,0 +1,36 @@
+variable "ingress_security_group_id" {
+    description = "default security group id associated with vpc"
+}
+
+variable "vpc_public_subnets" {
+    description = "public subnets associated with vpc"
+}
+
+variable "environment" {
+  description = "environment"
+}
+
+variable "name" {
+  description = "the name of your stack, e.g. \"demo\""
+}
+
+
+variable "aws_acm_certificate_arn" {
+   description = "ALB certificates"
+}
+
+{% comment %} variable "root_domain_name" {
+  description = "root domain name"
+}
+
+variable "hosted_zone_id" {
+  description = "hosted zone id of root domain"
+}
+
+variable "master_hosts" {
+  description = "master host ids"
+} 
+
+variable "worker_hosts" {
+  description = "worker host ids"
+}  {% endcomment %}

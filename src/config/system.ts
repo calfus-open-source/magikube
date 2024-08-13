@@ -136,6 +136,7 @@ class SystemConfig {
             "aws_eks_module_version": "20.20.0",
             "aws_eks_cluster_version": "1.30",
             "aws_load_balancer_controller_version": "1.8.0",
+            "argocd_helm_version": "6.0.6",
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",
             ...this.bastionSystemConfig,

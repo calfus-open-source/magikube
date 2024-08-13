@@ -87,6 +87,7 @@ export default class AWSProject extends BaseProject {
         this.createACM();
         this.createRoute53();
         this.createIngressController();
+        this.createEnvironment();
     }
 
     async createVpc(): Promise<void> {
@@ -107,6 +108,12 @@ export default class AWSProject extends BaseProject {
     async createACM(): Promise<void> {
         this.createFile('main.tf', '../templates/aws/modules/acm/main.tf.liquid', '/infrastructure/modules/acm');
         this.createFile('variables.tf', '../templates/aws/modules/acm/variables.tf.liquid', '/infrastructure/modules/acm');
+    }
+
+    async createEnvironment(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/environment/main.tf.liquid', './modules/environment');
+        this.createFile('variables.tf', '../templates/aws/modules/environment/variables.tf.liquid', './modules/environment');
+        this.createFile('argocd-app.yaml', '../templates/aws/modules/environment/argocd-app.yaml.liquid', './');
     }
 
     // Function to start the SSH process in the background
@@ -218,62 +225,79 @@ export default class AWSProject extends BaseProject {
         return new Promise((resolve, reject) => {
             try {
                 AppLogger.info('Running terraform apply...', true);
-                let args = ['apply', '-no-color', '-auto-approve'];
-                if (module) {
-                    args.unshift(`-target=${module}`);
-                }
-                if (varFile) {
-                    args.push(`-var-file=${varFile}`);
-                }
+                // let args = ['apply', '-no-color', '-auto-approve'];
+                // if (module) {
+                //     args.push(`-target=${module}`);
+                // }
+                // if (varFile) {
+                //     args.push(`-var-file=${varFile}`);
+                // }
 
-                const totalStepsCommand = `terraform plan -detailed-exitcode | grep -i Plan: | awk '{print $2}'`;
-                const totalStepsOutput = execSync(totalStepsCommand, { cwd: projectPath, env: process.env }).toString().trim();
-                const totalSteps = parseInt(totalStepsOutput, 10);
-                if (totalSteps > 0) {
-                    const percentIncrease = 100/totalSteps;
-                    const progressBar = ProgressBar.createProgressBar();
-                    progressBar.start(100, 0, { message: 'Terraform apply in progress...' })
-                    const terraformProcess = spawn('terraform', args, {
-                        cwd: projectPath,
-                        env: process.env
-                    });
-        
-                    terraformProcess.stdout.on('data', (data) => {
-                        AppLogger.info(`stdout: ${data.toString()}`);
-                        const output = data.toString();
-                        // Regex to match "Creation complete" messages
-                        const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
-                        let match;
-                        while ((match = creationCompleteRegex.exec(output)) !== null) {
-                            progressBar.increment(percentIncrease); // Increment progress bar for each match found
-                        }
-                    });
-        
-                    terraformProcess.stderr.on('data', (data) => {
-                        progressBar.stop();
-                        AppLogger.error(`stderr: ${data.toString()}`);
-                    });
-        
-                    terraformProcess.on('close', (code) => {
-                        if (code === 0) {
-                            progressBar.update(100, {message: 'Terraform Apply Completed ...'});
-                            progressBar.stop();
-                            AppLogger.debug('Terraform apply completed successfully.', true);
-                            resolve();
-                        } else {
-                            AppLogger.error(`Terraform apply process exited with code ${code}`, true);
-                            reject(new Error(`Terraform apply process exited with code ${code}`));
-                        }
-                    });
-        
-                    terraformProcess.on('error', (err) => {
-                        progressBar.stop();
-                        AppLogger.error(`Failed to apply terraform process: ${err}`, true);
-                        reject(err);
-                    });
-                } else {
-                    AppLogger.info('No resources to add, skipping terraform apply', true);
+                // const terraformCommand = `terraform ${args.join(' ')}`;
+                // AppLogger.debug(`Terraform apply command: ${terraformCommand}`, true);
+
+                let command = module 
+                ? `terraform apply -target=${module} -auto-approve -no-color` 
+                : 'terraform apply -auto-approve';
+                if (varFile) {
+                    command += ` -var-file=${varFile}`;
                 }
+                AppLogger.debug(`Executing command: ${command}`, true);
+                execSync(command, {
+                    cwd: projectPath,
+                    stdio: 'pipe',
+                    env: process.env
+                });
+                AppLogger.debug('Terraform apply command executed successfully.', true);
+
+                // const totalStepsCommand = `terraform plan -detailed-exitcode | grep -i Plan: | awk '{print $2}'`;
+                // const totalStepsOutput = execSync(totalStepsCommand, { cwd: projectPath, env: process.env }).toString().trim();
+                // const totalSteps = parseInt(totalStepsOutput, 10);
+                // if (totalSteps > 0) {
+                //     const percentIncrease = 100/totalSteps;
+                //     const progressBar = ProgressBar.createProgressBar();
+                //     progressBar.start(100, 0, { message: 'Terraform apply in progress...' })
+                //     const terraformProcess = spawn('terraform', args, {
+                //         cwd: projectPath,
+                //         env: process.env
+                //     });
+        
+                //     terraformProcess.stdout.on('data', (data) => {
+                //         AppLogger.info(`stdout: ${data.toString()}`);
+                //         const output = data.toString();
+                //         // Regex to match "Creation complete" messages
+                //         const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
+                //         let match;
+                //         while ((match = creationCompleteRegex.exec(output)) !== null) {
+                //             progressBar.increment(percentIncrease); // Increment progress bar for each match found
+                //         }
+                //     });
+        
+                //     terraformProcess.stderr.on('data', (data) => {
+                //         progressBar.stop();
+                //         AppLogger.error(`stderr: ${data.toString()}`);
+                //     });
+        
+                //     terraformProcess.on('close', (code) => {
+                //         if (code === 0) {
+                //             progressBar.update(100, {message: 'Terraform Apply Completed ...'});
+                //             progressBar.stop();
+                //             AppLogger.debug('Terraform apply completed successfully.', true);
+                //             resolve();
+                //         } else {
+                //             AppLogger.error(`Terraform apply process exited with code ${code}`, true);
+                //             reject(new Error(`Terraform apply process exited with code ${code}`));
+                //         }
+                //     });
+        
+                //     terraformProcess.on('error', (err) => {
+                //         progressBar.stop();
+                //         AppLogger.error(`Failed to apply terraform process: ${err}`, true);
+                //         reject(err);
+                //     });
+                // } else {
+                //     AppLogger.info('No resources to add, skipping terraform apply', true);
+                // }
             } catch (error) {
                 AppLogger.error(`Failed to apply terraform process: ${error}`, true);
                 reject(error);

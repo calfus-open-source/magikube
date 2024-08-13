@@ -2,6 +2,7 @@ import AWSProject from "./aws-project.js";
 import BaseCommand from "../../commands/base.js";
 import gitOpsProject from "../gitops/common-gitops.js";
 import repositoryProject from "../code-repository/common-repository.js";
+import argoCdProject from "../argocd/setup-argocd.js";
 
 export default class EKSNodeGrpClusterProject extends AWSProject {
   private path:string | undefined
@@ -18,6 +19,7 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
     let command: BaseCommand | undefined;
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
+    const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
 
     this.createFile("main.tf", "../templates/aws/eks-nodegroup/main.tf.liquid", "/infrastructure");
     this.createFile(
@@ -36,6 +38,7 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
     this.createEKSng();
     gitOpsInstance.createGitOps(this.path, this.name);
     repositoryInstance.createrepository(this.path, this.name);
+    argocdInstance.argoCdProject(this.path, this.name);
   }
 
   async createEKSng(): Promise<void> {

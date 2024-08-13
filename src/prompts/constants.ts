@@ -1,6 +1,6 @@
 export enum Environment {
-  PRODUCTION = "production",
-  NON_PRODUCTION = "non-production",
+  PRODUCTION = "prod",
+  NON_PRODUCTION = "non-prod",
 }
 
 export enum CloudProvider {
