@@ -9,23 +9,23 @@ export default class gitOpsProject extends BaseProject {
        this.createFile(
          "main.tf",
          "../templates/gitops/aws/main.tf.liquid",
-         "./modules/gitops"
+         "infrastructure/modules/gitops"
        );
        this.createFile(
          "variables.tf",
          "../templates/gitops/aws/variables.tf.liquid",
-         "./modules/gitops"
+         "infrastructure/modules/gitops"
        );
      } else if (this.config.source_code_repository === "github") {
          this.createFile(
              "main.tf",
              "../templates/gitops/github/main.tf.liquid",
-             "./modules/gitops",
+             "infrastructure/modules/gitops",
          );
          this.createFile(
              "variables.tf",
              "../templates/gitops/github/variables.tf.liquid",
-             "./modules/gitops",
+             "infrastructure/modules/gitops",
          );
      }
   }

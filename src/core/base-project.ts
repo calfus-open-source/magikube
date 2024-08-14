@@ -26,6 +26,7 @@ export default abstract class BaseProject {
         await this.deleteFolder();
     }
 
+
     async terraformDestroy(): Promise<void> {
         // Run terraform destroy
         AppLogger.info(`Running terraform destroy in the path`, true);
@@ -33,10 +34,10 @@ export default abstract class BaseProject {
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            await terraform?.runTerraformInit(this.projectPath+'/k8s_config', `../${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`);
             terraform?.startSSHProcess();
             // Destroy the ingress and other helm modules
-            await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `../terraform.tfvars`);
+            await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `/infrastructure/terraform.tfvars`);
             terraform?.stopSSHProcess();
         }
         await terraform?.runTerraformDestroy(this.projectPath);
@@ -77,7 +78,7 @@ export default abstract class BaseProject {
 
     async createProviderFile(): Promise<void> {
         //create a providers.tf file in the path
-        await this.createFile('providers.tf', '../templates/common/providers.tf.liquid');
+        await this.createFile('providers.tf', '../templates/common/providers.tf.liquid',"/infrastructure");
     }
 
     async createFile(filename: string, templateFilename: string, folderName: string = '.', CreateProjectFile : boolean= false): Promise<void> {

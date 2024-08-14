@@ -19,18 +19,18 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
 
-    this.createFile("main.tf", "../templates/aws/eks-nodegroup/main.tf.liquid");
+    this.createFile("main.tf", "../templates/aws/eks-nodegroup/main.tf.liquid", "/infrastructure");
     this.createFile(
       "terraform.tfvars",
-      "../templates/aws/eks-nodegroup/terraform.tfvars.liquid"
+      "../templates/aws/eks-nodegroup/terraform.tfvars.liquid" , "/infrastructure"
     );
     this.createFile(
       "variables.tf",
-      "../templates/aws/eks-nodegroup/variables.tf.liquid"
+      "../templates/aws/eks-nodegroup/variables.tf.liquid" , "/infrastructure"
     );
     this.createFile(
       `${this.config.environment}-config.tfvars`,
-      "../templates/aws/eks-nodegroup/backend-config.tfvars.liquid"
+      "../templates/aws/eks-nodegroup/backend-config.tfvars.liquid" , "/infrastructure"
     );
     this.createCommon();
     this.createEKSng();
@@ -42,12 +42,12 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
     this.createFile(
       "main.tf",
       "../templates/aws/modules/eks-nodegroup/main.tf.liquid",
-      "./modules/eks-nodegroup"
+      "/infrastructure/modules/eks-nodegroup"
     );
     this.createFile(
       "variables.tf",
       "../templates/aws/modules/eks-nodegroup/variables.tf.liquid",
-      "./modules/eks-nodegroup"
+      "/infrastructure/modules/eks-nodegroup"
     );
   }
 }

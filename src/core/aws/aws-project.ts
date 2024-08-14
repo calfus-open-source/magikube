@@ -90,23 +90,23 @@ export default class AWSProject extends BaseProject {
     }
 
     async createVpc(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/vpc/main.tf.liquid', './modules/vpc');
-        this.createFile('variables.tf', '../templates/aws/modules/vpc/variables.tf.liquid', './modules/vpc');
+        this.createFile('main.tf', '../templates/aws/modules/vpc/main.tf.liquid', '/infrastructure/modules/vpc');
+        this.createFile('variables.tf', '../templates/aws/modules/vpc/variables.tf.liquid', '/infrastructure/modules/vpc');
     }
     
     async createRoute53(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/route53/main.tf.liquid', './modules/route53');
-        this.createFile('variables.tf', '../templates/aws/modules/route53/variables.tf.liquid', './modules/route53');
+        this.createFile('main.tf', '../templates/aws/modules/route53/main.tf.liquid', '/infrastructure/modules/route53');
+        this.createFile('variables.tf', '../templates/aws/modules/route53/variables.tf.liquid', '/infrastructure/modules/route53');
     }
 
     async createIngressController(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/ingress-controller/main.tf.liquid', './modules/ingress-controller');
-        this.createFile('variables.tf', '../templates/aws/modules/ingress-controller/variables.tf.liquid', './modules/ingress-controller');
+        this.createFile('main.tf', '../templates/aws/modules/ingress-controller/main.tf.liquid', '/infrastructure/modules/ingress-controller');
+        this.createFile('variables.tf', '../templates/aws/modules/ingress-controller/variables.tf.liquid', '/infrastructure/modules/ingress-controller');
     }
 
     async createACM(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/acm/main.tf.liquid', './modules/acm');
-        this.createFile('variables.tf', '../templates/aws/modules/acm/variables.tf.liquid', './modules/acm');
+        this.createFile('main.tf', '../templates/aws/modules/acm/main.tf.liquid', '/infrastructure/modules/acm');
+        this.createFile('variables.tf', '../templates/aws/modules/acm/variables.tf.liquid', '/infrastructure/modules/acm');
     }
 
     // Function to start the SSH process in the background
@@ -214,7 +214,7 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
-        AppLogger.debug(`Running terraform apply..., ${projectPath}`);
+        AppLogger.debug(`Running terraform apply upper one..., ${projectPath}`);
         return new Promise((resolve, reject) => {
             try {
                 AppLogger.info('Running terraform apply...', true);
@@ -282,6 +282,7 @@ export default class AWSProject extends BaseProject {
     }
     
     async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
+
         try {
             await this.runTerraformInit(projectPath, backend);
             await this.runTerraformApply(projectPath, module, varFile);
@@ -291,7 +292,7 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
-        AppLogger.info(`Running terraform destroy..., ${projectPath}`, true);
+        AppLogger.info(`Running terraform destroy..., ${projectPath}/infrastructure`, true);
         try {
             let command = module 
                 ? `terraform destroy -target=${module} -auto-approve` 
@@ -300,7 +301,7 @@ export default class AWSProject extends BaseProject {
                 command += ` -var-file=${varFile}`;
             }
             execSync(command, {
-                cwd: projectPath,
+                cwd: `${projectPath}/infrastructure`,
                 stdio: 'inherit',
                 env: process.env
             });
