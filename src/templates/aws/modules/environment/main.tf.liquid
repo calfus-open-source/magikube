@@ -49,6 +49,14 @@ resource "aws_route53_record" "argocd-cname" {
   records        = [data.aws_lb.frontend_alb.dns_name]
 }
 
+resource "aws_route53_record" "app-cname" {
+  zone_id = var.route53_zoneid
+  name    = "${var.domain_name}"
+  type    = "CNAME"
+  ttl     = 300
+  records        = [data.aws_lb.frontend_alb.dns_name]
+}
+
 output "aws_lb_arn" {
   value = data.aws_lb.frontend_alb.arn
 }
