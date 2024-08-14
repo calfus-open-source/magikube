@@ -1,0 +1,103 @@
+data "aws_availability_zones" "available" {}
+
+locals {
+  azs      = slice(data.aws_availability_zones.available.names, 0, {{ aws_az_count }})
+}
+
+{% comment %} Condition to check if the kubernetes is on EC2 {% endcomment %}
+{% if cluster_type == "k8s" %}
+{% comment %} Get the config from ~/.kube/config {% endcomment %}
+provider "kubernetes" {
+  config_path = "~/.kube/config"
+  config_context = "${var.name}-${var.environment}-context"
+}
+{% comment %} else condition {% endcomment %}
+{% else %}
+{% comment %} Get the config from the cluster {% endcomment %}
+provider "kubernetes" {
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+  token                  = var.cluster_token
+}
+{% endif %}
+
+{% if cluster_type == "k8s" %}
+  {% comment %} Get the config from ~/.kube/config {% endcomment %}
+  provider "helm" {
+    kubernetes {
+      config_path = "~/.kube/config"
+    }
+  }
+  {% comment %} else condition {% endcomment %}
+  {% else %}  
+  provider "helm" {
+    kubernetes {
+      host                   = var.cluster_endpoint
+      cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+      token                  = var.cluster_token
+    }
+  }
+{% endif %}
+
+locals {
+  argocd_values_content = templatefile("./argocd-values.yaml", {
+    ssl_cert_arn = var.ssl_cert_arn
+    hostname     = "argocd.${var.domain_name}"
+    name         = "${var.name}"
+    environment  = "${var.environment}"
+    vpc_public_subnets = join(",", var.vpc_public_subnets)
+  })
+}
+
+resource "null_resource" "argocd_values" {
+  triggers = {
+    checksum = md5(local.argocd_values_content)
+  }
+}
+
+resource "kubernetes_namespace" "ns-argocd" {
+  metadata {
+    annotations = {
+      name = "${var.name}-${var.environment}-argocd"
+    }
+
+    name = "${var.name}-${var.environment}-argocd"
+  }
+}
+
+resource "helm_release" "argocd" {
+  name       = "argocd"
+  chart      = "argo-cd"
+  repository = "https://argoproj.github.io/argo-helm"
+  version    = "{{ argocd_helm_version }}"
+  namespace  = "${kubernetes_namespace.ns-argocd.metadata[0].name}"
+  values = [
+    local.argocd_values_content
+  ]
+
+  lifecycle {
+    ignore_changes = [
+      metadata
+    ]
+  }
+}
+
+resource "kubernetes_secret" "argocd_ssh_secret" {
+  metadata {
+    name      = "${kubernetes_namespace.ns-argocd.metadata[0].name}-ssh-secret"
+    namespace = "${kubernetes_namespace.ns-argocd.metadata[0].name}"
+    labels = {
+      "argocd.argoproj.io/secret-type" = "repository"
+    }
+  }
+
+  data = {
+    url           = var.gitops_repo_url_ssh
+    type          = "git"
+    sshPrivateKey = var.gitops_user_private_key
+  }
+}
+
+output "argocd_namespace" {
+  value = kubernetes_namespace.ns-argocd.metadata[0].name
+}

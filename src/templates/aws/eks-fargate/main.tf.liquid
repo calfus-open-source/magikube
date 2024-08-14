@@ -8,12 +8,32 @@ terraform {
     }
 }
 
+data "aws_route53_zone" "route53_zone" {
+  name = var.domain_name
+}
+
 module "vpc" {
     source = "./modules/vpc"
     name = "${ var.project_name }-${ var.environment }-vpc"
     environment = "${ var.environment }"
     cidr = "${ var.vpc_cidr }"
 }
+
+{% comment %} module "security_group"{
+    source = "./modules/security-groups"
+    name                    = "${ var.project_name }"
+    environment             = "${ var.environment }"
+    vpc_id                  = module.vpc.id
+} {% endcomment %}
+
+{% comment %} module "alb-ingress" {
+    source                    = "./modules/alb"
+    name                      = "${ var.project_name }"
+    vpc_public_subnets        = module.vpc.public_subnets
+    aws_acm_certificate_arn   = module.acm.ssl_cert_arn
+    environment               = "${ var.environment }"
+    ingress_security_group_id = module.security_group.ingress
+} {% endcomment %}
 
 module "eks" {
     source                  = "./modules/eks-fargate"
@@ -31,16 +51,13 @@ module "eks" {
     domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
 } {% endcomment %}
 
-{% comment %} {% if domain %}
 module "acm" {
     source = "./modules/acm"
     name = "${ var.project_name }"
     environment = "${ var.environment }"
-    domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
-    route53_zoneid = module.route53.zone_id
-} 
-{% endif %}
-{% endcomment %}
+    domain_name = var.domain_name
+    route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
+}
 
 {% if source_code_repository == 'github' %}
 module "gitops" {
@@ -51,17 +68,17 @@ module "gitops" {
     github_owner = "${ var.github_owner }"
 }
 
-module "github_repo" {
+module "repository" {
      source = "./modules/code-repository"
      name = "${ var.project_name }"
      appType = "${ var.appType }"
      environment = "${ var.environment }"
      github_token = "${ var.github_access_token }"
      github_owner = "${ var.github_owner }"
- }
+}
 {% endif %}
 
-{% if source_code_repository == 'codecommit' %}
+{% comment %} {% if source_code_repository == 'codecommit' %}
 module "gitops" {
     source = "./modules/gitops"
     name = "${ var.project_name }"
@@ -84,7 +101,7 @@ locals {
      environment = "${ var.environment }"
  }
 
-{% endif %}
+{% endif %} {% endcomment %}
 
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
     name = module.eks.cluster_name
@@ -107,6 +124,38 @@ module "ingress-controller" {
     fargate_profiles       = module.eks.fargate_profiles
 }
 
+module "environment" {
+  source                             = "./modules/environment"
+  name                               = "${ var.project_name }"
+  environment                        = "${ var.environment }"
+  region                             = "${ var.region }"
+  cluster_endpoint                   = module.eks.cluster_endpoint
+  cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+  cluster_token                      = data.aws_eks_cluster_auth.eks_cluster_auth.token
+  domain_name                        = var.domain_name
+  route53_zoneid                     = data.aws_route53_zone.route53_zone.zone_id
+  gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
+  gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+  argocd_namespace                   = module.argo.argocd_namespace
+}
+
+module "argo" {
+    source = "./modules/argocd"
+    name                               = "${ var.project_name }"
+    environment                        = "${ var.environment }"
+    region                             = "${ var.region }"
+    cluster_endpoint                   = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name                       = module.eks.cluster_name
+    oidc_provider_arn                  = module.eks.oidc_provider_arn
+    oidc_provider                      = module.eks.oidc_provider
+    cluster_token                      = data.aws_eks_cluster_auth.eks_cluster_auth.token
+    route53_zoneid                     = data.aws_route53_zone.route53_zone
+    domain_name                        = "${ var.domain_name }"
+    ssl_cert_arn                       = module.acm.ssl_cert_arn
+    vpc_public_subnets                 = module.vpc.public_subnets
+    gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
+    gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
 locals {
    repositories = [
      for repo_name in var.appType : {

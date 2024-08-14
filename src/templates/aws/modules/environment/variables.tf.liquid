@@ -1,0 +1,42 @@
+variable "name" {
+  description = "the name of your stack, e.g. \"demo\""
+}
+
+variable "environment" {
+  description = "the name of your environment, e.g. \"prod\""
+}
+
+variable "region" {
+  description = "the AWS region in which resources are created, you must set the availability_zones variable as well if you define this value to something other than the default"
+}
+
+variable "cluster_certificate_authority_data" {
+  description = "cluster certificate authority data"
+}
+
+variable "cluster_endpoint" {
+  description = "cluster endpoint"
+}
+
+variable "cluster_token" {
+  description = "cluster token"
+}
+
+variable "domain_name" {
+  description = "domain name"
+}
+
+variable "route53_zoneid" {
+  description = "route53 zone id"
+}
+
+variable "gitops_repo_url_ssh" {
+  description = "gitops repo url ssh"
+}
+
+variable "argocd_namespace" {
+  description = "argocd namespace"
+}
+
+variable "gitops_user_private_key" {
+}

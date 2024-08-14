@@ -76,6 +76,11 @@ Creating a new magikube project named 'sample' in the current directory
         }
       }
 
+      for (const prompt of promptGenerator.getDomainPrompt()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
+
       const dir = `${process.cwd()}/magikube-templates`;
       if (!fs.existsSync(dir)) {
         execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
@@ -121,14 +126,35 @@ Creating a new magikube project named 'sample' in the current directory
     const projectConfig = SystemConfig.getInstance().getConfig();
     let command: BaseCommand | undefined;
     const createApp = new CreateApplication(command as BaseCommand, projectConfig)
+    const modules = [
+      "module.vpc",
+      "module.eks",
+      "module.acm",
+      "module.gitops",
+      "module.repository",
+      "module.ingress-controller",
+      "module.argo",
+      "module.environment"
+  ];
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
       if (responses['cloud_provider'] === 'aws') {
         await terraform.AWSProfileActivate(responses['aws_profile']);
       }
       // Delay of 15 seconds to allow the user to review the terraform files
-      await new Promise(resolve => setTimeout(resolve, 15000));
-      await terraform?.runTerraform(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
+      if (responses['cluster_type'] === 'eks-fargate' || responses['cluster_type'] === 'eks-nodegroup' ) {
+        await new Promise(resolve => setTimeout(resolve, 15000));
+        await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
+        for (const module of modules) {
+          try {
+              AppLogger.info(`Starting Terraform apply for module: ${module}`, true);
+              await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure", module, 'terraform.tfvars');        
+              AppLogger.debug(`Successfully applied Terraform for module: ${module}`);
+          } catch (error) {
+              AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
+          }
+      }      
+      }
       if (responses['cluster_type'] === 'k8s') {
         await new Promise(resolve => setTimeout(resolve, 10000));
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);

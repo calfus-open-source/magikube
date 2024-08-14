@@ -11,7 +11,7 @@ data "github_user" "current_user" {
 }
 
 resource "github_team" "gitops_team" {
-  name        = "${var.name}.${var.environment}.gitops"
+  name        = "${var.name}-${var.environment}-gitops"
   description = "Git Ops team for ${var.name}, Environment: ${var.environment}"
 }
 
@@ -28,18 +28,27 @@ resource "github_team_repository" "gitops_team_repository" {
 }
 
 resource "github_repository" "gitops_repository" {
-  name        = "${var.name}.${var.environment}.gitops"
+  name        = "${var.name}-${var.environment}-gitops"
   description = "Git Ops repository for ${var.name}, Environment: ${var.environment}"
   visibility  = "private"
   has_issues  = false
   has_projects = false
   has_wiki    = false
-  auto_init   = true
-  gitignore_template = "Terraform"
-  license_template = "apache-2.0"
+  auto_init   = false
   topics = ["gitops", "terraform", "cicd"]
 }
 
+resource "tls_private_key" "gitops_ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "github_repository_deploy_key" "gitops_deploy_key" {
+  repository = github_repository.gitops_repository.name
+  title      = "GitOps Deploy Key"
+  key        = tls_private_key.gitops_ssh_key.public_key_openssh
+  read_only  = false
+}
 output "gitops_repository_url" {
   value = github_repository.gitops_repository.html_url
 }
@@ -48,3 +57,18 @@ output "gitops_repository_clone_url" {
   value = github_repository.gitops_repository.git_clone_url
 }
 
+output "gitops_ssh_private_key" {
+  value = tls_private_key.gitops_ssh_key.private_key_pem
+}
+
+output "gitops_ssh_public_key" {
+  value = tls_private_key.gitops_ssh_key.public_key_openssh
+}
+
+output "gitops_deploy_key_id" {
+  value = github_repository_deploy_key.gitops_deploy_key.id
+}
+
+output "gitops_ssh_clone_url" {
+  value = github_repository.gitops_repository.ssh_clone_url
+}

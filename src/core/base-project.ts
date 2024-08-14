@@ -31,6 +31,31 @@ export default abstract class BaseProject {
         // Run terraform destroy
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
+        const modules = [
+            "module.environment",
+            "module.argo",
+            "module.ingress-controller",
+            "module.repository",
+            "module.gitops",
+            "module.acm",
+            "module.eks",
+            "module.vpc"
+        ];
+        if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
+            // Initialize Terraform once
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
+            
+            // Destroy modules one by one
+            for (const module of modules) {
+                try {
+                    AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
+                    await terraform?.runTerraformDestroy(this.projectPath+`/infrastructure`, module, 'terraform.tfvars');
+                    AppLogger.debug(`Successfully destroyed Terraform for module: ${module}`);
+                } catch (error) {
+                    AppLogger.error(`Error destroying Terraform for module: ${module}, ${error}`, true);
+                }
+            }
+        }
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
@@ -40,7 +65,7 @@ export default abstract class BaseProject {
             await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `/infrastructure/terraform.tfvars`);
             terraform?.stopSSHProcess();
         }
-        await terraform?.runTerraformDestroy(this.projectPath);
+        //await terraform?.runTerraformDestroy(this.projectPath);
     }
 
     async deleteFolder(): Promise<void> {

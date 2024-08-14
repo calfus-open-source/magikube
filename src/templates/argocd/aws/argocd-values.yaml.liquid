@@ -1,0 +1,26 @@
+server:
+  # Argo CD server ingress configuration
+  ingress:
+    # -- Enable an ingress resource for the Argo CD server
+    enabled: true
+    controller: aws    
+    annotations:
+      alb.ingress.kubernetes.io/group.name: "${name}-${environment}"
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/certificate-arn: "${ssl_cert_arn}"
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06 
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/subnets: '${vpc_public_subnets}'
+
+    # -- Defines which ingress controller will implement the resource
+    ingressClassName: "alb"
+
+    # -- Argo CD server hostname
+    ## NOTE: Hostname must be provided if Ingress is enabled
+    hostname: "${hostname}"
+    
+configs:
+  params:
+    server.insecure: true

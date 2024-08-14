@@ -1,0 +1,65 @@
+resource "aws_security_group" "ingress" {
+  name   = "${var.name}-${var.environment}-ingress-sg"
+  vpc_id = var.vpc_id
+
+  ingress {
+    description      = "HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description      = "HTTPS"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+  
+  egress {
+    protocol         = "-1"
+    from_port        = 0
+    to_port          = 0
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  
+  tags = {
+    Name             = "${var.name}-${var.environment}-ingress-sg"
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "networking"
+    "terraform"      = "true"    
+  }
+}
+
+output "ingress" {
+  value = aws_security_group.ingress.id
+}
+
+resource "aws_security_group" "backend-ingress" {
+  name   = "${var.name}-${var.environment}-backend-ingress-sg"
+  vpc_id = var.vpc_id
+
+  egress {
+    protocol         = "-1"
+    from_port        = 0
+    to_port          = 0
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  
+  tags = {
+    Name             = "${var.name}-${var.environment}-backend-ingress-sg"
+    "product"        = var.name
+    "environment"    = var.environment
+    "role"           = "networking"
+    "terraform"      = "true"    
+  }
+}
+
+output "backend-ingress" {
+  value = aws_security_group.backend-ingress.id
+}

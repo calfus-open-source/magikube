@@ -8,22 +8,34 @@ resource "aws_acm_certificate" "ssl-cert" {
       "role"           = "networking"
       "terraform"      = "true"    
     }
+
+    subject_alternative_names = [
+      "*.${var.domain_name}"
+    ]
   
     lifecycle {
       create_before_destroy = true
     }
   }
   
-  {% comment %}
-  resource "aws_route53_record" "ssl-cert-validation" {
-    for_each = toset(aws_acm_certificate.ssl-cert.domain_validation_options)
-
-    allow_overwrite = true
-    name            = each.value.resource_record_name
-    records         = [each.value.resource_record_value]
-    ttl             = 60
-    type            = each.value.resource_record_type
-    zone_id         = var.route53_zoneid
+resource "aws_route53_record" "lifecycle-cert-validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.ssl-cert.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
   }
-  {% endcomment %}
-  
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = var.route53_zoneid
+}
+
+# Output the ARN of the ACM certificate
+output "ssl_cert_arn" {
+  value = aws_acm_certificate.ssl-cert.arn
+}

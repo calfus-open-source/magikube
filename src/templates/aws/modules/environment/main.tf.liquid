@@ -1,0 +1,62 @@
+provider "kubernetes" {
+  host                   = var.cluster_endpoint
+  cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+  token                  = var.cluster_token
+}
+
+locals {
+  argocd_app_rendered = templatefile("./argocd-app.yaml", {
+    application_name       = "${var.name}-${var.environment}"
+    namespace              = var.argocd_namespace
+    gitops_repo_url_ssh    = "${var.gitops_repo_url_ssh}"
+    application_path       = "${var.name}-${var.environment}"
+    target_namespace       = "${var.name}-${var.environment}-app"
+  })
+}
+
+resource "null_resource" "argocd_app" {
+  triggers = {
+    checksum = md5(local.argocd_app_rendered)
+  }
+}
+
+resource "kubernetes_namespace" "ns-environment" {
+  metadata {
+    annotations = {
+      name = "${var.name}-${var.environment}-app"
+    }
+
+    name = "${var.name}-${var.environment}-app"
+  }
+}
+
+resource "kubernetes_manifest" "argocd_app_deployment" {
+  manifest = yamldecode(local.argocd_app_rendered)
+}
+
+data "aws_lb" "frontend_alb" {
+  tags = {
+    "ingress.k8s.aws/stack" = "${var.name}-${var.environment}"
+    "elbv2.k8s.aws/cluster" = "${var.name}-${var.environment}-eks"
+  }
+}
+
+resource "aws_route53_record" "argocd-cname" {
+  zone_id = var.route53_zoneid
+  name    = "argocd.${var.domain_name}"
+  type    = "CNAME"
+  ttl     = 300
+  records        = [data.aws_lb.frontend_alb.dns_name]
+}
+
+resource "aws_route53_record" "app-cname" {
+  zone_id = var.route53_zoneid
+  name    = "${var.domain_name}"
+  type    = "CNAME"
+  ttl     = 300
+  records        = [data.aws_lb.frontend_alb.dns_name]
+}
+
+output "aws_lb_arn" {
+  value = data.aws_lb.frontend_alb.arn
+}

@@ -138,6 +138,19 @@ const codeCommitPrompts: any[] = [
   },
 ];
 
+const domainPrompt: any[] = [
+  {
+    message: "Enter the Domain Name: ",
+    name: "domain",
+    type: "input",
+    validate: (input: string) => {
+      if (!input || input.trim() === "") {
+        return "Domain name is required.";
+      }
+      return true;
+    }
+  }
+];
 
 enum ApplicationType {
   REACT = "react",
@@ -209,6 +222,10 @@ export default class PromptGenerator {
       console.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
       process.exit(1);
     }
+  }
+
+  getDomainPrompt(): any[] {
+    return domainPrompt;
   }
 
   getFrontendApplicationType(): any[] {
