@@ -84,7 +84,7 @@ export default class CreateApplication extends BaseProject {
             for (const file of dotFiles) {
                 await this.createFile(`.${file}`, `${path}/dist//next/${file}.liquid`, `${path}/${projectName}/${nextAppName}`,true);
             }
-            await this.createFile(`page.tsx`, `${path}//dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
+            await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
             execSync(`npm i`, {
                 cwd: `${path}/${projectName}/${nextAppName}`,
                 stdio: 'inherit'
@@ -207,24 +207,24 @@ export default class CreateApplication extends BaseProject {
              const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml']
              const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml' ]
              for(const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/auth-service/`, true);
+                await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
              }
             
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/keycloak-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-service/`, true);
+                await this.createFile(file, `${path}/dist/gitops/keycloak-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak`, true);
              }
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/express-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/express-service/`, true);
+                await this.createFile(file, `${path}/dist/gitops/express-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/express`, true);
              }
              if(frontend_app_type == 'react'){
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/react-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/react-service/`, true);
+                await this.createFile(file, `${path}/dist/gitops/react-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/react`, true);
              }
              await this.createFile('react.yml', `${path}/dist/gitops/common-gitops-files/react.yml.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true )
             }
             if(frontend_app_type == 'next'){
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/next-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/next-service/`, true);
+                await this.createFile(file, `${path}/dist/gitops/next-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/next/`, true);
              }
              await this.createFile('next.yml', `${path}/dist/gitops/common-gitops-files/next.yml.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true )
             }
