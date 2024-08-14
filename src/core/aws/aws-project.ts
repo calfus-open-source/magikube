@@ -111,9 +111,9 @@ export default class AWSProject extends BaseProject {
     }
 
     async createEnvironment(): Promise<void> {
-        this.createFile('main.tf', '../templates/aws/modules/environment/main.tf.liquid', './modules/environment');
-        this.createFile('variables.tf', '../templates/aws/modules/environment/variables.tf.liquid', './modules/environment');
-        this.createFile('argocd-app.yaml', '../templates/aws/modules/environment/argocd-app.yaml.liquid', './');
+        this.createFile('main.tf', '../templates/aws/modules/environment/main.tf.liquid', '/infrastructure/modules/environment');
+        this.createFile('variables.tf', '../templates/aws/modules/environment/variables.tf.liquid', '/infrastructure/modules/environment');
+        this.createFile('argocd-app.yaml', '../templates/aws/modules/environment/argocd-app.yaml.liquid', '/infrastructure');
     }
 
     // Function to start the SSH process in the background
@@ -221,7 +221,7 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
-        AppLogger.debug(`Running terraform apply upper one..., ${projectPath}`);
+        AppLogger.debug(`Running terraform apply..., ${projectPath}`);
         return new Promise((resolve, reject) => {
             try {
                 AppLogger.info('Running terraform apply...', true);

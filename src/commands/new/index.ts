@@ -148,7 +148,7 @@ Creating a new magikube project named 'sample' in the current directory
           try {
             console.log(`Starting Terraform apply for module: ${module}`);
             await terraform?.runTerraform(
-              process.cwd()+"/"+projectName,
+              process.cwd()+"/"+projectName+"/infrastructure",
               `${responses['environment']}-config.tfvars`,
               module,
               'terraform.tfvars'
