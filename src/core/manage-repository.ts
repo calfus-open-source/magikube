@@ -10,8 +10,8 @@ export class ManageRepository {
         const {token, userName, orgName, sourceCodeRepo, region, appName, projectName, appType} = configObject;
         let repoSetupError: boolean = false;
         const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
-        const projectPath = `${process.cwd()}/${projectName}/${appName}`;
-        const repoName = `${projectName}-${appType}-app`;
+        const projectPath = appType === 'gitops' ? `${process.cwd()}/${projectName}/${appType}` :`${process.cwd()}/${projectName}/${appName}`;
+        const repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
         // Function to execute command and log it
         const execAndLog = (command: string, description: string): string => {
             try {
