@@ -156,4 +156,19 @@ module "argo" {
     vpc_public_subnets                 = module.vpc.public_subnets
     gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
     gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for ${repo_name}"
+     }
+   ]
+ }
+
+module "ecr-repo" {
+    source            = "./modules/ecr"
+    image_tag_mutability   = "MUTABLE"
+    count = length(local.repositories)
+    name = "${ var.project_name }"
+    appType = local.repositories[count.index].appType
 }

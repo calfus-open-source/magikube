@@ -173,7 +173,7 @@ Creating a new magikube project named 'sample' in the current directory
       // Running the actual app setups
       const  { github_access_token: token, git_user_name: userName, github_owner: orgName, 
                source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey,
-               aws_secret_access_key: awsSecretKey} = projectConfig;
+               aws_secret_access_key: awsSecretKey, environment:environment} = projectConfig;
       
       const configObject: ConfigObject = {
         token,
@@ -186,14 +186,13 @@ Creating a new magikube project named 'sample' in the current directory
         awsSecretKey
       };
      const statusAuthenticationService = await createApp.setupAuthenticationService(projectConfig);
-     const statuskeyclockService = await createApp.setupKeyCloak(projectConfig);
-     const setupGitopsservicestatus =  await createApp.setupGitops(projectConfig);
       if(statusAuthenticationService){
                   configObject.appName = 'auth-service';
                   configObject.appType = 'auth-service';
         await ManageRepository.pushCode(configObject)
 
       }
+      const statuskeyclockService = await createApp.setupKeyCloak(projectConfig);
       if(statuskeyclockService){
                 configObject.appName = 'keycloak';
                 configObject.appType = 'keycloak-service';
@@ -207,10 +206,10 @@ Creating a new magikube project named 'sample' in the current directory
       if (responses['frontend_app_type']) {
         await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
       }
-
+      const setupGitopsservicestatus =  await createApp.setupGitops(projectConfig);
       if(setupGitopsservicestatus){
-                        configObject.appName = 'gitops';
-                        configObject.appType = 'default';
+                        configObject.appName = `${environment}`;
+                        configObject.appType = `gitops`;
               await ManageRepository.pushCode(configObject)
 
             }

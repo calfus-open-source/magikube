@@ -86,6 +86,7 @@ export default class AWSProject extends BaseProject {
         this.createVpc();
         this.createACM();
         this.createRoute53();
+        this.createECR();
         this.createIngressController();
         this.createEnvironment();
     }
@@ -115,7 +116,10 @@ export default class AWSProject extends BaseProject {
         this.createFile('variables.tf', '../templates/aws/modules/environment/variables.tf.liquid', '/infrastructure/modules/environment');
         this.createFile('argocd-app.yaml', '../templates/aws/modules/environment/argocd-app.yaml.liquid', '/infrastructure');
     }
-
+    async createECR(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/ecr/main.tf.liquid', '/infrastructure/modules/ecr');
+        this.createFile('variables.tf', '../templates/aws/modules/ecr/variables.tf.liquid', '/infrastructure/modules/ecr');
+    }
     // Function to start the SSH process in the background
     async startSSHProcess() {
         const proxyName = this.config.project_name + '-' + this.config.environment + '-proxy';
