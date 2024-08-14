@@ -49,12 +49,16 @@ resource "aws_route53_record" "argocd-cname" {
   records        = [data.aws_lb.frontend_alb.dns_name]
 }
 
-resource "aws_route53_record" "app-cname" {
+resource "aws_route53_record" "app-alias" {
   zone_id = var.route53_zoneid
   name    = "${var.domain_name}"
-  type    = "CNAME"
-  ttl     = 300
-  records        = [data.aws_lb.frontend_alb.dns_name]
+  type    = "A"
+
+  alias {
+    name                   = data.aws_lb.frontend_alb.dns_name
+    zone_id                = data.aws_lb.frontend_alb.zone_id
+    evaluate_target_health = true
+  }
 }
 
 output "aws_lb_arn" {
