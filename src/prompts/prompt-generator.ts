@@ -43,7 +43,7 @@ const awsPrompts: any[] = [
   },
   },
   {
-    choices: ["eks-fargate", "eks-nodegroup", "k8s"],
+    choices: ["eks-fargate", "eks-nodegroup"],
     message: "Select a Cluster Type:",
     name: "cluster_type",
     type: "list",
@@ -60,7 +60,7 @@ const awsPrompts: any[] = [
     type: "list",
     choices: [
       VersionControl.GITHUB,
-      VersionControl.CODECOMMIT,
+      // VersionControl.CODECOMMIT,
       VersionControl.BITBUCKET,
     ],
     default:

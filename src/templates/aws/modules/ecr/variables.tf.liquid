@@ -1,0 +1,13 @@
+variable "name" {
+  description = "the name of your stack, e.g. \"demo\""
+}
+
+variable "image_tag_mutability" {
+  description = "The tag mutability setting for the repository."
+  type        = string
+  default     = "MUTABLE"
+}
+
+variable "appType" {
+  description = "The name of your repo"
+}
