@@ -2,10 +2,10 @@ import { execSync } from "child_process";
 import { AppLogger } from "../logger/appLogger.js";
 import { ProgressBar } from "../logger/progressLogger.js";
 import { ConfigObject } from "./interface.js";
-import { Octokit } from "@octokit/rest";
+import axios from 'axios';
 import SystemConfig from "../config/system.js";
 import fs from 'fs-extra';
-import sodium from 'libsodium-wrappers'
+import sodium from 'libsodium-wrappers';
 
 let encryptedAwsAccessKeyId: string;
 let encryptedAwsSecretAccessKey: string;
@@ -46,22 +46,22 @@ export class ManageRepository {
         }
 
         async function fetchPublicKey(token: string, orgName: string, repoName: string): Promise<{ key: string, keyId: string }> {
-        const octokit = new Octokit({
-            auth: `${token}`,
-        });
-
-                const response = await octokit.request('GET /repos/{owner}/{repo}/actions/secrets/public-key', {
-                    owner: `${orgName}`,
-                    repo: `${repoName}`,
-                    headers: {
+            try {
+                const response = await axios.get(`https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/public-key`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
                     'X-GitHub-Api-Version': '2022-11-28',
-                    },
+                    Accept: 'application/vnd.github.v3+json',
+                },
                 });
-
                 return {
-                    key: response.data.key,
-                    keyId: response.data.key_id,
+                key: response.data.key,
+                keyId: response.data.key_id,
                 };
+            } catch (error) {
+                console.error('Error fetching public key:', error);
+                throw error; // Re-throw the error after logging it
+            }
         }
         let fetchkey =  async () => {
             const mytoken = `${token}`;
