@@ -13,14 +13,13 @@ import {
 import {
   DynamoDBClient,
   CreateTableCommand,
-  DeleteTableCommand
+  DeleteTableCommand,
 } from "@aws-sdk/client-dynamodb";
 
 import BaseProject from "../base-project.js";
 import { AppLogger } from "../../logger/appLogger.js";
 
 export default class AWSTerraformBackend {
-
   static async create(
     project: BaseProject,
     projectName: string,
@@ -28,7 +27,6 @@ export default class AWSTerraformBackend {
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<boolean> {
-
     const bucketName = `${projectName}-tfstate`;
     await AWSTerraformBackend.createBucket(
       project,
@@ -49,7 +47,7 @@ export default class AWSTerraformBackend {
 
     return true;
   }
-  
+
   static async delete(
     project: BaseProject,
     projectName: string,
@@ -57,28 +55,27 @@ export default class AWSTerraformBackend {
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<boolean> {
-      
-      const bucketName = `${projectName}-tfstate`;
-      await AWSTerraformBackend.deleteBucket(
-        project,
-        bucketName,
-        region,
-        accessKeyId,
-        secretAccessKey
-      );
-  
-      const tableName = `${projectName}-tfstate-lock`;
-      await AWSTerraformBackend.deleteDynamoDBTable(
-        project,
-        tableName,
-        region,
-        accessKeyId,
-        secretAccessKey
-      );
+    const bucketName = `${projectName}-tfstate`;
+    await AWSTerraformBackend.deleteBucket(
+      project,
+      bucketName,
+      region,
+      accessKeyId,
+      secretAccessKey
+    );
 
-      return true;
+    const tableName = `${projectName}-tfstate-lock`;
+    await AWSTerraformBackend.deleteDynamoDBTable(
+      project,
+      tableName,
+      region,
+      accessKeyId,
+      secretAccessKey
+    );
+
+    return true;
   }
-  
+
   static async createDynamoDBTable(
     project: BaseProject,
     tableName: string,
@@ -99,9 +96,7 @@ export default class AWSTerraformBackend {
         await dynamoDBClient.send(
           new CreateTableCommand({
             TableName: tableName,
-            KeySchema: [
-              { AttributeName: "LockID", KeyType: "HASH" },
-            ],
+            KeySchema: [{ AttributeName: "LockID", KeyType: "HASH" }],
             AttributeDefinitions: [
               { AttributeName: "LockID", AttributeType: "S" },
             ],
@@ -203,7 +198,6 @@ export default class AWSTerraformBackend {
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<boolean> {
-
     const s3Client = new S3Client({
       region: region,
       credentials: {

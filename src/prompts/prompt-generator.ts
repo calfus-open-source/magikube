@@ -49,18 +49,17 @@ const awsPrompts: any[] = [
     type: "list",
   },
   {
-    message: "Enter AWS profile to use: ",
+    message: "Enter AWS Profile: ",
     name: "aws_profile",
     type: "input",
-    default: "sample",
+    default: process.env.AWS_PROFILE || SystemConfig.getInstance().getConfig().aws_profile,
   },
   {
-    message: "Source code repository: ",
+    message: "Source Code Repository:",
     name: "source_code_repository",
     type: "list",
     choices: [
       VersionControl.GITHUB,
-      VersionControl.CODECOMMIT,
       VersionControl.BITBUCKET,
     ],
     default:
@@ -71,26 +70,26 @@ const awsPrompts: any[] = [
 
 const k8sPrompts: any[] = [
   {
-    message: "Enter the type of worker instance: ",
-    name: "instance_type",
+    message: "Enter Type of Master Instance(s): ",
+    name: "master_instance_type",
     type: "input",
     default: "t3.micro",
   },
   {
-    message: "Enter the number of master nodes: ",
+    message: "Enter Number of Master Node(s): ",
     name: "master_nodes_count",
     type: "input",
     default: 1,
   },
   {
-    message: "Enter the type of worker instance: ",
-    name: "instance_type",
+    message: "Enter Type of Worker Instance(s): ",
+    name: "worker_instance_type",
     type: "input",
     default: "t3.micro",
   },
   {
-    message: "Enter the number of worker nodes: ",
-    name: "worker_nodes",
+    message: "Enter Number of Woker Node(s): ",
+    name: "worker_nodes_count",
     type: "input",
     default: 1,
   },
@@ -116,28 +115,12 @@ const githubPrompts: any[] = [
   {
     type: 'input',
     name: 'git_user_name',
-    message: 'What is your git user name?',
+    message: 'Github User Name: ',
     default:
       process.env.GIT_USER_NAME ||
       SystemConfig.getInstance().getConfig().git_user_name,
   }
 ];
-
-const codeCommitPrompts: any[] = [
-  {
-    message: "Enter Name for Frontend Repo: ",
-    name: "frontend_repo_codecommit",
-    type: "input",
-    default: "frontend_app"
-  },
-  {
-    message: "Enter Name for Backend Repo: ",
-    name: "backend_repo_codecommit",
-    type: "input",
-    default: "backend_app"
-  },
-];
-
 
 enum ApplicationType {
   REACT = "react",
@@ -145,6 +128,7 @@ enum ApplicationType {
   NEST = "nest",
   NODE_EXPRESS = "node-express",
   NODE = "node",
+  NONE = "none",
 }
 
 export default class PromptGenerator {
@@ -217,8 +201,9 @@ export default class PromptGenerator {
         choices: [
           ApplicationType.REACT,
           ApplicationType.NEXT,
+          ApplicationType.NONE,
         ],
-        message: "Select a frontend application type:",
+        message: "Select Frontend Application Type:",
         name: "frontend_app_type",
         type: "list",
       },
@@ -232,8 +217,9 @@ export default class PromptGenerator {
           ApplicationType.NODE_EXPRESS,
           // ApplicationType.NEST,
           // ApplicationType.NODE,
+          ApplicationType.NONE,
         ],
-        message: "Select a backend application type:",
+        message: "Select Backend Application Type:",
         name: "backend_app_type",
         type: "list",
       },

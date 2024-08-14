@@ -8,7 +8,7 @@ import * as jsyaml from 'js-yaml';
 import * as os from 'os';
 import { AppLogger } from '../../logger/appLogger.js';
 import { ProgressBar } from '../../logger/progressLogger.js';
-import CreateApplication from '../setup-application.js';
+//import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
 
 let sshProcess: any;
@@ -41,22 +41,22 @@ export default class AWSProject extends BaseProject {
             awsStatus = true;
         }
         let command: BaseCommand | undefined;
-        const createApplication = new CreateApplication(command as BaseCommand, this.config)
+        //const createApplication = new CreateApplication(command as BaseCommand, this.config)
         if (!this.config.dryrun) {
             // Once the prompts are accepted at the start, these parameters will be accessible
-            const  {git_user_name, github_access_token, github_owner, project_name} = this.config;
-            let frontend_app_name;
-            let backend_app_name;
-            if(this.config.frontend_app_type == "react") {
-                frontend_app_name = this.config.react_app_name;
-            }
-            if (this.config.frontend_app_type == "next") {
-                frontend_app_name = this.config.next_app_name;
-            }
-            if (this.config.backend_app_type == "node-express") {
-                backend_app_name = this.config.node_app_name;
-            }
-            await createApplication.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name, project_name);
+            // const  {git_user_name, github_access_token, github_owner, project_name} = this.config;
+            // let frontend_app_name;
+            // let backend_app_name;
+            // if(this.config.frontend_app_type == "react") {
+            //     frontend_app_name = this.config.react_app_name;
+            // }
+            // if (this.config.frontend_app_type == "next") {
+            //     frontend_app_name = this.config.next_app_name;
+            // }
+            // if (this.config.backend_app_type == "node-express") {
+            //     backend_app_name = this.config.node_app_name;
+            // }
+            //await createApplication.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name, project_name);
             
             if (awsStatus) {
                 await super.destroyProject(name, path);

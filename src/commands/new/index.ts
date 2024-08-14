@@ -7,11 +7,10 @@ import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
 import SystemConfig from '../../config/system.js';
 import fs from 'fs';
-import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
-import CreateApplication from '../../core/setup-application.js';
+//import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
-import { ConfigObject } from '../../core/interface.js';
+import { ConfigObject } from '../../apps/interface.js';
 
 export default class CreateProject extends BaseCommand {
   static args = {
@@ -29,8 +28,7 @@ Creating a new magikube project named 'sample' in the current directory
 `,
   ]
 
-  async run(): Promise<void> {
-    const {args, flags} = await this.parse(CreateProject);
+  async getPrompts(args: { name: any; }, flags: { dryrun: any; }): Promise<Answers> {
     let responses: Answers = { 
       "project_name": args.name, 
       "project_id": uuidv4(),
@@ -40,7 +38,6 @@ Creating a new magikube project named 'sample' in the current directory
     const promptGenerator = new PromptGenerator();
     const credentialsPrompts = new CredentialsPrompts();
 
-    let appRouter;
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);
       responses = { ...responses, ...resp };
@@ -74,42 +71,41 @@ Creating a new magikube project named 'sample' in the current directory
         }
       }
 
-      const templatesDir = SystemConfig.getInstance().getConfig().magikube_cache || `${process.cwd()}/..`;
-      if (!fs.existsSync(`${templatesDir}/magikube-templates`)) {
-        execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
-            cwd: `${templatesDir}`,
-            stdio: 'inherit'
-        });
-      } else {
-        execSync('git pull', {
-            cwd: `${templatesDir}/magikube-templates`,
-            stdio: 'inherit'
-        });
+      for (const prompt of promptGenerator.getFrontendApplicationType()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
       }
+
+      for (const prompt of promptGenerator.getBackendApplicationType()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
+
+      AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
+      SystemConfig.getInstance().mergeConfigs(responses);
+    }
+
+    return responses;
+  }
+
+  async run(): Promise<void> {    
+    const {args, flags} = await this.parse(CreateProject);
+    const responses = await this.getPrompts(args, flags);
+
+    const projectName = args.name;
+    const terraform = await TerraformProject.getProject(this);
+
 
       // const copyTemplateResult = execSync('npm run copy-app-templates', {
       //   cwd: `${process.cwd()}`,
       //   stdio: 'pipe'
       // });
       // AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
-      }
+      //}
 
       // Asking for the frontend and backend prompts
-      for (const prompt of promptGenerator.getFrontendApplicationType()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
-      for (const prompt of promptGenerator.getBackendApplicationType()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
-
-    AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
-    SystemConfig.getInstance().mergeConfigs(responses);
 
     // Get the project name from the command line arguments
-    const projectName = args.name;
-    const terraform = await TerraformProject.getProject(this);
     if (terraform) {
        await terraform.createProject(projectName, process.cwd());
     //   if (responses['cloud_provider'] === 'aws') {
@@ -130,30 +126,31 @@ Creating a new magikube project named 'sample' in the current directory
     //   } 
       const projectConfig = SystemConfig.getInstance().getConfig();
       let command: BaseCommand | undefined;
-      const createApp = new CreateApplication(command as BaseCommand, projectConfig)
+      
+      //const createApp = new CreateApplication(command as BaseCommand, projectConfig)
       // Running the actual app setups
-      const  { github_access_token: token, git_user_name: userName, github_owner: orgName, 
-        source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey, aws_secret_access_key: awsSecretKey} = projectConfig;
+      // const  { github_access_token: token, git_user_name: userName, github_owner: orgName, 
+      //   source_code_repository: sourceCodeRepo, aws_region: region, aws_access_key_id: awsAccessKey, aws_secret_access_key: awsSecretKey} = projectConfig;
       
-      const configObject: ConfigObject = {
-        token,
-        userName,
-        orgName,
-        sourceCodeRepo,
-        region,
-        projectName,
-        awsAccessKey,
-        awsSecretKey
-      };
-      await createApp.setupAuthenticationService(projectConfig);
-      await createApp.setupKeyCloak(projectConfig);
-      if (responses['backend_app_type']) {
-        await createApp.handleAppCreation(responses['backend_app_type'], configObject);
-      }
+      // const configObject: ConfigObject = {
+      //   token,
+      //   userName,
+      //   orgName,
+      //   sourceCodeRepo,
+      //   region,
+      //   projectName,
+      //   awsAccessKey,
+      //   awsSecretKey
+      // };
+      // await createApp.setupAuthenticationService(projectConfig);
+      // await createApp.setupKeyCloak(projectConfig);
+      // if (responses['backend_app_type']) {
+      //   await createApp.handleAppCreation(responses['backend_app_type'], configObject);
+      // }
       
-      if (responses['frontend_app_type']) {
-        await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
-      }
+      // if (responses['frontend_app_type']) {
+      //   await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
+      // }
     }
   }
 }
