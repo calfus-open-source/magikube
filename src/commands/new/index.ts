@@ -144,20 +144,16 @@ Creating a new magikube project named 'sample' in the current directory
       // Delay of 15 seconds to allow the user to review the terraform files
       if (responses['cluster_type'] === 'eks-fargate' || responses['cluster_type'] === 'eks-nodegroup' ) {
         await new Promise(resolve => setTimeout(resolve, 15000));
+        await terraform?.runTerraformInit(process.cwd()+"/"+projectName, `${responses['environment']}-config.tfvars`);
         for (const module of modules) {
           try {
-            console.log(`Starting Terraform apply for module: ${module}`);
-            await terraform?.runTerraform(
-              process.cwd()+"/"+projectName+"/infrastructure",
-              `${responses['environment']}-config.tfvars`,
-              module,
-              'terraform.tfvars'
-            );
-            AppLogger.debug(`Successfully applied Terraform for module: ${module}`);
+              AppLogger.info(`Starting Terraform apply for module: ${module}`, true);
+              await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure", module, 'terraform.tfvars');        
+              AppLogger.debug(`Successfully applied Terraform for module: ${module}`);
           } catch (error) {
-            AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
+              AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
           }
-        }
+      }      
       }
       if (responses['cluster_type'] === 'k8s') {
         await new Promise(resolve => setTimeout(resolve, 10000));

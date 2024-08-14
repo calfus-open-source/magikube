@@ -11,7 +11,7 @@ data "github_user" "current_user" {
 }
 
 resource "github_team" "gitops_team" {
-  name        = "${var.name}.${var.environment}.gitops"
+  name        = "${var.name}-${var.environment}-gitops"
   description = "Git Ops team for ${var.name}, Environment: ${var.environment}"
 }
 
@@ -28,7 +28,7 @@ resource "github_team_repository" "gitops_team_repository" {
 }
 
 resource "github_repository" "gitops_repository" {
-  name        = "${var.name}.${var.environment}.gitops"
+  name        = "${var.name}-${var.environment}-gitops"
   description = "Git Ops repository for ${var.name}, Environment: ${var.environment}"
   visibility  = "private"
   has_issues  = false
