@@ -19,7 +19,7 @@ export class ManageRepository {
         const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
         const projectPath = `${process.cwd()}/${projectName}/${appName}`;
         const repoName = `${projectName}-${appType}-app`;
-        const gitopsRepo = `${projectName}.${getEnvironment}.gitops`;
+        const gitopsRepo = `${projectName}-${getEnvironment}-gitops`;
         // Function to execute command and log it
         const execAndLog = (command: string, description: string): string => {
             try {
