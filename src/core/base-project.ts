@@ -37,6 +37,7 @@ export default abstract class BaseProject {
             "module.ingress-controller",
             "module.repository",
             "module.gitops",
+            "module.ecr-repo",
             "module.acm",
             "module.eks",
             "module.vpc"

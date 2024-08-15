@@ -14,10 +14,10 @@ let publicKey: string;
 let publicKeyId: string;
 export class ManageRepository {
     static async pushCode(configObject: ConfigObject) {
-        const {token, userName, orgName, sourceCodeRepo, region, appName, projectName, appType, awsAccessKey, awsSecretKey, getEnvironment} = configObject;
+        const {token, userName, orgName, sourceCodeRepo, region, appName, projectName, appType, awsAccessKey, awsSecretKey, environment} = configObject;
         let repoSetupError: boolean = false;
         const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
-        const gitopsRepo = `${projectName}-${getEnvironment}-gitops`;
+        const gitopsRepo = `${projectName}-${environment}-gitops`;
         const projectPath = appType === 'gitops' ? `${process.cwd()}/${projectName}/${appType}` :`${process.cwd()}/${projectName}/${appName}`;
         const repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
         // Function to execute command and log it
@@ -105,7 +105,7 @@ export class ManageRepository {
                 { cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"AWS_REGION","value":"${region}"}'`, message: 'Creating environment variables'},
                 { cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"ECR_REPOSITORY","value":"${repoName}"}'`, message: 'Creating environment variables'},
                 { cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"GITOPS_REPO","value":"${gitopsRepo}"}'`, message: 'Creating environment variables'},
-                { cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"USERNAME","value":"${userName}"}'`, message: 'Creating environment variables'},
+                { cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"USERNAME","value":"${orgName}"}'`, message: 'Creating environment variables'},
                 { cmd: `curl -L -X PUT -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/AWS_ACCESS_KEY_ID -d '{"encrypted_value":"${data.encryptedAwsAccessKeyId}","key_id":"${publicKeyId}"}'`, message: 'adding aws access key ...' },
                 { cmd: `curl -L -X PUT -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/AWS_SECRET_ACCESS_KEY -d '{"encrypted_value":"${data.encryptedAwsSecretAccessKey}","key_id":"${publicKeyId}"}'`, message: 'adding aws access key ...' },
                 { cmd: `curl -L -X PUT -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/REPO_TOKEN -d '{"encrypted_value":"${data.encryptedGithubToken}","key_id":"${publicKeyId}"}'`,
