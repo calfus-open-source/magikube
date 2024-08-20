@@ -33,6 +33,7 @@ Creating a new magikube project named 'sample' in the current directory
     AppLogger.configureLogger();
     AppLogger.info('Logger Started ...');
     const {args, flags} = await this.parse(CreateProject);
+  try {
     let responses: Answers = { 
       "project_name": args.name, 
       "project_id": uuidv4(),
@@ -218,6 +219,13 @@ Creating a new magikube project named 'sample' in the current directory
     }
 
       await createApp.MoveFiles(projectName)
+
+    AppLogger.info('Magikube setup completed successfully! 🎉', true);
+
+  } catch (error) {
+    AppLogger.error(`An error occurred during the setup process: ${error}`, true);
+    throw error;
+  }
 
   }
 }
