@@ -130,6 +130,7 @@ Creating a new magikube project named 'sample' in the current directory
       "module.vpc",
       "module.eks",
       "module.acm",
+      "module.ecr-repo",
       "module.gitops",
       "module.repository",
       "module.ingress-controller",
@@ -183,7 +184,8 @@ Creating a new magikube project named 'sample' in the current directory
         region,
         projectName,
         awsAccessKey,
-        awsSecretKey
+        awsSecretKey,
+        environment
       };
      const statusAuthenticationService = await createApp.setupAuthenticationService(projectConfig);
       if(statusAuthenticationService){

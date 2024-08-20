@@ -9,7 +9,7 @@ export interface ConfigObject {
     appType?: string;
     awsAccessKey?: string;
     awsSecretKey?: string;
-    getEnvironment?: string;
+    environment?: string;
 }
 
 export interface AppTypeMap {
