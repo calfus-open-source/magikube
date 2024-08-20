@@ -225,12 +225,13 @@ export default class CreateApplication extends BaseProject {
              const appName = 'gitops';
              const { project_name: projectName, frontend_app_type, environment } = projectConfig;    
              const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml']
+             const gitopsKeycloakFiles = ['deployment.yml', 'ingress.yml', 'service.yml', 'deployment-postgres.yml']
              const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml' ]
              for(const file of gitopsFiles) {
                 await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
              }
             
-              for(const file of gitopsFiles) {
+              for(const file of gitopsKeycloakFiles) {
                 await this.createFile(file, `${path}/dist/gitops/keycloak-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak`, true);
              }
               for(const file of gitopsFiles) {
