@@ -199,9 +199,9 @@ Creating a new magikube project named 'sample' in the current directory
       if(statuskeyclockService){
                 configObject.appName = 'keycloak';
                 configObject.appType = 'keycloak-service';
-            await ManageRepository.pushCode(configObject)
+        await ManageRepository.pushCode(configObject);
 
-          }
+      }
 
       if (responses['backend_app_type']) {
         await createApp.handleAppCreation(responses['backend_app_type'], configObject);
@@ -213,14 +213,20 @@ Creating a new magikube project named 'sample' in the current directory
       if(setupGitopsservicestatus){
                         configObject.appName = `${environment}`;
                         configObject.appType = `gitops`;
-              await ManageRepository.pushCode(configObject)
+        await ManageRepository.pushCode(configObject);
 
-            }
+      }
     }
 
-      await createApp.MoveFiles(projectName)
+        await createApp.MoveFiles(projectName);
       
     AppLogger.info('Magikube setup completed successfully! 🎉', true);
+
+    //Remove dist folder after setup completed
+    const distPath = `${process.cwd()}/dist`;
+      if (fs.existsSync(distPath)) {
+        execSync(`rm -rf ${distPath}`)
+      }
 
   } catch (error) {
     AppLogger.error(`An error occurred during the setup process: ${error}`, true);
