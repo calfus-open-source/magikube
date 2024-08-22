@@ -1,7 +1,7 @@
 {
   "name": "magikube",
   "description": "Infrastructure as Code in minutes using magikube",
-  "version": "0.0.7",
+  "version": "0.0.1",
   "author": "Calfus",
   "bin": {
     "magikube": "./bin/run.js"
