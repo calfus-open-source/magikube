@@ -68,10 +68,37 @@ export class ManageRepository {
             const mytoken = `${token}`;
             const myorgName = `${orgName}`;
             const myrepoName = `${repoName}`;
-            const { key, keyId } = await fetchPublicKey(mytoken, myorgName, myrepoName);
+            // const { key, keyId } = await fetchPublicKey(mytoken, myorgName, myrepoName);
+            async function fetchPublicKeyWithRetry(mytoken: string, myorgName: string, myrepoName: string, maxRetries: number = 3): Promise<{ key: string, keyId: string }> {
+                let attempts = 0;
+                let result = { key: '', keyId: '' };
 
-            publicKey = key;
-            publicKeyId = keyId;
+                while (attempts < maxRetries) {
+                    try {
+                        attempts++;
+                        result = await fetchPublicKey(mytoken, myorgName, myrepoName);
+                        return result;
+                    } catch (error) {
+                        if (attempts >= maxRetries) {
+                            console.error('Max retry attempts reached for fetching public key and keyId');
+                            throw error;
+                        } else {
+                            console.error(`Attempt ${attempts} failed to fetch public key and keyId. Retrying...`);
+                        }
+                    }
+                }
+
+                return result;
+            }
+
+            try {
+                const { key, keyId } = await fetchPublicKeyWithRetry(mytoken, myorgName, myrepoName);
+                publicKey = key;
+                publicKeyId = keyId;
+            } catch (error) {
+                console.error('Failed to fetch public key and keyId:', error);
+            }
+
            }
         await fetchkey()
         console.log('Starting encryption process...');
@@ -88,33 +115,7 @@ export class ManageRepository {
             const myorgName = `${orgName}`;
             const myrepoName = `${repoName}`;
 
-            // const { key: publicKey } = await fetchPublicKey(mytoken, myorgName, myrepoName);
-            async function fetchPublicKeyWithRetry(mytoken: string, myorgName: string, myrepoName: string, maxRetries: number = 3): Promise<string> {
-                let attempts = 0;
-                let publicKey = '';
-                while (attempts < maxRetries) {
-                    try {
-                        attempts++;
-                        const { key } = await fetchPublicKey(mytoken, myorgName, myrepoName);
-                        publicKey = key;
-                        return publicKey;
-                    } catch (error) {
-                        if (attempts >= maxRetries) {
-                            console.error(`Max retry attempts reached for fetching public key`);
-                            throw error;
-                        } else {
-                            console.error(`Attempt ${attempts} failed to fetch public key. Retrying...`);
-                        }
-                    }
-                }
-                return publicKey;
-            }
-            try {
-                const publicKey = await fetchPublicKeyWithRetry(mytoken, myorgName, myrepoName);
-                console.log('Public key fetched successfully:', publicKey);
-            } catch (error) {
-                console.error('Failed to fetch public key:', error);
-            }
+            const { key: publicKey } = await fetchPublicKey(mytoken, myorgName, myrepoName);
 
             const awsAccessKeyId = `${awsAccessKey}`;
             const awsSecretAccessKey = `${awsSecretKey}`;
