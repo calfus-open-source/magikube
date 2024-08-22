@@ -88,7 +88,34 @@ export class ManageRepository {
             const myorgName = `${orgName}`;
             const myrepoName = `${repoName}`;
 
-            const { key: publicKey } = await fetchPublicKey(mytoken, myorgName, myrepoName);
+            // const { key: publicKey } = await fetchPublicKey(mytoken, myorgName, myrepoName);
+            async function fetchPublicKeyWithRetry(mytoken: string, myorgName: string, myrepoName: string, maxRetries: number = 3): Promise<string> {
+                let attempts = 0;
+                let publicKey = '';
+                while (attempts < maxRetries) {
+                    try {
+                        attempts++;
+                        const { key } = await fetchPublicKey(mytoken, myorgName, myrepoName);
+                        publicKey = key;
+                        return publicKey;
+                    } catch (error) {
+                        if (attempts >= maxRetries) {
+                            console.error(`Max retry attempts reached for fetching public key`);
+                            throw error;
+                        } else {
+                            console.error(`Attempt ${attempts} failed to fetch public key. Retrying...`);
+                        }
+                    }
+                }
+                return publicKey;
+            }
+            try {
+                const publicKey = await fetchPublicKeyWithRetry(mytoken, myorgName, myrepoName);
+                console.log('Public key fetched successfully:', publicKey);
+            } catch (error) {
+                console.error('Failed to fetch public key:', error);
+            }
+
             const awsAccessKeyId = `${awsAccessKey}`;
             const awsSecretAccessKey = `${awsSecretKey}`;
             const githubToken = `${token}`;
