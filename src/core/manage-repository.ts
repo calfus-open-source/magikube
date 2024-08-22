@@ -53,6 +53,7 @@ export class ManageRepository {
                     'X-GitHub-Api-Version': '2022-11-28',
                     Accept: 'application/vnd.github.v3+json',
                 },
+                timeout: 10000,
                 });
                 return {
                 key: response.data.key,

@@ -56,10 +56,38 @@ export default class CreateApplication extends BaseProject {
             await this.createFile('auth-guard.ts', `${path}/dist/express/auth-guard.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
             await this.createFile('index.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
             await this.createFile('protected.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
-            execSync('npm install', {
-                cwd: `${path}/${projectName}/${nodeAppName}`,
-                stdio: 'inherit'
-            });
+
+            const MAX_RETRIES = 3;
+            let attempts = 0;
+            let success = false;
+
+            while (attempts < MAX_RETRIES && !success) {
+                try {
+                    attempts++;
+                    execSync('npm install', {
+                        cwd: `${path}/${projectName}/${nodeAppName}`,
+                        stdio: 'inherit'
+                    });
+                    success = true; // If successful, exit the loop
+                } catch (error) {
+                    if (error instanceof Error) {
+                        console.error(`Attempt ${attempts} failed: ${error.message}`);
+                    } else {
+                        console.error(`Attempt ${attempts} failed with an unknown error`);
+                    }
+
+                    if (attempts >= MAX_RETRIES) {
+                        console.error('Max retry attempts reached. Aborting.');
+                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
+                    } else {
+                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
+                    }
+                }
+            }
+
+            // Ensure that this point is only reached after successful execution or retries are exhausted.
+            console.log('Continuing with the next function...');
+
             AppLogger.info('Node Express app created successfully.');
             return true;
         } catch (error) {
@@ -69,7 +97,7 @@ export default class CreateApplication extends BaseProject {
             return false;
         }
     }
-    
+
     //create Next.js application
     createNextApp = async (projectConfig: any) => {
         let nextAppName;
@@ -94,10 +122,38 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(`${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}/.github/workflows`, true);
             }
             await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
-            execSync(`npm i`, {
-                cwd: `${path}/${projectName}/${nextAppName}`,
-                stdio: 'inherit'
-            });
+
+            const MAX_RETRIES = 3;
+            let attempts = 0;
+            let success = false;
+
+            while (attempts < MAX_RETRIES && !success) {
+                try {
+                    attempts++;
+                    execSync('npm install', {
+                        cwd: `${path}/${projectName}/${nextAppName}`,
+                        stdio: 'inherit'
+                    });
+                    success = true; // If successful, exit the loop
+                } catch (error) {
+                    if (error instanceof Error) {
+                        console.error(`Attempt ${attempts} failed: ${error.message}`);
+                    } else {
+                        console.error(`Attempt ${attempts} failed with an unknown error`);
+                    }
+
+                    if (attempts >= MAX_RETRIES) {
+                        console.error('Max retry attempts reached. Aborting.');
+                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
+                    } else {
+                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
+                    }
+                }
+            }
+
+            // Ensure that this point is only reached after successful execution or retries are exhausted.
+            console.log('Continuing with the next function...');
+
             AppLogger.info('Next.js application created successfully.', true);
             return true;
         } catch (error) {
@@ -136,10 +192,38 @@ export default class CreateApplication extends BaseProject {
             for (const file of githubActionFIles) {
                 await this.createFile(`${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/.github/workflows`, true);
             }
-            execSync('npm install', {
-                cwd: `${path}/${projectName}/${reactAppName}`,
-                stdio: 'inherit'
-            });
+
+            const MAX_RETRIES = 3;
+            let attempts = 0;
+            let success = false;
+
+            while (attempts < MAX_RETRIES && !success) {
+                try {
+                    attempts++;
+                    execSync('npm install', {
+                        cwd: `${path}/${projectName}/${reactAppName}`,
+                        stdio: 'inherit'
+                    });
+                    success = true; // If successful, exit the loop
+                } catch (error) {
+                    if (error instanceof Error) {
+                        console.error(`Attempt ${attempts} failed: ${error.message}`);
+                    } else {
+                        console.error(`Attempt ${attempts} failed with an unknown error`);
+                    }
+
+                    if (attempts >= MAX_RETRIES) {
+                        console.error('Max retry attempts reached. Aborting.');
+                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
+                    } else {
+                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
+                    }
+                }
+            }
+
+            // Ensure that this point is only reached after successful execution or retries are exhausted.
+            console.log('Continuing with the next function...');
+
             AppLogger.info('React app created successfully.', true);
             return true;
     } catch (error) {
@@ -206,10 +290,40 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
             }
 
-            execSync('npm install', {
-                cwd: `${path}/${projectName}/${appName}`,
-                stdio: 'inherit'
-            });
+            const MAX_RETRIES = 3;
+            let attempts = 0;
+            let success = false;
+
+            while (attempts < MAX_RETRIES && !success) {
+                try {
+                    attempts++;
+                    execSync('npm install', {
+                        cwd: `${path}/${projectName}/${appName}`,
+                        stdio: 'inherit'
+                    });
+                    success = true; // If successful, exit the loop
+                } catch (error) {
+                    if (error instanceof Error) {
+                        console.error(`Attempt ${attempts} failed: ${error.message}`);
+                    } else {
+                        console.error(`Attempt ${attempts} failed with an unknown error`);
+                    }
+
+                    if (attempts >= MAX_RETRIES) {
+                        console.error('Max retry attempts reached. Aborting.');
+                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
+                    } else {
+                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
+                    }
+                }
+            }
+
+            // Ensure that this point is only reached after successful execution or retries are exhausted.
+            console.log('Continuing with the next function...');
+
+            // Ensure that this point is only reached after successful execution or retries are exhausted.
+            console.log('Continuing with the next function...');
+
 
             return true
         } catch (error) {
