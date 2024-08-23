@@ -167,12 +167,7 @@ export default class CreateApplication extends BaseProject {
             for (const file of themeSetupFiles) {
                 await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/themes/magikube/login`, true);
             }
-        const configPath = `${path}/${projectName}/${appName}/config.sh`;
-            if(configPath){
-                 execSync(`cd ${path}/${projectName}/${appName} && ./config.sh`, {
-                    stdio: 'inherit'
-                 });
-            }
+
             AppLogger.error("Keycloak setup done successfully.", true);
             return true;
 

@@ -12,6 +12,7 @@ import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 import { ConfigObject } from '../../core/interface.js';
 import { ManageRepository } from '../../core/manage-repository.js';
+import http from 'http';
 
 export default class CreateProject extends BaseCommand {
   static args = {
@@ -80,6 +81,7 @@ Creating a new magikube project named 'sample' in the current directory
       for (const prompt of promptGenerator.getDomainPrompt()) {
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
+        console.log(responses, ">>>>>>>>>>>>>responses")
       }
 
       const dir = `${process.cwd()}/magikube-templates`;
@@ -116,6 +118,7 @@ Creating a new magikube project named 'sample' in the current directory
       for (const prompt of promptGenerator.getBackendApplicationType()) {
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
+        console.log(responses.domain,'<<<<<<<<<<<responses')
       }
 
     AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
@@ -219,6 +222,52 @@ Creating a new magikube project named 'sample' in the current directory
     }
 
         await createApp.MoveFiles(projectName);
+
+   // Function to check if Keycloak service is up
+   function checkKeycloakService(domain: string): Promise<boolean> {
+      return new Promise<boolean>((resolve) => {
+        const url = `http://${domain}/keycloak`; 
+        const req = http.get(url, (res) => {
+          resolve(res.statusCode === 200);
+      });
+
+    req.on('error', () => {
+      resolve(false); 
+    });
+
+    req.end();
+  });
+}
+
+// Function to wait until the Keycloak service is up
+async function waitForKeycloakService(domain: string, retries = 70, delay = 20000): Promise<boolean> {
+  for (let i = 0; i < retries; i++) {
+    const isUp = await checkKeycloakService(domain);
+    if (isUp) {
+      console.log('Keycloak service is up!');
+      return true;
+    }
+    console.log(`Keycloak service is not up yet. Retrying in ${delay / 1000} seconds...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  console.error('Failed to detect that Keycloak service is up. Exiting...');
+  return false;
+}
+
+      // Wait for the Keycloak service to be up
+      const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
+      const domain = responses.domain; 
+      console.log(domain,"!!!!!!!!!!!!!domain")
+      const isServiceUp = await waitForKeycloakService(domain);
+      if (isServiceUp && fs.existsSync(keycloakConfigPath)) {
+          execSync(`chmod +x config.sh && /bin/sh ./config.sh`, {
+              cwd: `${process.cwd()}/${args.name}/keycloak`,
+              stdio: 'inherit'
+          });
+      } else {
+          console.error('Cannot run the script because Keycloak service is not up or config.sh does not exist.');
+     }
+
       
     AppLogger.info('Magikube setup completed successfully! 🎉', true);
 
