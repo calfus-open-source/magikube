@@ -98,7 +98,7 @@ export default class AWSProject extends BaseProject {
     }
     async createRds() : Promise<void> {
         this.createFile('main.tf', '../templates/aws/modules/rds/main.tf.liquid', '/infrastructure/modules/rds');
-        this.createFile('variables.tf', '../templates/aws/modules/rds/variables.tf.liquid');
+        this.createFile('variables.tf', '../templates/aws/modules/rds/variables.tf.liquid' , '/infrastructure/modules/rds');
 
     }
     

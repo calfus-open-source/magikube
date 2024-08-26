@@ -16,14 +16,14 @@ module "vpc" {
 }
 
 module "rds"{
-  source = "./modules/rds"
-  name = "${ var.project_name }-db"
-  environment = "${ var.environment }"
-  region = var.region
-  vpc_id = module.vpc.id
-  vpc_public_subnets = module.vpc.public_subnets
-  vpc_private_subnets = module.vpc.private_subnets
-  security_group_id = module.vpc.security_group_id
+    source = "./modules/rds"
+    name = "${ var.project_name }-db"
+    environment = "${ var.environment }"
+    region = var.region
+    vpc_id = module.vpc.id
+    vpc_public_subnets = module.vpc.public_subnets
+    vpc_private_subnets = module.vpc.private_subnets
+    security_group_id = module.vpc.security_group_id
 }
 
 {% if source_code_repository == 'github' %}
