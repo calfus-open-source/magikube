@@ -44,15 +44,15 @@ module "acm" {
     route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
 }
 
-module "rdsdb"{
-  source = "./modules/rds"
-  name = "${ var.project_name }-db"
-  environment = "${ var.environment }"
-  region = var.region
-  vpc_id = module.vpc.id
-  vpc_public_subnets = module.vpc.public_subnets
-  vpc_private_subnets = module.vpc.private_subnets
-  security_group_id = module.vpc.security_group_id
+module "rds" {
+    source = "./modules/rds"
+    name = "${ var.project_name }-db"
+    environment = "${ var.environment }"
+    region = var.region
+    vpc_id = module.vpc.id
+    vpc_public_subnets = module.vpc.public_subnets
+    vpc_private_subnets = module.vpc.private_subnets
+    security_group_id = module.vpc.security_group_id
 }
 
 {% if source_code_repository == 'github' %}
