@@ -40,7 +40,8 @@ export default abstract class BaseProject {
             "module.ecr-repo",
             "module.acm",
             "module.eks",
-            "module.vpc"
+            "module.vpc",
+            "module.rds",
         ];
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once

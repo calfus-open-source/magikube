@@ -31,6 +31,11 @@ variable "cluster_version" {
     description = "The EKS cluster version"
 }
 
+variable "appType" {
+   description = "List of app names"
+   type        = list(string)
+ }
+
 {% if source_code_repository == 'github' %}
 variable "github_access_token" {
     description = "The github access"
@@ -41,7 +46,4 @@ variable "github_owner" {
 }
 {% endif %}
 
-variable "appType" {
-   description = "List of app names"
-   type        = list(string)
- }
+

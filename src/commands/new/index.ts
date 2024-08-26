@@ -129,6 +129,7 @@ Creating a new magikube project named 'sample' in the current directory
     const createApp = new CreateApplication(command as BaseCommand, projectConfig)
     const modules = [
       "module.vpc",
+      "module.rds",
       "module.eks",
       "module.acm",
       "module.ecr-repo",
