@@ -10,6 +10,7 @@ import { AppLogger } from '../../logger/appLogger.js';
 import { ProgressBar } from '../../logger/progressLogger.js';
 import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
+import { executeCommandWithRetry } from '../common-functions/execCommands.js';
 
 let sshProcess: any;
 
@@ -198,13 +199,14 @@ export default class AWSProject extends BaseProject {
                     } else {
                         AppLogger.error(`Failed to initialize terraform process. Exit code: ${code}`, true);
                         reject(new Error(`Terraform init failed with exit code ${code}`)); // Reject promise on error
+                        setImmediate(() => process.exit(1)); 
                     }
                 });
     
             } catch (error) {
                 progressBar.stop(); // Close progress bar on error
                 AppLogger.error(`Failed to initialize terraform process: ${error}`, true);
-                reject(error); // Reject promise on error
+                reject(error); // Reject promise on error     
             }
         });
     }
@@ -277,6 +279,7 @@ export default class AWSProject extends BaseProject {
                         progressBar.stop();
                         AppLogger.error(`Terraform apply process exited with code ${code}`, true);
                         reject(new Error(`Terraform apply process exited with code ${code}`));
+                        setImmediate(() => process.exit(1));
                     }
                 });
     
@@ -412,57 +415,10 @@ export default class AWSProject extends BaseProject {
     }
 
     async runAnsiblePlaybook1(projectPath: string) {
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-    
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook... Attempt ${attempt}, ${projectPath}`, true);
-                execSync('ansible-playbook ../playbooks/create-k8s-cluster.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.debug('Kubernetes cluster created successfully.');
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook - ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-    }    
+       executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`});
+    }   
+     
     async runAnsiblePlaybook2(projectPath: string) {
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-    
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Kubernetes cluster configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook, ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
+        executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`});
     }
 }

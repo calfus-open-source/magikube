@@ -1,4 +1,3 @@
-import { execSync } from "child_process";
 import { AppLogger } from "../logger/appLogger.js";
 import { ProgressBar } from "../logger/progressLogger.js";
 import { ConfigObject } from "./interface.js";
@@ -6,6 +5,7 @@ import axios from 'axios';
 import SystemConfig from "../config/system.js";
 import fs from 'fs-extra';
 import sodium from 'libsodium-wrappers';
+import { executeCommandWithRetry } from "./common-functions/execCommands.js";
 
 let encryptedAwsAccessKeyId: string;
 let encryptedAwsSecretAccessKey: string;
@@ -16,7 +16,7 @@ export class ManageRepository {
     static async pushCode(configObject: ConfigObject) {
         const {token, userName, orgName, sourceCodeRepo, region, appName, projectName, appType, awsAccessKey, awsSecretKey, environment} = configObject;
         let repoSetupError: boolean = false;
-        const execCommand = (command: string, projectPath: string) => execSync(command, { cwd: projectPath, stdio: 'pipe' });
+        const execCommand = (command: string, projectPath: string) => executeCommandWithRetry(command, { cwd: projectPath,  stdio: 'pipe' })
         const gitopsRepo = `${projectName}-${environment}-gitops`;
         const projectPath = appType === 'gitops' ? `${process.cwd()}/${projectName}/${appType}` :`${process.cwd()}/${projectName}/${appName}`;
         const repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
