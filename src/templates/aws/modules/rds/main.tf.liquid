@@ -14,7 +14,7 @@ module "rds" {
   source = "terraform-aws-modules/rds/aws"
   version = "6.4.0"
 
-  identifier           = "${var.name}-${var.environment}-db"
+  identifier           = "${var.name}-${var.environment}"
   engine               = "postgres"
   engine_version       = "16"
   family               = "postgres16" # DB parameter group
@@ -29,8 +29,7 @@ module "rds" {
   manage_master_user_password_rotation              = true
   master_user_password_rotate_immediately           = false
   master_user_password_rotation_schedule_expression = "rate(15 days)"
-  subnet_ids                                        = var.vpc_database_subnets
-  db_subnet_group_name                              = "${var.name}-${var.environment}"
+  db_subnet_group_name                              = "${var.name}-${var.environment}-vpc"
   vpc_security_group_ids                            = [var.security_group_id]
 
   maintenance_window              = "Mon:00:00-Mon:03:00"
