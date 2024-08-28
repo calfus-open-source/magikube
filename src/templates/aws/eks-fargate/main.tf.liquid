@@ -77,14 +77,6 @@ module "acm" {
     route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
 }
 
-{% if source_code_repository == 'github' %}
-
-	@@ -77,99 +45,3 @@ module "repository" {
-     github_owner = "${ var.github_owner }"
-}
-{% endif %}
-
-
 {% comment %} {% if source_code_repository == 'codecommit' %}
 module "gitops" {
     source = "./modules/gitops"
