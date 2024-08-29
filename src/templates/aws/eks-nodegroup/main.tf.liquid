@@ -54,19 +54,6 @@ module "acm" {
     domain_name = var.domain_name
     route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
 }
-
-module "rds"{
-    source = "./modules/rds"  
-    name = "${ var.project_name }"
-    environment = "${ var.environment }"
-    region                 = var.region
-    vpc_id                 = module.vpc.id
-    vpc_private_subnets    = module.vpc.private_subnets
-    vpc_public_subnets     = module.vpc.public_subnets
-    vpc_database_subnets   = module.vpc.database_subnets
-    security_group_id      = module.vpc.default_security_group_id
-}
-
 {% if source_code_repository == 'github' %}
 module "gitops" {
     source = "./modules/gitops"

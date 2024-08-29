@@ -8,11 +8,9 @@ terraform {
     }
 }
 
-
 data "aws_route53_zone" "route53_zone" {
   name = var.domain_name
 }
-
 
 module "vpc" {
     source = "./modules/vpc"
@@ -50,7 +48,6 @@ module "rds"{
     ingress_security_group_id = module.security_group.ingress
 } {% endcomment %}
 
-
 module "eks" {
     source                  = "./modules/eks-fargate"
     name                    = "${ var.project_name }"
@@ -59,7 +56,6 @@ module "eks" {
     vpc_private_subnets     = module.vpc.private_subnets
     cluster_version         = "${ var.cluster_version }"
 }
-
 
 {% comment %} module "route53" {
     source = "./modules/route53"
@@ -76,6 +72,24 @@ module "acm" {
     domain_name = var.domain_name
     route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
 }
+{% if source_code_repository == 'github' %}
+module "gitops" {
+    source = "./modules/gitops"
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+    github_token = "${ var.github_access_token }"
+    github_owner = "${ var.github_owner }"
+}
+
+module "repository" {
+     source = "./modules/code-repository"
+     name = "${ var.project_name }"
+     appType = "${ var.appType }"
+     environment = "${ var.environment }"
+     github_token = "${ var.github_access_token }"
+     github_owner = "${ var.github_owner }"
+}
+{% endif %}
 
 {% comment %} {% if source_code_repository == 'codecommit' %}
 module "gitops" {
@@ -125,7 +139,6 @@ module "ingress-controller" {
     fargate_profiles       = module.eks.fargate_profiles
 }
 
-
 module "environment" {
   source                             = "./modules/environment"
   name                               = "${ var.project_name }"
@@ -140,7 +153,6 @@ module "environment" {
   gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
   argocd_namespace                   = module.argo.argocd_namespace
 }
-
 
 module "argo" {
     source = "./modules/argocd"
