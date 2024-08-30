@@ -1,14 +1,10 @@
-import { execSync } from "child_process";
 import { AppLogger } from "../logger/appLogger.js";
-import { ProgressBar } from "../logger/progressLogger.js";
 import BaseProject from "./base-project.js";
 import fs from 'fs-extra';
 import SystemConfig from "../config/system.js";
 import { AppTypeMap, ConfigObject } from "./interface.js";
 import { ManageRepository } from "./manage-repository.js";
 import BaseCommand from "../commands/base.js";
-import { promises } from "dns";
-import { exit } from "process";
 import { executeCommandWithRetry } from "./common-functions/execCommands.js";
 
 
@@ -124,7 +120,7 @@ export default class CreateApplication extends BaseProject {
             AppLogger.info('Creating react app!', true);
             const { appName: reactAppName, projectName} = projectConfig;
             await this.createFile('index.html', `${path}/dist/react/index.html.liquid`, `${path}/${projectName}/${reactAppName}/public`,true);
-            const reactAppFile = ['App.tsxx', 'index.tsx', 'app.css']
+            const reactAppFile = ['App.tsx', 'index.tsx', 'app.css']
             for (const file of reactAppFile) {
                 await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/src`,true);
             }
@@ -308,8 +304,7 @@ export default class CreateApplication extends BaseProject {
                 if (url) {
                     AppLogger.debug(`Deleting repository for..., ${url}`);
                     const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
-                     const result = execSync(command, { stdio: 'pipe' });
-                    // const result = executeCommandWithRetry(command, { stdio: 'pipe' })
+                    const result = executeCommandWithRetry(command, { stdio: 'pipe' })
                     AppLogger.debug(`Repository deleted successfully:, ${result.toString()}`);
                     AppLogger.debug(`Removing repository for..., ${url}`);
                     fs.rmdirSync(`./${projectName}/${appName}`, { recursive: true });

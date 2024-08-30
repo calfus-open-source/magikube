@@ -316,14 +316,12 @@ export default class AWSProject extends BaseProject {
             if (varFile) {
                 command += ` -var-file=${varFile}`;
             }
-            execSync(command, {
-                cwd: `${projectPath}`,
-                stdio: 'inherit',
-                env: process.env
-            });
-            AppLogger.info('Terraform destroy completed successfully.', true);
+    
+            const result = executeCommandWithRetry(command, {cwd: `${projectPath}`, stdio: 'inherit', env: "process.env" })
+            AppLogger.info('Terraform destroy completed successfully....', true);
         } catch (error) {
             AppLogger.error(`Failed to destroy terraform process:: ${error}`, true);
+            process.exit(1);
         }
     }
 
