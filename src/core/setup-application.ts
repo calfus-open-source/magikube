@@ -8,6 +8,10 @@ import { AppTypeMap, ConfigObject } from "./interface.js";
 import { ManageRepository } from "./manage-repository.js";
 import BaseCommand from "../commands/base.js";
 import { promises } from "dns";
+import { exit } from "process";
+import { executeCommandWithRetry } from "./common-functions/execCommands.js";
+
+
 
 export default class CreateApplication extends BaseProject {
     private appTypeMap: AppTypeMap;
@@ -57,44 +61,18 @@ export default class CreateApplication extends BaseProject {
             await this.createFile('index.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
             await this.createFile('protected.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
 
-            const MAX_RETRIES = 3;
-            let attempts = 0;
-            let success = false;
-
-            while (attempts < MAX_RETRIES && !success) {
-                try {
-                    attempts++;
-                    execSync('npm install', {
-                        cwd: `${path}/${projectName}/${nodeAppName}`,
-                        stdio: 'inherit'
-                    });
-                    success = true; // If successful, exit the loop
-                } catch (error) {
-                    if (error instanceof Error) {
-                        console.error(`Attempt ${attempts} failed: ${error.message}`);
-                    } else {
-                        console.error(`Attempt ${attempts} failed with an unknown error`);
-                    }
-
-                    if (attempts >= MAX_RETRIES) {
-                        console.error('Max retry attempts reached. Aborting.');
-                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
-                    } else {
-                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
-                    }
-                }
-            }
-
-            // Ensure that this point is only reached after successful execution or retries are exhausted.
-            console.log('Continuing with the next function...');
+            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nodeAppName}`, stdio: 'pipe'});
 
             AppLogger.info('Node Express app created successfully.');
+
             return true;
+
         } catch (error) {
             AppLogger.error(`Failed to create Node Express app: ${error}`, true);
             AppLogger.error(`Error occured, cleaning up the ${nodeAppName} directory...`, true);
-                fs.rmdirSync(`./${projectConfig.project_name}/${nodeAppName}`, { recursive: true });
-            return false;
+            fs.rmdirSync(`./${projectConfig.project_name}/${nodeAppName}`, { recursive: true });
+            process.exit(1);    
+            
         }
     }
 
@@ -123,44 +101,18 @@ export default class CreateApplication extends BaseProject {
             }
             await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
 
-            const MAX_RETRIES = 3;
-            let attempts = 0;
-            let success = false;
-
-            while (attempts < MAX_RETRIES && !success) {
-                try {
-                    attempts++;
-                    execSync('npm install', {
-                        cwd: `${path}/${projectName}/${nextAppName}`,
-                        stdio: 'inherit'
-                    });
-                    success = true; // If successful, exit the loop
-                } catch (error) {
-                    if (error instanceof Error) {
-                        console.error(`Attempt ${attempts} failed: ${error.message}`);
-                    } else {
-                        console.error(`Attempt ${attempts} failed with an unknown error`);
-                    }
-
-                    if (attempts >= MAX_RETRIES) {
-                        console.error('Max retry attempts reached. Aborting.');
-                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
-                    } else {
-                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
-                    }
-                }
-            }
-
-            // Ensure that this point is only reached after successful execution or retries are exhausted.
-            console.log('Continuing with the next function...');
+            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nextAppName}`});
 
             AppLogger.info('Next.js application created successfully.', true);
+            
             return true;
+
         } catch (error) {
             AppLogger.error(`Failed to create Next.js app: ${error}`);
             AppLogger.debug('Deleting created files and folders...');
             fs.rmdirSync(`./${projectConfig.project_name}/${nextAppName}`, { recursive: true });
-            return false;
+            process.exit(1);
+           
         } 
     }
 
@@ -172,7 +124,7 @@ export default class CreateApplication extends BaseProject {
             AppLogger.info('Creating react app!', true);
             const { appName: reactAppName, projectName} = projectConfig;
             await this.createFile('index.html', `${path}/dist/react/index.html.liquid`, `${path}/${projectName}/${reactAppName}/public`,true);
-            const reactAppFile = ['App.tsx', 'index.tsx', 'app.css']
+            const reactAppFile = ['App.tsxx', 'index.tsx', 'app.css']
             for (const file of reactAppFile) {
                 await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/src`,true);
             }
@@ -193,44 +145,17 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(`${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/.github/workflows`, true);
             }
 
-            const MAX_RETRIES = 3;
-            let attempts = 0;
-            let success = false;
-
-            while (attempts < MAX_RETRIES && !success) {
-                try {
-                    attempts++;
-                    execSync('npm install', {
-                        cwd: `${path}/${projectName}/${reactAppName}`,
-                        stdio: 'inherit'
-                    });
-                    success = true; // If successful, exit the loop
-                } catch (error) {
-                    if (error instanceof Error) {
-                        console.error(`Attempt ${attempts} failed: ${error.message}`);
-                    } else {
-                        console.error(`Attempt ${attempts} failed with an unknown error`);
-                    }
-
-                    if (attempts >= MAX_RETRIES) {
-                        console.error('Max retry attempts reached. Aborting.');
-                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
-                    } else {
-                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
-                    }
-                }
-            }
-
-            // Ensure that this point is only reached after successful execution or retries are exhausted.
-            console.log('Continuing with the next function...');
+            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`});
 
             AppLogger.info('React app created successfully.', true);
+
             return true;
+
     } catch (error) {
         AppLogger.error(`Failed to create React app:${error}`, true);
         AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
         fs.rmdirSync(`./${projectConfig.project_name}/${reactAppName}`, { recursive: true });
-        return false;
+        process.exit(1);
     }
 }
     // Setup Keycloak
@@ -251,11 +176,15 @@ export default class CreateApplication extends BaseProject {
             for (const file of themeSetupFiles) {
                 await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/themes/magikube/login`, true);
             }
+
+            AppLogger.info('Keycloak service created successfully.', true);
+
             return true
 
         } catch (error) {
             AppLogger.error(`Failed to setup keycloak, ${error}`, true);
-            return false
+            process.exit(1);
+
     }
 }
 
@@ -290,45 +219,14 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
             }
 
-            const MAX_RETRIES = 3;
-            let attempts = 0;
-            let success = false;
-
-            while (attempts < MAX_RETRIES && !success) {
-                try {
-                    attempts++;
-                    execSync('npm install', {
-                        cwd: `${path}/${projectName}/${appName}`,
-                        stdio: 'inherit'
-                    });
-                    success = true; // If successful, exit the loop
-                } catch (error) {
-                    if (error instanceof Error) {
-                        console.error(`Attempt ${attempts} failed: ${error.message}`);
-                    } else {
-                        console.error(`Attempt ${attempts} failed with an unknown error`);
-                    }
-
-                    if (attempts >= MAX_RETRIES) {
-                        console.error('Max retry attempts reached. Aborting.');
-                        throw new Error(`Failed to run 'npm install' after ${MAX_RETRIES} attempts.`);
-                    } else {
-                        console.log(`Retrying... (${attempts}/${MAX_RETRIES})`);
-                    }
-                }
-            }
-
-            // Ensure that this point is only reached after successful execution or retries are exhausted.
-            console.log('Continuing with the next function...');
-
-            // Ensure that this point is only reached after successful execution or retries are exhausted.
-            console.log('Continuing with the next function...');
-
+            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${appName}`});
 
             return true
+
         } catch (error) {
             AppLogger.error(`Failed to setup authentication service, ${error}`, true);
-            return false
+            process.exit(1);
+  
     }
     }
 
@@ -371,7 +269,7 @@ export default class CreateApplication extends BaseProject {
         
          }catch (error) {
         AppLogger.error(`Failed to setup authentication service, ${error}`, true);
-        return false
+        process.exit(1);
     }
     }
 
@@ -395,6 +293,7 @@ export default class CreateApplication extends BaseProject {
             }
         } catch (error) {
             AppLogger.error('Error occured while setting up the repository', true)
+            process.exit(1);
         }
     }
     
@@ -409,7 +308,8 @@ export default class CreateApplication extends BaseProject {
                 if (url) {
                     AppLogger.debug(`Deleting repository for..., ${url}`);
                     const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
-                    const result = execSync(command, { stdio: 'pipe' });
+                     const result = execSync(command, { stdio: 'pipe' });
+                    // const result = executeCommandWithRetry(command, { stdio: 'pipe' })
                     AppLogger.debug(`Repository deleted successfully:, ${result.toString()}`);
                     AppLogger.debug(`Removing repository for..., ${url}`);
                     fs.rmdirSync(`./${projectName}/${appName}`, { recursive: true });
