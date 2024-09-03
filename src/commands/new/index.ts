@@ -12,7 +12,17 @@ import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 import { ConfigObject } from '../../core/interface.js';
 import { ManageRepository } from '../../core/manage-repository.js';
+import { Colours } from '../../prompts/constants.js';
 
+function validateUserInput(input: string): void {
+  const pattern = /^(?=.{3,8}$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
+  if (pattern.test(input)) {
+      console.log('Input is valid.');
+  } else {
+      console.error(`\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`);
+      process.exit(1);
+  }
+}
 export default class CreateProject extends BaseCommand {
   static args = {
     name: Args.string({description: 'Project name to be created', required: true}),
@@ -33,12 +43,15 @@ Creating a new magikube project named 'sample' in the current directory
     AppLogger.configureLogger();
     AppLogger.info('Logger Started ...');
     const {args, flags} = await this.parse(CreateProject);
+
+    // Check the project name condition
+    validateUserInput(args.name)
   try {
     let responses: Answers = { 
       "project_name": args.name, 
       "project_id": uuidv4(),
       "dryrun": flags.dryrun || false,
-    };    
+    };
 
     const promptGenerator = new PromptGenerator();
     const credentialsPrompts = new CredentialsPrompts();
