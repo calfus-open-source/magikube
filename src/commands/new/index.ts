@@ -129,7 +129,6 @@ Creating a new magikube project named 'sample' in the current directory
     const createApp = new CreateApplication(command as BaseCommand, projectConfig)
     const modules = [
       "module.vpc",
-      "module.rds",
       "module.eks",
       "module.acm",
       "module.ecr-repo",
@@ -137,7 +136,8 @@ Creating a new magikube project named 'sample' in the current directory
       "module.repository",
       "module.ingress-controller",
       "module.argo",
-      "module.environment"
+      "module.environment",
+      "module.rds"
   ];
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());

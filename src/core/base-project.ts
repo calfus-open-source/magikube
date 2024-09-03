@@ -32,6 +32,7 @@ export default abstract class BaseProject {
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         const modules = [
+            "module.rds",
             "module.environment",
             "module.argo",
             "module.ingress-controller",
@@ -40,8 +41,7 @@ export default abstract class BaseProject {
             "module.ecr-repo",
             "module.acm",
             "module.eks",
-            "module.vpc",
-            "module.rds",
+            "module.vpc"
         ];
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
