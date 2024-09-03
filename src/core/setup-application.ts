@@ -31,165 +31,14 @@ export default class CreateApplication extends BaseProject {
           },
         };
     }
-
-    createNodeExpressApp = async (projectConfig: any) => {
-        let nodeAppName;
-        try {
-            AppLogger.info('Creating node-express app!', true);
-            const { appName: nodeAppName, projectName} = projectConfig;
-            const path = process.cwd();
-            await this.createFile('app.ts', `${path}/dist/express/app.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src`,true);
-            const dotFiles = ['gitignore', 'eslintrc.json'];
-            const githubActionFIles = [ 'ci-build.yml' ];
-            for (const file of githubActionFIles) {
-                await this.createFile(`${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}/.github/workflows`, true);
-            }
-            for (const file of dotFiles){
-                await this.createFile(`.${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true)
-            }
-            const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml'];
-            for (const file of files) {
-                await this.createFile(file, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true);
-            }
-            await this.createFile('AppConfig.ts', `${path}/dist/express/AppConfig.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/config`,true)
-            await this.createFile('auth-guard.service.ts', `${path}/dist/express/auth-guard.service.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
-            await this.createFile('auth-guard.ts', `${path}/dist/express/auth-guard.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
-            await this.createFile('index.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
-            await this.createFile('protected.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
-
-            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nodeAppName}`, stdio: 'pipe'});
-
-            AppLogger.info('Node Express app created successfully.');
-
-            return true;
-
-        } catch (error) {
-            AppLogger.error(`Failed to create Node Express app: ${error}`, true);
-            AppLogger.error(`Error occured, cleaning up the ${nodeAppName} directory...`, true);
-            fs.rmdirSync(`./${projectConfig.project_name}/${nodeAppName}`, { recursive: true });
-            process.exit(1);    
-            
-        }
-    }
-
-    //create Next.js application
-    createNextApp = async (projectConfig: any) => {
-        let nextAppName;
-        const path = process.cwd();
-        try {
-            AppLogger.info('Creating next app!', true);
-            const { appName: nextAppName, projectName} = projectConfig;
-            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
-            const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
-            const dotFiles = ['gitignore', 'eslintrc.json', 'env.local']
-            const files = [...commonFiles, ...appRouterFiles];
-            const githubActionFIles = [ 'ci-build.yml' ];
-            for (const file of files) {
-            const route = appRouterFiles.includes(file) ? `./${projectName}/${nextAppName}/app` : `${path}/${projectName}/${nextAppName}`;
-                await this.createFile(file, `${path}/dist/next/${file}.liquid`, route, true);
-            }
-            for (const file of dotFiles) {
-                await this.createFile(`.${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}`,true);
-            }
-            await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
-            for (const file of githubActionFIles) {
-                await this.createFile(`${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}/.github/workflows`, true);
-            }
-            await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`,true);
-
-            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nextAppName}`});
-
-            AppLogger.info('Next.js application created successfully.', true);
-            
-            return true;
-
-        } catch (error) {
-            AppLogger.error(`Failed to create Next.js app: ${error}`);
-            AppLogger.debug('Deleting created files and folders...');
-            fs.rmdirSync(`./${projectConfig.project_name}/${nextAppName}`, { recursive: true });
-            process.exit(1);
-           
-        } 
-    }
-
-    // create React application
-    createReactApp = async (projectConfig: any) => {
-        let reactAppName;
-        const path = process.cwd();
-        try {
-            AppLogger.info('Creating react app!', true);
-            const { appName: reactAppName, projectName} = projectConfig;
-            await this.createFile('index.html', `${path}/dist/react/index.html.liquid`, `${path}/${projectName}/${reactAppName}/public`,true);
-            const reactAppFile = ['App.tsx', 'index.tsx', 'app.css']
-            for (const file of reactAppFile) {
-                await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/src`,true);
-            }
-            const reactAuthFiles = ['AuthGuard.tsx', 'AuthenticationProvider.tsx', 'Callback.tsx']
-                  for (const file of reactAuthFiles) {
-                await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/src/components`,true);
-            }
-            const reactCommonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'nginx.conf'];
-            for (const file of reactCommonFiles) {
-                await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}`,true);
-            }
-            const dotFiles = ['gitignore', 'eslintrc.json','env.local','env.local']
-            for (const file of dotFiles) {
-                await this.createFile(`.${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}`,true);
-            }
-            const githubActionFIles = [ 'ci-build.yml' ];
-            for (const file of githubActionFIles) {
-                await this.createFile(`${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/.github/workflows`, true);
-            }
-
-            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`});
-
-            AppLogger.info('React app created successfully.', true);
-
-            return true;
-
-    } catch (error) {
-        AppLogger.error(`Failed to create React app:${error}`, true);
-        AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
-        fs.rmdirSync(`./${projectConfig.project_name}/${reactAppName}`, { recursive: true });
-        process.exit(1);
-    }
-}
-    // Setup Keycloak
-    async setupKeyCloak(projectConfig: any) {
-        const path = process.cwd();
-        try {
-            const appName = 'keycloak';
-            const { project_name: projectName } = projectConfig;
-            const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh','Dockerfile'];
-            const themeSetupFiles = ['login.ftl', 'theme.properties', 'error.ftl'];
-            const githubActionFIles = [ 'ci-build.yml' ];
-            for (const file of githubActionFIles) {
-                await this.createFile(`${file}`, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/.github/workflows`, true);
-            }
-            for (const file of keyCloakSetuopFiles) {
-                await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
-            }
-            for (const file of themeSetupFiles) {
-                await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/themes/magikube/login`, true);
-            }
-
-            AppLogger.info('Keycloak service created successfully.', true);
-
-            return true
-
-        } catch (error) {
-            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
-            process.exit(1);
-
-    }
-}
-
+    
     // Setup Auth service
     async setupAuthenticationService(projectConfig: any){
         const path = process.cwd();
+        const appName = 'auth-service';
+        const { project_name: projectName } = projectConfig;  
         try {
-            const appName = 'auth-service';
-            const { project_name: projectName } = projectConfig;    
+            AppLogger.info('Creating Auth-Service!', true);  
             const keyCloakBaseFiles = ['app.controller.ts', 'app.module.ts', 'app.service.ts', 'main.ts'];
             const keyCloakHealthFiles = ['health.controller.ts', 'health.module.ts', 'health.service.ts'];
             const dotFiles = ['env.local', 'gitignore'];
@@ -215,23 +64,165 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
             }
 
-            executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${appName}`});
-
+            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${appName}`});
+            AppLogger.info('Auth-Service created successfully!', true);
             return true
 
         } catch (error) {
             AppLogger.error(`Failed to setup authentication service, ${error}`, true);
+            fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
             process.exit(1);
   
     }
     }
 
+    // Setup Keycloak
+    async setupKeyCloak(projectConfig: any) {
+        const path = process.cwd();
+        const appName = 'keycloak';
+        const { project_name: projectName } = projectConfig;
+        try {
+            AppLogger.info('Creating Keycloak-Service!', true);
+            const keyCloakSetuopFiles = ['config.sh', 'entrypoint.sh','Dockerfile'];
+            const themeSetupFiles = ['login.ftl', 'theme.properties', 'error.ftl'];
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/.github/workflows`, true);
+            }
+            for (const file of keyCloakSetuopFiles) {
+                await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}`, true);
+            }
+            for (const file of themeSetupFiles) {
+                await this.createFile(file, `${path}/dist/keycloak/${file}.liquid`, `${path}/${projectName}/${appName}/themes/magikube/login`, true);
+            }
+
+            AppLogger.info('Keycloak service created successfully.', true);
+
+            return true
+
+        } catch (error) {
+            AppLogger.error(`Failed to setup keycloak, ${error}`, true);
+            fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
+            process.exit(1);
+      }
+   }
+
+    createNodeExpressApp = async (projectConfig: any) => {
+        const { appName: nodeAppName, projectName} = projectConfig;
+        const path = process.cwd();
+        try {
+            AppLogger.info('Creating node-express app!', true);
+            await this.createFile('app.ts', `${path}/dist/express/app.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src`,true);
+            const dotFiles = ['gitignore', 'eslintrc.json'];
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}/.github/workflows`, true);
+            }
+            for (const file of dotFiles){
+                await this.createFile(`.${file}`, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true)
+            }
+            const files = ['package.json', 'tsconfig.json', 'Dockerfile', 'buildspec.yml'];
+            for (const file of files) {
+                await this.createFile(file, `${path}/dist/express/${file}.liquid`, `${path}/${projectName}/${nodeAppName}`,true);
+            }
+            await this.createFile('AppConfig.ts', `${path}/dist/express/AppConfig.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/config`,true)
+            await this.createFile('auth-guard.service.ts', `${path}/dist/express/auth-guard.service.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
+            await this.createFile('auth-guard.ts', `${path}/dist/express/auth-guard.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/middlewares`,true)
+            await this.createFile('index.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
+            await this.createFile('protected.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
+
+            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nodeAppName}`, stdio: 'pipe'});
+            AppLogger.info('Node Express app created successfully.',true);
+            return true;
+
+        } catch (error) {
+            AppLogger.error(`Failed to create Node-express Application: ${error}`, true);
+            fs.rmdirSync(`${path}/${projectName}/${nodeAppName}`, { recursive: true });
+            process.exit(1);
+        }
+    }
+
+    // Create Next.js application
+    createNextApp = async (projectConfig: any) => {
+        const path = process.cwd();
+        const { appName: nextAppName, projectName } = projectConfig;
+        try {
+            AppLogger.info('Creating next app!', true);    
+            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
+            const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
+            const dotFiles = ['gitignore', 'eslintrc.json', 'env.local'];
+            const files = [...commonFiles, ...appRouterFiles];
+            const githubActionFiles = ['ci-build.yml'];
+
+            for (const file of files) {
+                const route = appRouterFiles.includes(file) ? `./${projectName}/${nextAppName}/app` : `${path}/${projectName}/${nextAppName}`;
+                await this.createFile(file, `${path}/dist/next/${file}.liquid`, route, true);
+            }
+            for (const file of dotFiles) {
+                await this.createFile(`.${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}`, true);
+            }
+            await this.createFile(`page.tsx`, `${path}/dist/next/callback.tsx.liquid`, `${path}/${projectName}/${nextAppName}/app/callback`, true);
+            for (const file of githubActionFiles) {
+                await this.createFile(`${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}/.github/workflows`, true);
+            }
+
+            await executeCommandWithRetry('npm install', { cwd: `${path}/${projectName}/${nextAppName}` });
+            AppLogger.info('Next.js application created successfully.', true);
+            return true;
+
+        } catch (error) {
+            AppLogger.error(`Failed to create Next.js app: ${error}`, true);
+            fs.rmdirSync(`${path}/${projectName}/${nextAppName}`, { recursive: true });
+            process.exit(1);
+        }
+    };
+
+    // create React application
+    createReactApp = async (projectConfig: any) => {
+        const path = process.cwd();
+        const { appName: reactAppName, projectName} = projectConfig;
+        try {
+            AppLogger.info('Creating react app...', true);
+            await this.createFile('index.html', `${path}/dist/react/index.html.liquid`, `${path}/${projectName}/${reactAppName}/public`,true);
+            const reactAppFile = ['App.tsx', 'index.tsx', 'app.css']
+            for (const file of reactAppFile) {
+                await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/src`,true);
+            }
+            const reactAuthFiles = ['AuthGuard.tsx', 'AuthenticationProvider.tsx', 'Callback.tsx']
+                  for (const file of reactAuthFiles) {
+                await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/src/components`,true);
+            }
+            const reactCommonFiles = ['package.json', 'tsconfig.json', 'Dockerfile', 'nginx.conf'];
+            for (const file of reactCommonFiles) {
+                await this.createFile(file, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}`,true);
+            }
+            const dotFiles = ['gitignore', 'eslintrc.json','env.local','env.local']
+            for (const file of dotFiles) {
+                await this.createFile(`.${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}`,true);
+            }
+            const githubActionFIles = [ 'ci-build.yml' ];
+            for (const file of githubActionFIles) {
+                await this.createFile(`${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/.github/workflows`, true);
+            }
+
+            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`});
+            AppLogger.info('React app created successfully.', true);
+            return true;
+
+    } catch (error) {
+            AppLogger.error(`Failed to create React app:${error}`, true);
+            AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
+            fs.rmdirSync(`${path}/${projectName}/${reactAppName}`, { recursive: true });
+            process.exit(1);
+    }
+}
+   
     //Setup Gitops 
     async setupGitops(projectConfig:any){
          const path = process.cwd();
-         try{
-             const appName = 'gitops';
-             const { project_name: projectName, frontend_app_type, environment } = projectConfig;    
+         const appName = 'gitops';
+         const { project_name: projectName, frontend_app_type, environment } = projectConfig;   
+         try{ 
              const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml']
              const gitopsKeycloakFiles = ['deployment.yml', 'ingress.yml', 'service.yml', 'deployment-postgres.yml']
              const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml' ]
@@ -259,14 +250,16 @@ export default class CreateApplication extends BaseProject {
             }
               for(const file of commonGitopsFiles){
                 await this.createFile(`${file}`, `${path}/dist/gitops/common-gitops-files/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true)
-              }
+            }
+
               AppLogger.info('Gitops setup is done.', true);
               return true;
         
          }catch (error) {
-        AppLogger.error(`Failed to setup authentication service, ${error}`, true);
-        process.exit(1);
-    }
+            AppLogger.error(`Failed to setup authentication service, ${error}`, true);
+            fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
+            process.exit(1);
+      }
     }
 
     

@@ -33,20 +33,18 @@ export async function executeCommandWithRetry(
             success = true; 
         } catch (error) {
             if (error instanceof Error) {
-                console.error(``);
-                 AppLogger.info(`Attempt ${attempts} failed: ${error.message}`, true);
+                AppLogger.info(`Attempt ${attempts} failed: ${error.message}`, true);
             } else {
-                console.error();
                 AppLogger.info(`Attempt ${attempts} failed with an unknown error`, true);
             }
 
             if (attempts >= maxRetries) {
-                 AppLogger.info('Max retry attempts reached. Aborting.', true);         
+                AppLogger.info('Max retry attempts reached. Aborting.', true);
+                throw error;
             } else {
-                 AppLogger.info(`Retrying... (${attempts}/${maxRetries})`, true);
+                AppLogger.info(`Retrying... (${attempts}/${maxRetries})`, true);
             }
         }
     }
 }
-
 

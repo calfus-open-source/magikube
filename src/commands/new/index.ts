@@ -85,15 +85,15 @@ Creating a new magikube project named 'sample' in the current directory
       const dir = `${process.cwd()}/magikube-templates`;
       const path =  process.cwd();
        if (!fs.existsSync(dir)) {
-        executeCommandWithRetry('git clone https://github.com/calfus-open-source/magikube-templates.git',{cwd:path});
+       await executeCommandWithRetry('git clone https://github.com/calfus-open-source/magikube-templates.git',{cwd:path});
     }
 
     if (!fs.existsSync(`${process.cwd()}/dist`)) {
-        executeCommandWithRetry('mkdir dist', {cwd:path});
+       await executeCommandWithRetry('mkdir dist', {cwd:path});
     }
 
     const copyTemplateResult = executeCommandWithRetry('rsync -av magikube-templates/* dist/ --prune-empty-dirs', {cwd:path});
-    executeCommandWithRetry(`rm -rf ${dir}`, {cwd:path});
+    await executeCommandWithRetry(`rm -rf ${dir}`, {cwd:path});
 
     AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
 
@@ -208,19 +208,15 @@ Creating a new magikube project named 'sample' in the current directory
           configObject.appType = 'gitops';
           await ManageRepository.pushCode(configObject);
         }
-
-
     }
   
-
       await createApp.MoveFiles(projectName)
       
-    AppLogger.info('Magikube setup completed successfully! 🎉', true);
+     AppLogger.info('Magikube setup completed successfully! 🎉', true);
 
   } catch (error) {
     AppLogger.error(`An error occurred during the setup process: ${error}`, true);
     process.exit(1); 
-    throw error;
   }
 
   }
