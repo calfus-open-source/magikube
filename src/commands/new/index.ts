@@ -44,7 +44,7 @@ Creating a new magikube project named 'sample' in the current directory
 
     // Check the project name condition
     validateUserInput(args.name)
-    AppLogger.configureLogger(args.name, true); 
+      AppLogger.configureLogger(args.name); 
     AppLogger.info('Logger Started ...');
 
   try {

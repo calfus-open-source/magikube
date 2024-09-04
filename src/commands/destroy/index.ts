@@ -36,7 +36,7 @@ Destroying magikube project named 'sample' in the current directory
 
   async run(): Promise<void> {
     const {args, flags} = await this.parse(DestroyProject);
-    AppLogger.configureLogger();
+    AppLogger.configureLogger(args.name, false);
     //read config and responses form project level config
     const responses = await this.readProjectConfig(args.name, process.cwd());
     responses['dryrun'] = flags.dryrun || false;

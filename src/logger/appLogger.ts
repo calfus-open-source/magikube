@@ -16,12 +16,15 @@ export class AppLogger {
   }
  
   public static configureLogger(projectName?: string, shouldCreateLogFile: boolean = true) {
-  if (shouldCreateLogFile) {
+
     this.createLogFolderIfNotExists();
       const filepath = path.join(this.logDirectory,'.' );
+      console.log(filepath,"<<<filepath")
       const oldFilePath =  path.join(this.logDirectory,`${projectName}-${new Date().toISOString().split('T')[0]}.log`);
-
-    try {
+      console.log(oldFilePath,"<<<oldFilePath")
+    if(shouldCreateLogFile){
+      try {
+     
         const files = fs.readdirSync(filepath);
         const prefix = `${projectName}-${new Date().toISOString().split('T')[0]}`;
         const count = files.filter(file => file.startsWith(prefix)).length;
@@ -29,12 +32,11 @@ export class AppLogger {
         if (count >= 1) {
           const newPath = path.join(this.logDirectory, `${projectName}-${new Date().toISOString().split('T')[0]}-${count}.log`);
           fs.renameSync(oldFilePath, newPath);
-        } else {
-          console.log('File does not exist');
-        }
+        } 
     } catch (err) {
         console.error('Error:', err);
     }
+  }
 
     const loggerTransports = [
       {
@@ -77,7 +79,7 @@ export class AppLogger {
       transports: LoggerGenerator.createFileRotateTransport(loggerTransports[1].options),
       exitOnError: false,
     })
-  }
+  
 }
 
   public static debug(value: any, enableConsole: boolean = false) {
