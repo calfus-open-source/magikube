@@ -149,7 +149,8 @@ Creating a new magikube project named 'sample' in the current directory
       "module.repository",
       "module.ingress-controller",
       "module.argo",
-      "module.environment"
+      "module.environment",
+      "module.rds"
   ];
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());

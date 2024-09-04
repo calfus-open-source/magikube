@@ -32,6 +32,7 @@ export default abstract class BaseProject {
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         const modules = [
+            "module.rds",
             "module.environment",
             "module.argo",
             "module.ingress-controller",
