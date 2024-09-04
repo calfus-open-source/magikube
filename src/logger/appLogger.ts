@@ -34,7 +34,8 @@ export class AppLogger {
           fs.renameSync(oldFilePath, newPath);
         } 
     } catch (err) {
-        console.error('Error:', err);
+        AppLogger.error(`Failed to create the log file ${err}`, true)
+        process.exit(1)
     }
   }
 
