@@ -15,7 +15,7 @@ import { ManageRepository } from '../../core/manage-repository.js';
 import { Colours } from '../../prompts/constants.js';
 
 function validateUserInput(input: string): void {
-  const pattern = /^(?=.{3,8}$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
+  const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
   if (pattern.test(input)) {
       console.log('Input is valid.');
   } else {
