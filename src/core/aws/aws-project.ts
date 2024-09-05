@@ -89,12 +89,18 @@ export default class AWSProject extends BaseProject {
         this.createRoute53();
         this.createECR();
         this.createIngressController();
+        this.createRds();
         this.createEnvironment();
     }
 
     async createVpc(): Promise<void> {
         this.createFile('main.tf', '../templates/aws/modules/vpc/main.tf.liquid', '/infrastructure/modules/vpc');
         this.createFile('variables.tf', '../templates/aws/modules/vpc/variables.tf.liquid', '/infrastructure/modules/vpc');
+    }
+    async createRds() : Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/rds/main.tf.liquid', '/infrastructure/modules/rds');
+        this.createFile('variables.tf', '../templates/aws/modules/rds/variables.tf.liquid' , '/infrastructure/modules/rds');
+
     }
     
     async createRoute53(): Promise<void> {

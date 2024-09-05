@@ -1,0 +1,30 @@
+variable "name" {
+  description = "the name of your stack, e.g. \"demo\""
+}
+
+variable "environment" {
+  description = "the name of your environment, e.g. \"prod\""
+}
+
+variable "region" {
+  description = "the AWS region in which resources are created, you must set the availability_zones variable as well if you define this value to something other than the default"
+}
+
+variable "vpc_id" {
+  description = "VPC Id"
+}
+
+variable "vpc_public_subnets" {
+  description = "List of public subnets"
+}
+
+variable "vpc_private_subnets" {
+  description = "List of private subnets"
+}
+variable "vpc_database_subnets" {
+  description = "List of database subnets"
+}
+
+variable "security_group_id" {
+    description = "Security Group Id"
+}
