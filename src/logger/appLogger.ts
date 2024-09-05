@@ -14,9 +14,31 @@ export class AppLogger {
       fs.mkdirSync(this.logDirectory);
     }
   }
+ 
+  public static configureLogger(projectName?: string, shouldCreateLogFile: boolean = true) {
 
-  public static configureLogger() {
     this.createLogFolderIfNotExists();
+      const filepath = path.join(this.logDirectory,'.' );
+      console.log(filepath,"<<<filepath")
+      const oldFilePath =  path.join(this.logDirectory,`${projectName}-${new Date().toISOString().split('T')[0]}.log`);
+      console.log(oldFilePath,"<<<oldFilePath")
+    if(shouldCreateLogFile){
+      try {
+     
+        const files = fs.readdirSync(filepath);
+        const prefix = `${projectName}-${new Date().toISOString().split('T')[0]}`;
+        const count = files.filter(file => file.startsWith(prefix)).length;
+
+        if (count >= 1) {
+          const newPath = path.join(this.logDirectory, `${projectName}-${new Date().toISOString().split('T')[0]}-${count}.log`);
+          fs.renameSync(oldFilePath, newPath);
+        } 
+    } catch (err) {
+        AppLogger.error(`Failed to create the log file ${err}`, true)
+        process.exit(1)
+    }
+  }
+
     const loggerTransports = [
       {
         type: 'console',
@@ -40,7 +62,7 @@ export class AppLogger {
                 return `${info.timestamp}: ${(info.level).toUpperCase()}${info.level.length < 5 ? '  ' : ' '}: ${info.message}`;
               })
           ),
-          filename: path.join(this.logDirectory, 'magikube-%DATE%.log'),
+          filename: path.join(this.logDirectory, `${projectName}-%DATE%.log`),
           datePattern: 'YYYY-MM-DD',
           maxSize: '1g',
         },
@@ -58,7 +80,8 @@ export class AppLogger {
       transports: LoggerGenerator.createFileRotateTransport(loggerTransports[1].options),
       exitOnError: false,
     })
-  }
+  
+}
 
   public static debug(value: any, enableConsole: boolean = false) {
     this.fileLogger.log('debug', value);
@@ -67,7 +90,7 @@ export class AppLogger {
     }
   }
 
-  public static error(value: any, enableConsole: boolean = false) {
+  public static error(value: any, enableConsole: boolean = true) {
     this.fileLogger.log('error', value);
     if (enableConsole) {
       this.consoleLogger.log('error', value);

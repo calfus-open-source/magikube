@@ -40,12 +40,13 @@ Creating a new magikube project named 'sample' in the current directory
   ]
 
   async run(): Promise<void> {
-    AppLogger.configureLogger();
-    AppLogger.info('Logger Started ...');
     const {args, flags} = await this.parse(CreateProject);
 
     // Check the project name condition
     validateUserInput(args.name)
+      AppLogger.configureLogger(args.name); 
+    AppLogger.info('Logger Started ...');
+
   try {
     let responses: Answers = { 
       "project_name": args.name, 
