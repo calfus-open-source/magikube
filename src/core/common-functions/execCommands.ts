@@ -6,7 +6,6 @@ type StdioOption = 'inherit' | 'pipe' | 'ignore';
 type ShellOption = string | undefined; 
 interface ExecuteCommandOptions {
     cwd?: string;
-    maxRetries?: number;
     stdio?: StdioOption;
     shell?: ShellOption;
     env?:ShellOption;
@@ -14,11 +13,11 @@ interface ExecuteCommandOptions {
 
 export async function executeCommandWithRetry(
     command: string,
-    options: ExecuteCommandOptions = {} 
+    options: ExecuteCommandOptions = {},
+    maxRetries: number
 ) {
     const {
         cwd = process.cwd(),
-        maxRetries = 3,
         stdio = 'inherit',
         shell = undefined
     } = options;

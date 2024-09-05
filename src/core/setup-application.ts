@@ -64,7 +64,7 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(file, `${path}/dist/keycloak-auth-service/${file}.liquid`, `${path}/${projectName}/${appName}/src/keycloak`, true);
             }
 
-            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${appName}`});
+            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${appName}`},3);
             AppLogger.info('Auth-Service created successfully!', true);
             return true
 
@@ -131,7 +131,7 @@ export default class CreateApplication extends BaseProject {
             await this.createFile('index.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
             await this.createFile('protected.ts', `${path}/dist/express/index.ts.liquid`, `${path}/${projectName}/${nodeAppName}/src/routes`,true)
 
-            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nodeAppName}`, stdio: 'pipe'});
+            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nodeAppName}`, stdio: 'pipe'}, 3);
             AppLogger.info('Node Express app created successfully.',true);
             return true;
 
@@ -148,7 +148,7 @@ export default class CreateApplication extends BaseProject {
         const { appName: nextAppName, projectName } = projectConfig;
         try {
             AppLogger.info('Creating next app!', true);    
-            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
+            const commonFiles = ['buildspec.ymla', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
             const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
             const dotFiles = ['gitignore', 'eslintrc.json', 'env.local'];
             const files = [...commonFiles, ...appRouterFiles];
@@ -166,7 +166,7 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(`${file}`, `${path}/dist/next/${file}.liquid`, `${path}/${projectName}/${nextAppName}/.github/workflows`, true);
             }
 
-            await executeCommandWithRetry('npm install', { cwd: `${path}/${projectName}/${nextAppName}` });
+            await executeCommandWithRetry('npm install', { cwd: `${path}/${projectName}/${nextAppName}` },3);
             AppLogger.info('Next.js application created successfully.', true);
             return true;
 
@@ -205,7 +205,7 @@ export default class CreateApplication extends BaseProject {
                 await this.createFile(`${file}`, `${path}/dist/react/${file}.liquid`, `${path}/${projectName}/${reactAppName}/.github/workflows`, true);
             }
 
-            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`});
+            await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`}, 3);
             AppLogger.info('React app created successfully.', true);
             return true;
 
@@ -289,16 +289,21 @@ export default class CreateApplication extends BaseProject {
     async destroyApp(userName: string, token: string, orgName: string, frontendAppName: string, backendAppName: string, projectName: string) {
         try {    
             const appNames = [];
-            if (frontendAppName) appNames.push(frontendAppName);
             if (backendAppName) appNames.push(backendAppName);
+            if (frontendAppName) appNames.push(frontendAppName);
             AppLogger.debug(`Repos to be deleted: ${appNames}`);
             for (const appName of appNames) {
+                console.log(appName, "appName")
                 const url = (orgName && userName) ? `https://api.github.com/repos/${orgName}/${appName}` : (!orgName && userName) ? `https://api.github.com/repos/${userName}/${appName}` : '';
                 if (url) {
                     AppLogger.debug(`Deleting repository for..., ${url}`);
                     const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
-                    const result = executeCommandWithRetry(command, { stdio: 'pipe' })
-                    AppLogger.debug(`Repository deleted successfully:, ${result.toString()}`);
+                    try{
+                       executeCommandWithRetry(command, { stdio: 'pipe' },3)
+                       AppLogger.info(`Repository deleted successfully : ${url}`, true)
+                    }catch(error){
+                            AppLogger.error(`Failed to delete repository: ${error}`, true);
+                    }
                     AppLogger.debug(`Removing repository for..., ${url}`);
                     fs.rmdirSync(`./${projectName}/${appName}`, { recursive: true });
                 } else {
@@ -306,7 +311,7 @@ export default class CreateApplication extends BaseProject {
                 }
             }
         } catch (error) {
-            AppLogger.error(`Failed to delete repository: ${error}`, true);
+                    AppLogger.error(`${error}`, true);
         }
     }
 

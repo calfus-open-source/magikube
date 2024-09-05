@@ -317,7 +317,7 @@ export default class AWSProject extends BaseProject {
                 command += ` -var-file=${varFile}`;
             }
     
-            const result = executeCommandWithRetry(command, {cwd: `${projectPath}`, stdio: 'inherit', env: "process.env" })
+            executeCommandWithRetry(command, {cwd: `${projectPath}`, stdio: 'inherit', env: "process.env" },1)
             AppLogger.info('Terraform destroy completed successfully....', true);
         } catch (error) {
             AppLogger.error(`Failed to destroy terraform process:: ${error}`, true);
@@ -413,10 +413,10 @@ export default class AWSProject extends BaseProject {
     }
 
     async runAnsiblePlaybook1(projectPath: string) {
-       executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`});
+       executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
     }   
      
     async runAnsiblePlaybook2(projectPath: string) {
-        executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`});
+        executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
     }
 }

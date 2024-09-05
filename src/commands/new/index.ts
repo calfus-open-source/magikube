@@ -85,15 +85,15 @@ Creating a new magikube project named 'sample' in the current directory
       const dir = `${process.cwd()}/magikube-templates`;
       const path =  process.cwd();
        if (!fs.existsSync(dir)) {
-       await executeCommandWithRetry('git clone https://github.com/calfus-open-source/magikube-templates.git',{cwd:path});
+       await executeCommandWithRetry('git clone https://github.com/calfus-open-source/magikube-templates.git',{cwd:path},1);
     }
 
     if (!fs.existsSync(`${process.cwd()}/dist`)) {
-       await executeCommandWithRetry('mkdir dist', {cwd:path});
+       await executeCommandWithRetry('mkdir dist', {cwd:path},1);
     }
 
-    const copyTemplateResult = executeCommandWithRetry('rsync -av magikube-templates/* dist/ --prune-empty-dirs', {cwd:path});
-    await executeCommandWithRetry(`rm -rf ${dir}`, {cwd:path});
+    const copyTemplateResult = executeCommandWithRetry('rsync -av magikube-templates/* dist/ --prune-empty-dirs', {cwd:path},1);
+    await executeCommandWithRetry(`rm -rf ${dir}`, {cwd:path},1);
 
     AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
 
