@@ -37,6 +37,7 @@ data "aws_ami" "worker_host_ami" {
     tags = {
       Name = "${ var.project_name }-${ var.environment }-worker" 
       Group = "k8s-worker"
+      Project = "${ var.project_name }-${ var.environment }"
     }
   
     ebs_block_device {

@@ -22,6 +22,7 @@ export default class AWSK8SProject extends AWSProject {
         let command: BaseCommand | undefined;
         const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
         const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
+    //    const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
         //Wait for all the files generation tasks to run and in parallel execution
         await Promise.all([
             this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid', "/infrastructure"),
@@ -29,9 +30,9 @@ export default class AWSK8SProject extends AWSProject {
             this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid' , "/infrastructure"),
             this.createFile(
                 `${this.config.environment}-config.tfvars`,
-                "../templates/aws/k8s/backend-config.tfvars.liquid" ,"/infrastructure"
+                "../templates/aws/k8s/backend-config.tfvars.liquid" ,"/infrastructure/k8s_config"
             ),
-            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', '/infrastructure'),
+            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', '/infrastructure/k8s_config'),
             this.createFile('variables.tf', '../templates/aws/k8s/k8s_config/variables.tf.liquid', '/infrastructure'),
             this.createCommon(),        
             this.createSSHKeyPair(),

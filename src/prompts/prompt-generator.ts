@@ -43,7 +43,7 @@ const awsPrompts: any[] = [
   },
   },
   {
-    choices: ["eks-fargate", "eks-nodegroup"],
+    choices: ["eks-fargate", "eks-nodegroup", "k8s"],
     message: "Select a Cluster Type:",
     name: "cluster_type",
     type: "list",

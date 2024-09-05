@@ -168,18 +168,21 @@ Creating a new magikube project named 'sample' in the current directory
           } catch (error) {
               AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
           }
-      }      
+      }
       }
       if (responses['cluster_type'] === 'k8s') {
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise(resolve => setTimeout(resolve, 20000));
+        await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
+        await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure");
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
+        await terraform?.runAnsiblePlaybook3(process.cwd()+"/"+projectName);
         terraform?.startSSHProcess();
-        const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName);
+        const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName+"/infrastructure");
         await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
-        await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
+        // await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
         terraform?.stopSSHProcess();
-      } 
+      }
 
       const projectConfig = SystemConfig.getInstance().getConfig();
       let command: BaseCommand | undefined;

@@ -2,12 +2,16 @@
 Host ${project_name}-${environment}-proxy
     HostName ${ip}
     User ubuntu
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/${project_name}-${environment}-key.pem
 %{ endfor ~}
 
 %{ for index, ip in master_ips ~}
 Host ${project_name}-${environment}-master
     HostName ${ip}
     User kube
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/${project_name}-${environment}-key.pem
     ProxyJump ${project_name}-${environment}-proxy
 %{ endfor ~}
 
@@ -15,5 +19,7 @@ Host ${project_name}-${environment}-master
 Host ${project_name}-${environment}-worker-${index}
     HostName ${ip}
     User kube
+    PubKeyAuthentication yes
+    IdentityFile ~/.ssh/${project_name}-${environment}-key.pem
     ProxyJump ${project_name}-${environment}-proxy
 %{ endfor ~}

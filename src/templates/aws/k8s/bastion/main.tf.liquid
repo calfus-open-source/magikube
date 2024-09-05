@@ -40,6 +40,7 @@ data "aws_ami" "bastion_host_ami" {
     tags = {
       Name = "${ var.project_name }-${ var.environment }-bastion"  
       Group = "bastion"
+      Project = "${ var.project_name }-${ var.environment }"
     }
   }
   

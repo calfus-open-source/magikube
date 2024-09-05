@@ -1,0 +1,24 @@
+server:
+  # Argo CD server ingress configuration
+  ingress:
+    # -- Enable an ingress resource for the Argo CD server
+    enabled: true
+    controller: aws    
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: 64m
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+
+    # -- Defines which ingress controller will implement the resource
+    ingressClassName: "nginx"
+
+    # -- Argo CD server hostname
+    ## NOTE: Hostname must be provided if Ingress is enabled
+    hostname: "${hostname}"
+    
+configs:
+  params:
+    server.insecure: true

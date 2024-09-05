@@ -3,10 +3,14 @@ provider "aws" {
   region     = "{{ aws_region }}"
 }
 
-terraform {
-  backend "s3" {
-  }
+data "aws_route53_zone" "route53_zone" {
+  name = var.domain_name
 }
+
+terraform {
+     backend "s3" {
+     }
+ }
 
 module "vpc" {
   source = "./modules/vpc"
@@ -62,16 +66,15 @@ module "route53" {
     environment = "${ var.environment }"
     domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
 } {% endcomment %}
-{% comment %} 
-{% if domain %}
+
+
   module "acm" {
       source = "./modules/acm"
       name = "${ var.project_name }"
       environment = "${ var.environment }"
-      domain_name = coalesce(var.domain_name, module.eks.cluster_endpoint)
-      route53_zoneid = module.route53.zone_id
+      domain_name = var.domain_name
+      route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
   } 
-{% endif %} {% endcomment %}
 
 locals {
   rendered_template = templatefile("./ssh-config.tftpl", {
@@ -111,10 +114,10 @@ module "gitops" {
       name = "${ var.project_name }"
       environment = "${ var.environment }"
       github_token = "${ var.github_access_token }"
-      github_owner = "${ github_owner }"
+      github_owner = "${ var.github_owner }"
 }
 
-module "github_repo" {
+module "repository" {
      source = "./modules/code-repository"
      name = "${ var.project_name }"
      appType = "${ var.appType }"
@@ -124,7 +127,7 @@ module "github_repo" {
  }
 {% endif %}
 
-{% if source_code_repository == 'codecommit' %}
+{% comment %} {% if source_code_repository == 'codecommit' %}
 module "gitops" {
     source = "./modules/gitops"
     name = "${ var.project_name }"
@@ -156,6 +159,7 @@ locals {
      }
    ]
  }
+{% endcomment %}
 
 module "ecr-repo" {
     source            = "./modules/ecr"
