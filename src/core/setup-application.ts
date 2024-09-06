@@ -293,7 +293,6 @@ export default class CreateApplication extends BaseProject {
             if (frontendAppName) appNames.push(frontendAppName);
             AppLogger.debug(`Repos to be deleted: ${appNames}`);
             for (const appName of appNames) {
-                console.log(appName, "appName")
                 const url = (orgName && userName) ? `https://api.github.com/repos/${orgName}/${appName}` : (!orgName && userName) ? `https://api.github.com/repos/${userName}/${appName}` : '';
                 if (url) {
                     AppLogger.debug(`Deleting repository for..., ${url}`);

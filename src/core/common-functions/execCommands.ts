@@ -24,8 +24,11 @@ export async function executeCommandWithRetry(
   while (attempts < maxRetries && !success) {
     try {
       attempts++;
-      execSync(command, { cwd, stdio, shell, env: process.env });
-      success = true;
+     const res =  execSync(command, { cwd, stdio, shell, env: process.env });
+     if(res){
+     AppLogger.info(`Executing command  ${command} : ${res.toString()}`);
+     }
+     success = true;
     } catch (error) {
       if (typeof error === 'object' && error !== null && 'message' in error) {
         const errorMessage = (error as Error).message;

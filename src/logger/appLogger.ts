@@ -19,9 +19,7 @@ export class AppLogger {
 
     this.createLogFolderIfNotExists();
       const filepath = path.join(this.logDirectory,'.' );
-      console.log(filepath,"<<<filepath")
       const oldFilePath =  path.join(this.logDirectory,`${projectName}-${new Date().toISOString().split('T')[0]}.log`);
-      console.log(oldFilePath,"<<<oldFilePath")
     if(shouldCreateLogFile){
       try {
      
