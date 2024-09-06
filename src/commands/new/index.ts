@@ -225,9 +225,9 @@ Creating a new magikube project named 'sample' in the current directory
         }
     }
   
-      await createApp.MoveFiles(projectName)
-      
+     await createApp.MoveFiles(projectName)  
      AppLogger.info('Magikube setup completed successfully! 🎉', true);
+     process.exit(1); 
 
   } catch (error) {
     AppLogger.error(`An error occurred during the setup process: ${error}`, true);

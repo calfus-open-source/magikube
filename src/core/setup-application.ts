@@ -148,7 +148,7 @@ export default class CreateApplication extends BaseProject {
         const { appName: nextAppName, projectName } = projectConfig;
         try {
             AppLogger.info('Creating next app!', true);    
-            const commonFiles = ['buildspec.ymla', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
+            const commonFiles = ['buildspec.yml', 'Dockerfile', 'nginx.conf', 'next.config.mjs', 'package.json', 'tsconfig.json'];
             const appRouterFiles = ['page.tsx', 'layout.tsx', 'global.css', 'AuthenticationProvider.tsx', 'AuthGuard.tsx'];
             const dotFiles = ['gitignore', 'eslintrc.json', 'env.local'];
             const files = [...commonFiles, ...appRouterFiles];
@@ -304,8 +304,10 @@ export default class CreateApplication extends BaseProject {
                     }catch(error){
                             AppLogger.error(`Failed to delete repository: ${error}`, true);
                     }
-                    AppLogger.debug(`Removing repository for..., ${url}`);
-                    fs.rmdirSync(`./${projectName}/${appName}`, { recursive: true });
+                    const appPath = fs.existsSync(`./${projectName}/${appName}`)
+                    if (fs.existsSync(`./${projectName}/${appName}`)) {
+                          fs.rmdirSync(`./${projectName}/${appName}`, { recursive: true });
+                    } 
                 } else {
                     throw new Error('Missing GitHub username or organization name');
                 }

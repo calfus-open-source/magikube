@@ -313,22 +313,27 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
-        AppLogger.info(`Running terraform destroy..., ${projectPath}`, true);
-        try {
-            AppLogger.info(`Destroying module ${module}...`, true);
-            let command = module 
-                ? `terraform destroy -target=${module} -auto-approve` 
-                : 'terraform destroy -auto-approve';
-            if (varFile) {
-                command += ` -var-file=${varFile}`;
-            }
-    
-            executeCommandWithRetry(command, {cwd: `${projectPath}`, stdio: 'inherit', env: "process.env" },1)
-            AppLogger.info('Terraform destroy completed successfully....', true);
-        } catch (error) {
-            AppLogger.error(`Failed to destroy terraform process:: ${error}`, true);
-            process.exit(1);
+    AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
+    try {
+        const moduleInfo = module ? `Destroying module ${module}...` : 'Destroying entire project...';
+        AppLogger.info(moduleInfo, true);
+
+        let command = module
+        ? `terraform destroy -target=${module} -auto-approve`
+        : 'terraform destroy -auto-approve';
+
+        if (varFile) {
+        command += ` -var-file=${varFile}`;
         }
+
+        // Make sure to pass correct environment variables
+        await executeCommandWithRetry(command, { cwd: projectPath, stdio: 'inherit' }, 3);
+
+        AppLogger.info('Terraform destroy completed successfully.', true);
+    } catch (error) {
+        AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
+        process.exit(1);
+    }
     }
 
     async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {
