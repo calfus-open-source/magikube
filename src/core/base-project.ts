@@ -42,6 +42,7 @@ export default abstract class BaseProject {
             "module.eks",
             "module.vpc"
         ];
+      
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
             await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
@@ -60,11 +61,21 @@ export default abstract class BaseProject {
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`);
-            terraform?.startSSHProcess();
-            // Destroy the ingress and other helm modules
-            await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `/infrastructure/terraform.tfvars`);
-            terraform?.stopSSHProcess();
+            // await terraform?.runTerraformInit(`${this.projectPath}/infrastructure`, `/infrastructure/${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
+            for (const module of modules) {
+                try{
+                    terraform?.startSSHProcess();
+                    // Destroy the ingress and other helm modules
+                    await terraform?.runTerraformDestroy(this.projectPath+'/infrastructure', module, `terraform.tfvars`);
+                    terraform?.stopSSHProcess();
+                    AppLogger.debug(`Successfully destroyed Terraform for module: ${module}`,true);
+                }catch(error){
+                    AppLogger.error(`Error destroying Terraform for module: ${module}, ${error}`, true);
+                }
+              
+            }
+         
         }
         //await terraform?.runTerraformDestroy(this.projectPath);
     }
