@@ -6,12 +6,12 @@ import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
 import SystemConfig from '../../config/system.js';
 import fs from 'fs';
-import { execSync } from 'child_process';
 import { AppLogger } from '../../logger/appLogger.js';
 import CreateApplication from '../../core/setup-application.js';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 import { ConfigObject } from '../../core/interface.js';
 import { ManageRepository } from '../../core/manage-repository.js';
+import { executeCommandWithRetry } from '../../core/common-functions/execCommands.js';
 import { Colours } from '../../prompts/constants.js';
 
 function validateUserInput(input: string): void {
@@ -97,30 +97,21 @@ Creating a new magikube project named 'sample' in the current directory
       }
 
       const dir = `${process.cwd()}/magikube-templates`;
-      if (!fs.existsSync(dir)) {
-        execSync('git clone https://github.com/calfus-open-source/magikube-templates.git', {
-            cwd: `${process.cwd()}`,
-            stdio: 'inherit'
-        });
-      }
-      if (!fs.existsSync(`${process.cwd()}/dist`)) {
-       try{
-        execSync("mkdir dist", 
-          {
-            cwd: `${process.cwd()}`,
-            stdio: 'inherit'
-          })
-        } catch(error){   
-            throw error
-          }      
-      }
-      const copyTemplateResult = execSync(`rsync -av magikube-templates/* dist/ --prune-empty-dirs`, {
-        cwd: `${process.cwd()}`,
-        stdio: 'pipe'
-      });
-      execSync(`rm -rf ${dir}`)
-      AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
-      }
+      const path =  process.cwd();
+       if (!fs.existsSync(dir)) {
+       await executeCommandWithRetry('git clone https://github.com/calfus-open-source/magikube-templates.git',{cwd:path},1);
+    }
+
+    if (!fs.existsSync(`${process.cwd()}/dist`)) {
+       await executeCommandWithRetry('mkdir dist', {cwd:path},1);
+    }
+
+    const copyTemplateResult = executeCommandWithRetry('rsync -av magikube-templates/* dist/ --prune-empty-dirs', {cwd:path},1);
+    await executeCommandWithRetry(`rm -rf ${dir}`, {cwd:path},1);
+
+    AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
+
+  };
 
       // Asking for the frontend and backend prompts
       for (const prompt of promptGenerator.getFrontendApplicationType()) {
@@ -203,43 +194,44 @@ Creating a new magikube project named 'sample' in the current directory
         awsSecretKey,
         environment
       };
+  
      const statusAuthenticationService = await createApp.setupAuthenticationService(projectConfig);
-      if(statusAuthenticationService){
-                  configObject.appName = 'auth-service';
-                  configObject.appType = 'auth-service';
-        await ManageRepository.pushCode(configObject)
+          if (statusAuthenticationService) {
+              configObject.appName = 'auth-service';
+              configObject.appType = 'auth-service';
+              await ManageRepository.pushCode(configObject);
+           }
 
-      }
-      const statuskeyclockService = await createApp.setupKeyCloak(projectConfig);
-      if(statuskeyclockService){
-                configObject.appName = 'keycloak';
-                configObject.appType = 'keycloak-service';
-            await ManageRepository.pushCode(configObject)
+      const statusKeycloakService = await createApp.setupKeyCloak(projectConfig);
+          if (statusKeycloakService) {
+              configObject.appName = 'keycloak';
+              configObject.appType = 'keycloak-service';
+              await ManageRepository.pushCode(configObject);
+           }
 
+          if (responses['backend_app_type']) {
+             await createApp.handleAppCreation(responses['backend_app_type'], configObject);
           }
 
-      if (responses['backend_app_type']) {
-        await createApp.handleAppCreation(responses['backend_app_type'], configObject);
-      }
-      if (responses['frontend_app_type']) {
-        await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
-      }
-      const setupGitopsservicestatus =  await createApp.setupGitops(projectConfig);
-      if(setupGitopsservicestatus){
-                        configObject.appName = `${environment}`;
-                        configObject.appType = `gitops`;
-              await ManageRepository.pushCode(configObject)
+          if (responses['frontend_app_type']) {
+             await createApp.handleAppCreation(responses['frontend_app_type'], configObject);
+          }
 
-            }
+      const setupGitopsServiceStatus = await createApp.setupGitops(projectConfig);
+        if (setupGitopsServiceStatus) {
+          configObject.appName = `${environment}`;
+          configObject.appType = 'gitops';
+          await ManageRepository.pushCode(configObject);
+        }
     }
-
-      await createApp.MoveFiles(projectName)
-      
-    AppLogger.info('Magikube setup completed successfully! 🎉', true);
+  
+     await createApp.MoveFiles(projectName)  
+     AppLogger.info('Magikube setup completed successfully! 🎉', true);
+     process.exit(1); 
 
   } catch (error) {
     AppLogger.error(`An error occurred during the setup process: ${error}`, true);
-    throw error;
+    process.exit(1); 
   }
 
   }
