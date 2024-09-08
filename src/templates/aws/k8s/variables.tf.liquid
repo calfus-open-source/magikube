@@ -41,3 +41,9 @@ variable "appType" {
    description = "List of app names"
    type        = list(string)
  }
+ variable "cluster_type" {
+  description = "Type of Kubernetes cluster (either 'eks' or 'k8s')"
+  type        = string
+  default     = "k8s"  # Default can be adjusted based on your needs
+}
+

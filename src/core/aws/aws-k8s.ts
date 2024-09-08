@@ -3,6 +3,7 @@ import AWSProject from './aws-project.js';
 import BaseCommand from "../../commands/base.js";
 import gitOpsProject from "../gitops/common-gitops.js";
 import repositoryProject from "../code-repository/common-repository.js";
+import argoCdProject from '../argocd/setup-argocd.js';
 
 export default class AWSK8SProject extends AWSProject {    
     // save the project name and path in variables
@@ -22,7 +23,7 @@ export default class AWSK8SProject extends AWSProject {
         let command: BaseCommand | undefined;
         const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
         const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
-    //    const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
+        const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
         //Wait for all the files generation tasks to run and in parallel execution
         await Promise.all([
             this.createFile('main.tf', '../templates/aws/k8s/main.tf.liquid', "/infrastructure"),
@@ -44,7 +45,8 @@ export default class AWSK8SProject extends AWSProject {
             this.copyFolderAndRender('../templates/aws/ansible', '/templates/aws/ansible'),
             this.createFile('ssh-config.tftpl', '../templates/aws/k8s/ssh-config.tftpl', '/infrastructure'),
             gitOpsInstance.createGitOps(this.path, this.projectName),
-            repositoryInstance.createrepository(this.path, this.projectName)
+            repositoryInstance.createrepository(this.path, this.projectName) ,
+            argocdInstance.argoCdProject(this.path, this.projectName )
         ]);
     } 
     async createSecurityGroup(): Promise<void> {
