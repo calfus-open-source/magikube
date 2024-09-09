@@ -53,7 +53,8 @@ worker_name: {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['inventory_hostname'
 worker_ip:  {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4'].address }}"{% endraw %}
 
 lifecycle: {{ environment }}
-external_hostname: {{ external_hostname }}
+
+hostname: {{ domain }}
 
 run_as_uid: 1001
 run_as_gid: 1001

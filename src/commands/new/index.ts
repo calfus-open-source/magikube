@@ -138,9 +138,8 @@ Creating a new magikube project named 'sample' in the current directory
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
     const projectConfig = SystemConfig.getInstance().getConfig();
-    console.log(projectConfig,"projectConfig<<<<<<<<")
     const aws= projectConfig.aws_profile;
-    console.log(aws, "<<<<<aws_profile")
+
     const path =`${process.cwd()}`
     
     console.log(path,"<<<<<path")
@@ -177,14 +176,15 @@ Creating a new magikube project named 'sample' in the current directory
       }
       }
       if (responses['cluster_type'] === 'k8s') {
-        console.log(fs.existsSync(`${process.cwd()}/${projectName}/infrastructure/modules/environment`), "<<<<<<<environment path")
+        console.log(fs.existsSync(`${process.cwd()}/${projectName}/infrastructure/modules/environment`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
         await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
         await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure");
-        execSync(`export AWS_PROFILE=${aws} `, {
-          cwd: `${process.cwd()}/${projectName}/infrastructure/modules/environment`,
+        execSync(`export AWS_PROFILE=${aws} `, 
+        {
+          cwd: `${process.cwd()}/${projectName}/infrastructure/templates/aws/ansible/environments`,
           stdio: 'inherit'
-      });
+        });
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook3(process.cwd()+"/"+projectName);
