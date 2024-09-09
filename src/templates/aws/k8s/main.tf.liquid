@@ -173,26 +173,6 @@ locals {
      }
    ]
  }
-
-module "argo" {
-    source = "./modules/argocd"
-    name                               = "${ var.project_name }"
-    environment                        = "${ var.environment }"
-    region                             = "${ var.region }"
-    cluster_endpoint                   = "" 
-    cluster_certificate_authority_data = "" 
-    cluster_name                       = ""
-    cluster_token                      = ""
-    oidc_provider_arn                  = ""
-    oidc_provider                      = ""
-    route53_zoneid                     = data.aws_route53_zone.route53_zone
-    domain_name                        = "${ var.domain_name }"
-    ssl_cert_arn                       = module.acm.ssl_cert_arn
-    vpc_public_subnets                 = module.vpc.public_subnets
-    gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
-    gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
-}
-
 module "ecr-repo" {
     source            = "./modules/ecr"
     image_tag_mutability   = "MUTABLE"
