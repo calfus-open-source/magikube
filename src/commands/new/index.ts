@@ -176,13 +176,14 @@ Creating a new magikube project named 'sample' in the current directory
       }
       }
       if (responses['cluster_type'] === 'k8s') {
-        console.log(fs.existsSync(`${process.cwd()}/${projectName}/infrastructure/modules/environment`),)
+    
+        console.log(fs.existsSync(`${process.cwd()}/${projectName}/templates/aws/ansible/environments`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
         await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
         await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure");
         execSync(`export AWS_PROFILE=${aws} `, 
         {
-          cwd: `${process.cwd()}/${projectName}/infrastructure/templates/aws/ansible/environments`,
+          cwd: `${process.cwd()}/${projectName}/templates/aws/ansible/environments`,
           stdio: 'inherit'
         });
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
