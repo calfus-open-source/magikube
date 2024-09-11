@@ -1,0 +1,23 @@
+---
+- name: Run apt update before installing prerequisites
+  apt:
+    update_cache: yes
+
+- name: install nginx
+  apt: name=nginx state=latest
+
+- name: start nginx
+  service:
+    name: nginx
+    state: started
+
+- name: Setup nginx conf
+  template: src=./templates/magikube-nginx-conf.j2 dest={{ nginx_sites }}/magikube-nginx.conf
+
+- name: Create symlink nginx vhost
+  file:
+    src={{ nginx_sites }}/magikube-nginx.conf
+    dest=/etc/nginx/sites-enabled/magikube-nginx.conf
+    state=link
+
+
