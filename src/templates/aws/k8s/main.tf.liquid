@@ -24,16 +24,6 @@ module "security_group"{
     environment             = "${ var.environment }"
     vpc_id                  = module.vpc.id
 }
-module "alb_ingress" {
-    source                    = "./modules/alb"
-    name                      = "${ var.project_name }"
-    vpc_public_subnets        = module.vpc.public_subnets
-    aws_acm_certificate_arn   = module.acm.ssl_cert_arn
-    environment               = "${ var.environment }"
-    ingress_security_group_id = module.security_group.ingress
-    route53_zoneid            = data.aws_route53_zone.route53_zone.zone_id
-    domain_name               = var.domain_name
-}
 
 module "ssh-key" {
   source          = "./modules/ssh-key"
@@ -83,7 +73,19 @@ module "route53" {
     domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
 } {% endcomment %}
 
-
+module "alb_ingress" {
+    source                    = "./modules/alb"
+    name                      = "${ var.project_name }"
+    vpc_public_subnets        = module.vpc.public_subnets
+    aws_acm_certificate_arn   = module.acm.ssl_cert_arn
+    environment               = "${ var.environment }"
+    ingress_security_group_id = module.security_group.ingress
+    route53_zoneid            = data.aws_route53_zone.route53_zone.zone_id
+    domain_name               = var.domain_name
+    master_node_ids           = module.master.k8s-master-ids
+    worker_node_ids           = module.worker.k8s-worker-ids
+    vpc_id                    = module.vpc.id
+}
 module "acm" {
     source = "./modules/acm"
     name = "${ var.project_name }"

@@ -42,3 +42,18 @@ variable "route53_zoneid" {
 variable "domain_name" {
   description = "domain name"
 }
+
+variable "master_node_ids" {
+  type = list(string)
+  description = "List of EC2 instance IDs for master nodes"
+}
+
+variable "worker_node_ids" {
+  type = list(string)
+  description = "List of EC2 instance IDs for worker nodes"
+}
+
+variable "vpc_id" {
+  description = "The VPC ID where the ALB is deployed"
+  type        = string
+}

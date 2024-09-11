@@ -1,24 +1,18 @@
 server:
-  # Argo CD server ingress configuration
   ingress:
-    # -- Enable an ingress resource for the Argo CD server
     enabled: true
-    controller: aws    
+    controller: aws
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /
-      nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/proxy-body-size: 64m
-      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-
-    # -- Defines which ingress controller will implement the resource
-    ingressClassName: "nginx"
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: instance
+      alb.ingress.kubernetes.io/group.name: "argocd-group"
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      kubernetes.io/ingress.class: alb
+    ingressClassName: "alb"   # This should be "alb" for AWS ALB
 
     # -- Argo CD server hostname
-    ## NOTE: Hostname must be provided if Ingress is enabled
-    hostname: "${hostname}"
-    
+    hostname: "{{ hostname }}"   
+
 configs:
   params:
     server.insecure: true

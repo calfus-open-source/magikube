@@ -6,40 +6,6 @@ resource "aws_lb" "alb" {
   subnets            = var.vpc_public_subnets
   enable_deletion_protection = false
 }
-
-resource "aws_lb_listener" "alb_listnener_http" {
-  load_balancer_arn = aws_lb.alb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-}
-
-resource "aws_lb_listener" "alb_listener_https" {
-  load_balancer_arn = aws_lb.alb.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01" # Updated to the latest security policy
-  certificate_arn   = var.aws_acm_certificate_arn
-
-  default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "404 Not Found"
-      status_code  = "404"
-    }
-  }
-}
-
 output "ingress_alb_dns_name" {
   value = aws_lb.alb.dns_name
 }
@@ -67,3 +33,82 @@ resource "aws_route53_record" "app-alias" {
 output "aws_lb_arn" {
   value = aws_lb.alb.arn
 }
+
+resource "aws_lb_target_group" "tg_master" {
+  name     = "${var.name}-${var.environment}-tg-master"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+  target_type = "instance"
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+  }
+}
+
+resource "aws_lb_target_group" "tg_worker" {
+  name     = "${var.name}-${var.environment}-tg-worker"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+  target_type = "instance"
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+  }
+}
+
+
+resource "aws_lb_target_group_attachment" "master_nodes" {
+  count            = length(var.master_node_ids)
+  target_group_arn = aws_lb_target_group.tg_master.arn
+  target_id        = element(var.master_node_ids, count.index)
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "worker_nodes" {
+  count            = length(var.worker_node_ids)
+  target_group_arn = aws_lb_target_group.tg_worker.arn
+  target_id        = element(var.worker_node_ids, count.index)
+  port             = 80
+}
+
+resource "aws_lb_listener" "alb_listener_https" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = var.aws_acm_certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg_master.arn
+  }
+}
+
+resource "aws_lb_listener_rule" "forward_to_worker" {
+  listener_arn = aws_lb_listener.alb_listener_https.arn
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg_worker.arn
+  }
+
+  condition {
+    host_header {
+      values = ["worker.${var.domain_name}"]
+    }
+  }
+}
+
+
+

@@ -181,11 +181,18 @@ Creating a new magikube project named 'sample' in the current directory
         await new Promise(resolve => setTimeout(resolve, 20000));
         await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
         await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure");
-        execSync(`export AWS_PROFILE=${aws} `, 
+        try{ 
+          AppLogger.info("AWS export command executing... ",true) 
+          execSync(`export AWS_PROFILE=${aws} `, 
         {
           cwd: `${process.cwd()}/${projectName}/templates/aws/ansible/environments`,
           stdio: 'inherit'
         });
+        AppLogger.info("AWS export command  executed.",true)
+        }catch(error){
+          AppLogger.error("AWS export command  NOT executed",true)
+        }
+       
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook3(process.cwd()+"/"+projectName);
