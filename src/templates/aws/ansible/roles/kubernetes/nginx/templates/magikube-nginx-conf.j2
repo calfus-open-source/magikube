@@ -1,7 +1,7 @@
 ## server configuration for ArgoCD
 server {
     listen 80;
-    server_name argocd.{{ domain }};  # Dynamic domain name from Ansible inventory
+    server_name argocd.{{ hostname }};  # Dynamic domain name from Ansible inventory
 
     if ($http_x_forwarded_proto = '') {
         set $http_x_forwarded_proto  $scheme;

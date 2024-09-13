@@ -6,18 +6,75 @@
 - name: install nginx
   apt: name=nginx state=latest
 
+- name: Ensure /etc/nginx is writable
+  file:
+    path: /etc/nginx
+    mode: '0755'
+    state: directory
+    recurse: yes
+
+- name: Ensure Nginx log directory permissions
+  file:
+    path: /var/log/nginx
+    mode: '0755'
+    state: directory
+    owner: www-data
+    group: adm
+    recurse: yes
+
 - name: start nginx
   service:
     name: nginx
     state: started
 
-- name: Setup nginx conf
-  template: src=./templates/magikube-nginx-conf.j2 dest={{ nginx_sites }}/magikube-nginx.conf
+# Fetch ArgoCD service IP from file
+- name: Fetch ArgoCD service IP from file
+  become: yes
+  slurp:
+    src: /tmp/argocd_service_ip.txt
+  register: argocd_service_ip_file
 
+- name: Set fact for ArgoCD service IP from file
+  set_fact:
+    argocd_service_ip: "{{ argocd_service_ip_file.content | b64decode }}"
+
+# Place the nginx configuration file in sites-available
+- name: Setup nginx conf
+  template:
+    src: ./templates/magikube-nginx-conf.j2
+    dest: /etc/nginx/sites-available/magikube-nginx.conf
+  vars:
+    argocd_service_ip: "{{ argocd_service_ip }}"
+  notify:
+    - restart nginx
+
+# Check if the existing Nginx config file exists
+- name: Check if the existing Nginx config file exists
+  stat:
+    path: /etc/nginx/sites-enabled/magikube-nginx.conf
+  register: ansible_stat
+
+# Remove existing Nginx config file if it exists
+- name: Remove existing Nginx config file if it exists
+  file:
+    path: /etc/nginx/sites-enabled/magikube-nginx.conf
+    state: absent
+  when: 
+    - ansible_stat.stat.exists  # Ensure this runs only if the file exists
+
+# Create the symlink in sites-enabled
 - name: Create symlink nginx vhost
   file:
-    src={{ nginx_sites }}/magikube-nginx.conf
-    dest=/etc/nginx/sites-enabled/magikube-nginx.conf
-    state=link
+    src: /etc/nginx/sites-available/magikube-nginx.conf
+    dest: /etc/nginx/sites-enabled/magikube-nginx.conf
+    state: link
+  notify:
+    - restart nginx
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+
 
 

@@ -65,6 +65,26 @@
   ansible.builtin.debug: 
     msg: "Helm Install (ArgoCD): stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"
 
+
+- name: Fetch ArgoCD service IP
+  become: yes
+  become_user: kube
+  shell: |
+    kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.clusterIP}'
+  register: argocd_service_ip
+  changed_when: false
+
+- name: Save ArgoCD service IP to a file (to be used by other playbooks)
+  become: yes
+  copy:
+    content: "{{ argocd_service_ip.stdout }}"
+    dest: /tmp/argocd_service_ip.txt
+
+- name: Set fact for ArgoCD service IP
+  set_fact:
+    argocd_service_ip: "{{ argocd_service_ip.stdout }}"
+
+
 - name: Delete argocd directory
   become: yes
   become_user: kube
