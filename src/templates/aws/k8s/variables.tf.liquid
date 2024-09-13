@@ -46,3 +46,19 @@ variable "appType" {
   default     = "k8s"  # Default can be adjusted based on your needs
 }
 
+variable "cluster_endpoint" {
+  description = "The endpoint of the Kubernetes cluster"
+  default     = ""
+}
+
+variable "cluster_certificate_authority_data" {
+  description = "The certificate authority data for the Kubernetes cluster"
+  default     = ""
+}
+
+variable "cluster_token" {
+  description = "The token for the Kubernetes cluster"
+  default     = ""
+}
+
+
