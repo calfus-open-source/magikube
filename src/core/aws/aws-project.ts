@@ -472,7 +472,7 @@ export default class AWSProject extends BaseProject {
         while (attempt < maxRetries && !success) {
             try {
                 attempt++;
-                AppLogger.debug(`Running ansible playbook boom boom.. Attempt ${attempt}, ${projectPath}`);
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
                 execSync('ansible-playbook -v ../playbooks/create-ingress-controller.yml', {
                     cwd: `${projectPath}/templates/aws/ansible/environments`,
                     stdio: 'inherit',
@@ -481,7 +481,34 @@ export default class AWSProject extends BaseProject {
                 AppLogger.info('Ingress and argocd configuration completed successfully.', true);
                 success = true;
             } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook boom boom, ${error}`, true);
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
+    }
+
+    async runAnsiblePlaybook4(projectPath: string) {
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/nginx.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Nginx configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
                 if (attempt >= maxRetries) {
                     AppLogger.error('Max retries reached. Exiting...', true);
                     throw error;

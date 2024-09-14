@@ -192,10 +192,10 @@ Creating a new magikube project named 'sample' in the current directory
         }catch(error){
           AppLogger.error("AWS export command  NOT executed",true)
         }
-       
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook3(process.cwd()+"/"+projectName);
+        await terraform?.runAnsiblePlaybook4(process.cwd()+"/"+projectName);
         terraform?.startSSHProcess();
         const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName+"/infrastructure");
         await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
