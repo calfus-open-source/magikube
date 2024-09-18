@@ -21,8 +21,8 @@ export async function waitForServiceToUP(
   serviceURL: string,
   AppName: any
 ): Promise<boolean> {
-  const retries = 20;
-  const delay = 20000;
+  const retries = 25;
+  const delay = 30000;
 
   const spinner = ora(`Checking ${AppName} service status...`).start();
 

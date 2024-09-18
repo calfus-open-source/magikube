@@ -305,45 +305,35 @@ Creating a new magikube project named 'sample' in the current directory
       const frontendURL = `http://${responses.domain}`;
       const argocdURL = `http://argocd.${responses.domain}`;
       const isKeycloakUp = await waitForServiceToUP(keycloakurl, "keycloak");
-      if (isKeycloakUp && fs.existsSync(keycloakConfigPath)) {
-        await executeCommandWithRetry(
-          `chmod +x config.sh && /bin/sh ./config.sh`,
-          { cwd: `${process.cwd()}/${args.name}/keycloak` },
-          1
-        );
-      } else {
-        AppLogger.error(
-          "Cannot run the script because Keycloak service is not up or config.sh does not exist."
-        );
+     if (isKeycloakUp && fs.existsSync(keycloakConfigPath)) {
+     try {
+        await executeCommandWithRetry(`chmod +x config.sh && /bin/sh ./config.sh`, { cwd: `${process.cwd()}/${args.name}/keycloak` }, 1);
+        AppLogger.info("Script executed successfully.", true);
+      } catch (error) {
+        AppLogger.error("Failed to execute script: " + error, true);
       }
+     } else {
+      AppLogger.error("Cannot run the script because Keycloak service is not up or config.sh does not exist.", true);
+     }
       const frontendAppType = projectConfig.frontend_app_type;
       const isArgoCDUp = await waitForServiceToUP(argocdURL, "argocd");
-      const isFrontendUp = await waitForServiceToUP(frontendURL, frontendAppType);
-       if (isKeycloakUp && isArgoCDUp && isFrontendUp) {
+      let isFrontendUp;
+      if(isKeycloakUp){ 
+        isFrontendUp = await waitForServiceToUP(frontendURL, frontendAppType) 
+      }
+      if (isKeycloakUp && isArgoCDUp && isFrontendUp) {
        const clickableLink = `\u001b]8;;${frontendURL}\u001b\\\u001b[34;4m${frontendURL}\u001b[0m\u001b]8;;\u001b\\`;
           const username = "magikube_user@example.com";
           const password = "welcome";
-          AppLogger.info(
-            `Magikube application is up and running at ${clickableLink}`,
-            true
-          );
-         AppLogger.info(
-           `Login using\nUsername: ${username}\nPassword: ${password}`,
-           true
-         );
+          AppLogger.info(`Magikube application is up and running at ${clickableLink}`,true);
+         AppLogger.info(`Login using\nUsername: ${username}\nPassword: ${password}`,true);
        } else {
-           AppLogger.error(
-             "One or more services failed to start. Please check the service.",
-             true
-           );
+           AppLogger.error( "One or more services failed to start. Please check the service.",true);
        }
       
       process.exit(1);
     } catch (error) {
-      AppLogger.error(
-        `An error occurred during the setup process: ${error}`,
-        true
-      );
+      AppLogger.error(`An error occurred during the setup process: ${error}`,true);
       process.exit(1);
     }
   }
