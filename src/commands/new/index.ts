@@ -15,6 +15,8 @@ import { executeCommandWithRetry } from "../../core/common-functions/execCommand
 import { Colours } from "../../prompts/constants.js";
 import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkStatus-utils.js";
 import { execSync } from "child_process";
+import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
+ 
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -143,6 +145,7 @@ Creating a new magikube project named 'sample' in the current directory
     SystemConfig.getInstance().mergeConfigs(responses);
 
     // Get the project name from the command line arguments
+
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
     const projectConfig = SystemConfig.getInstance().getConfig();
@@ -181,7 +184,9 @@ Creating a new magikube project named 'sample' in the current directory
       }
       }
       if (responses['cluster_type'] === 'k8s') {
-    
+
+        const dotmagikube = readProjectConfig(projectName,process.cwd())
+        console.log(dotmagikube,"<<<<<<dotmagikube")
         console.log(fs.existsSync(`${process.cwd()}/${projectName}/templates/aws/ansible/environments`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
         await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
@@ -247,7 +252,7 @@ Creating a new magikube project named 'sample' in the current directory
           configObject.appType = "auth-service";
           await ManageRepository.pushCode(configObject);
         }
-
+ 
         const statusKeycloakService = await createApp.setupKeyCloak(
           projectConfig
         );
@@ -280,9 +285,10 @@ Creating a new magikube project named 'sample' in the current directory
           await ManageRepository.pushCode(configObject);
         }
       }
+ 
       }
       await createApp.MoveFiles(projectName);
-
+ 
       const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
       const keycloakurl = `http://${responses.domain}/keycloak`;
       const frontendURL = `http://${responses.domain}`;
@@ -331,3 +337,5 @@ Creating a new magikube project named 'sample' in the current directory
     }
   }
 }
+ 
+ 

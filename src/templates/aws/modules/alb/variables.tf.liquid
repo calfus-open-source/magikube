@@ -43,14 +43,14 @@ variable "domain_name" {
   description = "domain name"
 }
 
-variable "master_node_ids" {
+variable "master-node-ips" {
   type = list(string)
-  description = "List of EC2 instance IDs for master nodes"
+  description = "List of private IP addresses for master nodes"
 }
 
-variable "worker_node_ids" {
+variable "worker-node-ips" {
   type = list(string)
-  description = "List of EC2 instance IDs for worker nodes"
+  description = "List of private IP addresses for worker nodes"
 }
 
 variable "vpc_id" {

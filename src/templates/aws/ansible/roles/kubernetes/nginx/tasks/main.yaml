@@ -27,6 +27,23 @@
     name: nginx
     state: started
 
+- name: Fetch ArgoCD service IP
+  become: yes
+  become_user: kube
+  shell: |
+    kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.clusterIP}'
+  register: argocd_service_ip
+  changed_when: false
+
+- name: Save ArgoCD service IP to a file (to be used by other playbooks)
+  become: yes
+  copy:
+    content: "{{ argocd_service_ip.stdout }}"
+    dest: /tmp/argocd_service_ip.txt
+
+- name: Set fact for ArgoCD service IP
+  set_fact:
+    argocd_service_ip: "{{ argocd_service_ip.stdout }}"
 # Fetch ArgoCD service IP from file
 - name: Fetch ArgoCD service IP from file
   become: yes
@@ -75,6 +92,49 @@
   service:
     name: nginx
     state: restarted
+
+ # Retrieve ArgoCD admin password
+- name: Retrieve ArgoCD admin password
+  become: yes
+  become_user: kube
+  shell: |
+    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode
+  register: argocd_admin_password
+  changed_when: false
+
+- name: Debug output for ArgoCD admin password
+  debug:
+    msg: "ArgoCD Admin Password: {{ argocd_admin_password.stdout }}"
+
+# Login to ArgoCD
+- name: Login to ArgoCD
+  become: yes
+  shell: |
+    argocd login argocd.{{ hostname }} --username admin --password {{ argocd_admin_password.stdout }} --insecure
+  register: argocd_login
+
+
+- name: Form the GitOps HTTPS clone URL
+  set_fact:
+    gitops_https_clone_url: "https://github.com/{{ github_owner }}/{{ project_name }}-{{ 'non-prod' if environment is defined else 'prod' }}-gitops.git"
+
+- name: Display the constructed GitOps HTTPS clone URL
+  debug:
+    msg: "The constructed GitOps HTTPS clone URL is: {{ gitops_https_clone_url }}"
+
+- name: Add GitHub repository to ArgoCD
+  become: yes
+  shell: |
+    argocd repo add https://github.com/{{ github_owner }}/{{ project_name }}-{{ 'non-prod' if environment is defined else 'prod' }}-gitops.git --username {{ git_user_name }} --password {{ github_access_token }}
+  args:
+    executable: /bin/bash
+  register: repo_add_output
+
+
+- name: Debug output for repository addition
+  debug:
+    msg: "Repository Addition: stdout: {{ repo_add_output.stdout_lines }} stderr: {{ repo_add_output.stderr_lines }}"
+
 
 
 

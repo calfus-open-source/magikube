@@ -55,6 +55,12 @@ worker_ip:  {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4
 lifecycle: {{ environment }}
 
 hostname: {{ domain }}
+git_user_name: {{ git_user_name }}
+github_access_token: {{ github_access_token }} 
+github_owner: {{ github_owner }}
+environment: {{ environment }}
+project_name: {{ project_name }}
+
 
 run_as_uid: 1001
 run_as_gid: 1001

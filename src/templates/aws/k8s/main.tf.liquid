@@ -82,8 +82,8 @@ module "alb_ingress" {
     ingress_security_group_id = module.security_group.ingress
     route53_zoneid            = data.aws_route53_zone.route53_zone.zone_id
     domain_name               = var.domain_name
-    master_node_ids           = module.master.k8s-master-ids
-    worker_node_ids           = module.worker.k8s-worker-ids
+    master-node-ips           = module.master.k8s-master-ips
+    worker-node-ips           = module.worker.k8s-worker-ips
     vpc_id                    = module.vpc.id
 }
 module "acm" {
@@ -134,7 +134,9 @@ module "gitops" {
       github_token = "${ var.github_access_token }"
       github_owner = "${ var.github_owner }"
 }
-
+ output "gitops_https_clone_url" {
+  value = module.gitops.gitops_https_clone_url
+}
 module "repository" {
      source = "./modules/code-repository"
      name = "${ var.project_name }"

@@ -1,93 +1,81 @@
 ---
-- name: Creates ingress-controller directory
+- name: Install ArgoCD CLI
+  become: yes
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/v2.7.8/argocd-linux-amd64"
+    dest: /usr/local/bin/argocd
+    mode: '0755'
+
+# Ingress controller installation comes first
+- name: Create ingress-controller directory
   become: yes
   become_user: kube
   file:
-    path: $HOME/ingress-controller
+    path: "$HOME/ingress-controller"
     state: directory
 
-- name: ingress-controller-values template
+- name: Template ingress-controller-values.yaml
   become: yes
   become_user: kube
-  template: src=./templates/ingress-controller-values.j2 dest=$HOME/ingress-controller/ingress-controller-values.yaml
+  template:
+    src: ./templates/ingress-controller-values.j2
+    dest: "$HOME/ingress-controller/ingress-controller-values.yaml"
 
 - name: Deploy ingress-controller helm chart
   become: yes
   become_user: kube
   shell: |
-    helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx -f $HOME/ingress-controller/ingress-controller-values.yaml --namespace ingress-nginx --create-namespace
-    exit 0
+    helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx -f "$HOME/ingress-controller/ingress-controller-values.yaml" --namespace ingress-nginx --create-namespace
   args:
-    executable: /bin/bash      
-  register: SHELL_STDOUT
+    executable: /bin/bash
+  register: ingress_controller_shell_stdout
 
-- name: debug output
-  ansible.builtin.debug: 
-    msg: "Helm Install (ingress-controller): stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"
+- name: Debug output for ingress-controller
+  debug:
+    msg: "Helm Install (ingress-controller): stderr: {{ ingress_controller_shell_stdout.stderr_lines }} stdout: {{ ingress_controller_shell_stdout.stdout_lines }}"
 
 - name: Delete ingress-controller directory
   become: yes
   become_user: kube
   file:
-    path: $HOME/ingress-controller
+    path: "$HOME/ingress-controller"
     state: absent
 
-- name: Creates argocd directory
+# Now, install ArgoCD
+- name: Create argocd directory
   become: yes
   become_user: kube
   file:
-    path: $HOME/argocd
+    path: "$HOME/argocd"
     state: directory
 
-- name: ArgoCD values template
+- name: Template argocd-values.yaml
   become: yes
   become_user: kube
-  template: src=./templates/argocd-values.j2 dest=$HOME/argocd/argocd-values.yaml
+  template:
+    src: ./templates/argocd-values.j2
+    dest: "$HOME/argocd/argocd-values.yaml"
 
-- name: Add ArgoCD helm chart
+- name: Add ArgoCD helm repo
   become: yes
   become_user: kube
   shell: |
     helm repo add argo https://argoproj.github.io/argo-helm
     helm repo update
+  args:
+    executable: /bin/bash
 
 - name: Deploy ArgoCD helm chart
   become: yes
   become_user: kube
   shell: |
-    helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace -f $HOME/argocd/argocd-values.yaml --namespace argocd --create-namespace
-    exit 0
+    helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace -f "$HOME/argocd/argocd-values.yaml"
   args:
-    executable: /bin/bash      
-  register: SHELL_STDOUT
+    executable: /bin/bash
+  register: argocd_shell_stdout
 
-- name: debug output
-  ansible.builtin.debug: 
-    msg: "Helm Install (ArgoCD): stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"
-
-
-- name: Fetch ArgoCD service IP
-  become: yes
-  become_user: kube
-  shell: |
-    kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.clusterIP}'
-  register: argocd_service_ip
-  changed_when: false
-
-- name: Save ArgoCD service IP to a file (to be used by other playbooks)
-  become: yes
-  copy:
-    content: "{{ argocd_service_ip.stdout }}"
-    dest: /tmp/argocd_service_ip.txt
-
-- name: Set fact for ArgoCD service IP
-  set_fact:
-    argocd_service_ip: "{{ argocd_service_ip.stdout }}"
+- name: Debug output for ArgoCD
+  debug:
+    msg: "Helm Install (ArgoCD): stderr: {{ argocd_shell_stdout.stderr_lines }} stdout: {{ argocd_shell_stdout.stdout_lines }}"
 
 
-- name: Delete argocd directory
-  become: yes
-  become_user: kube
-  file:
-    path: $HOME/argocd
-    state: absent

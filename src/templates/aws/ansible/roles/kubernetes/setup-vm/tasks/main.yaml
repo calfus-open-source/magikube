@@ -1,3 +1,4 @@
+
 ---
 - name: Update package cache
   apt:
@@ -31,12 +32,24 @@
       - python3-pip
     state: latest
     update_cache: true
-    
+
 - name: Install multi python packages
   ansible.builtin.pip:
     name:
       - boto
       - boto3
+
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Start Nginx service
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
 
 - name: Check the uptime prior reboot
   shell: uptime
@@ -46,7 +59,7 @@
   ansible.builtin.debug: 
     msg: "Uptime Before Reboot: {{UPTIME_PRE_REBOOT.stdout}}"
 
-- name: Reboot node and stop polling.
+- name: Reboot node and stop polling
   shell: reboot
   async: 10 # Do not care for 10 sec
   poll: 0 # Fire & Forget
@@ -62,3 +75,4 @@
 - name: debug output
   ansible.builtin.debug: 
     msg: "Uptime After Reboot: {{UPTIME_POST_REBOOT.stdout}}"
+
