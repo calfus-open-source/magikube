@@ -17,7 +17,7 @@ import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkSta
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
  
-
+ 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
   if (pattern.test(input)) {
@@ -34,51 +34,51 @@ export default class CreateProject extends BaseCommand {
       required: true,
     }),
   };
-
+ 
   static flags = {
     dryrun: Flags.boolean({
       char: "d",
       description:"Simulates execution of the command, showing what would happen without making any real changes to the system.",
     }),
   };
-
+ 
   static description = "Create new magikube project";
   static examples = [
-    `<%= config.bin %> <%= command.id %> sample 
+    `<%= config.bin %> <%= command.id %> sample
 Creating a new magikube project named 'sample' in the current directory
 `,
   ];
-
+ 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CreateProject);
-
+ 
     // Check the project name condition
     validateUserInput(args.name);
     AppLogger.configureLogger(args.name);
     AppLogger.info("Logger Started ...");
-
+ 
     try {
       let responses: Answers = {
         project_name: args.name,
         project_id: uuidv4(),
         dryrun: flags.dryrun || false,
       };
-
+ 
       const promptGenerator = new PromptGenerator();
       const credentialsPrompts = new CredentialsPrompts();
-
+ 
       let appRouter;
       for (const prompt of promptGenerator.getCloudProvider()) {
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
-
+ 
         for (const prompt of promptGenerator.getCloudProviderPrompts(resp["cloud_provider"])) {
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
         }
-
+ 
         const prompts = credentialsPrompts.getCredentialsPrompts( resp["cloud_provider"],responses);
-
+ 
         if (prompts.length > 0) {
           for (const prompt of prompts) {
             const resp = await inquirer.prompt(prompt);
@@ -86,27 +86,27 @@ Creating a new magikube project named 'sample' in the current directory
           }
           credentialsPrompts.saveCredentials(responses);
         }
-
+ 
         for (const prompt of promptGenerator.getVersionControlPrompts(responses["source_code_repository"])) {
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
         }
-
+ 
         for (const prompt of promptGenerator.getEnvironment()) {
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
-
+ 
           for (const prompt of promptGenerator.getLifecycles(resp["environment"])) {
             const resp = await inquirer.prompt(prompt);
             responses = { ...responses, ...resp };
           }
         }
-
+ 
         for (const prompt of promptGenerator.getDomainPrompt()) {
           const resp = await inquirer.prompt(prompt);
           responses = { ...responses, ...resp };
         }
-
+ 
         const dir = `${process.cwd()}/magikube-templates`;
         const path = process.cwd();
         if (!fs.existsSync(dir)) {
@@ -116,21 +116,21 @@ Creating a new magikube project named 'sample' in the current directory
             1
           );
         }
-
+ 
         if (!fs.existsSync(`${process.cwd()}/dist`)) {
           await executeCommandWithRetry("mkdir dist", { cwd: path }, 1);
         }
-
+ 
         const copyTemplateResult = executeCommandWithRetry(
           "rsync -av magikube-templates/* dist/ --prune-empty-dirs",
           { cwd: path },
           1
         );
         await executeCommandWithRetry(`rm -rf ${dir}`, { cwd: path }, 1);
-
+ 
         AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
       }
-
+ 
       // Asking for the frontend and backend prompts
       for (const prompt of promptGenerator.getFrontendApplicationType()) {
         const resp = await inquirer.prompt(prompt);
@@ -140,15 +140,16 @@ Creating a new magikube project named 'sample' in the current directory
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
       }
-
+ 
     AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
-
+ 
     // Get the project name from the command line arguments
-
+ 
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
     const projectConfig = SystemConfig.getInstance().getConfig();
+    console.log(projectConfig,"______projectConfig")
     const aws= projectConfig.aws_profile;
     const path =`${process.cwd()}`
     let command: BaseCommand | undefined;
@@ -164,6 +165,29 @@ Creating a new magikube project named 'sample' in the current directory
       "module.argo",
       "module.environment"
   ];
+  const {
+    github_access_token: token,
+    git_user_name: userName,
+    github_owner: orgName,
+    source_code_repository: sourceCodeRepo,
+    aws_region: region,
+    aws_access_key_id: awsAccessKey,
+    aws_secret_access_key: awsSecretKey,
+    environment: environment,
+  } = projectConfig;
+
+  const configObject: ConfigObject = {
+    token,
+    userName,
+    orgName,
+    sourceCodeRepo,
+    region,
+    projectName,
+    awsAccessKey,
+    awsSecretKey,
+    environment,
+  };
+  const setupGitopsServiceStatus = await createApp.setupGitops( projectConfig);
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
       if (responses['cloud_provider'] === 'aws') {
@@ -184,16 +208,15 @@ Creating a new magikube project named 'sample' in the current directory
       }
       }
       if (responses['cluster_type'] === 'k8s') {
-
+ 
         const dotmagikube = readProjectConfig(projectName,process.cwd())
-        console.log(dotmagikube,"<<<<<<dotmagikube")
         console.log(fs.existsSync(`${process.cwd()}/${projectName}/templates/aws/ansible/environments`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
         await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
         await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure");
-        try{ 
-          AppLogger.info("AWS export command executing... ",true) 
-          execSync(`export AWS_PROFILE=${aws} `, 
+        try{
+          AppLogger.info("AWS export command executing... ",true)
+          execSync(`export AWS_PROFILE=${aws} `,
         {
           cwd: `${process.cwd()}/${projectName}/templates/aws/ansible/environments`,
           stdio: 'inherit'
@@ -201,6 +224,11 @@ Creating a new magikube project named 'sample' in the current directory
         AppLogger.info("AWS export command  executed.",true)
         }catch(error){
           AppLogger.error("AWS export command  NOT executed",true)
+        }
+        if (setupGitopsServiceStatus) {
+          configObject.appName = `${environment}`;
+          configObject.appType = "gitops";
+          await ManageRepository.pushCode(configObject);
         }
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
@@ -212,7 +240,7 @@ Creating a new magikube project named 'sample' in the current directory
         // await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
         terraform?.stopSSHProcess();
       
-
+ 
         const projectConfig = SystemConfig.getInstance().getConfig();
         
         let command: BaseCommand | undefined;
@@ -220,31 +248,10 @@ Creating a new magikube project named 'sample' in the current directory
           command as BaseCommand,
           projectConfig
         );
-
+ 
         // Running the actual app setups
-        const {
-          github_access_token: token,
-          git_user_name: userName,
-          github_owner: orgName,
-          source_code_repository: sourceCodeRepo,
-          aws_region: region,
-          aws_access_key_id: awsAccessKey,
-          aws_secret_access_key: awsSecretKey,
-          environment: environment,
-        } = projectConfig;
-
-        const configObject: ConfigObject = {
-          token,
-          userName,
-          orgName,
-          sourceCodeRepo,
-          region,
-          projectName,
-          awsAccessKey,
-          awsSecretKey,
-          environment,
-        };
-
+       
+ 
         const statusAuthenticationService =
           await createApp.setupAuthenticationService(projectConfig);
         if (statusAuthenticationService) {
@@ -261,29 +268,22 @@ Creating a new magikube project named 'sample' in the current directory
           configObject.appType = "keycloak-service";
           await ManageRepository.pushCode(configObject);
         }
-
+ 
         if (responses["backend_app_type"]) {
           await createApp.handleAppCreation(
             responses["backend_app_type"],
             configObject
           );
         }
-
+ 
         if (responses["frontend_app_type"]) {
           await createApp.handleAppCreation(
             responses["frontend_app_type"],
             configObject
           );
         }
-
-        const setupGitopsServiceStatus = await createApp.setupGitops(
-          projectConfig
-        );
-        if (setupGitopsServiceStatus) {
-          configObject.appName = `${environment}`;
-          configObject.appType = "gitops";
-          await ManageRepository.pushCode(configObject);
-        }
+        
+       
       }
  
       }
