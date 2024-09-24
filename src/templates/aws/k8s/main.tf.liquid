@@ -186,3 +186,7 @@ module "ecr-repo" {
     name = "${ var.project_name }"
     appType = local.repositories[count.index].appType
 }
+
+output "repository_urls" {
+  value = [for repo in module.ecr-repo : repo.repository_urls]
+}
