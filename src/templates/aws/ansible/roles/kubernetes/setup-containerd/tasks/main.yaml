@@ -8,32 +8,32 @@
   blockinfile:
     path: "/etc/modules-load.d/containerd.conf"
     block: |
-          overlay
-          br_netfilter
+      overlay
+      br_netfilter
 
-- name: modprobe
+- name: Load kernel modules
   shell: |
-          sudo modprobe overlay
-          sudo modprobe br_netfilter
+    sudo modprobe overlay
+    sudo modprobe br_netfilter
 
 - name: Set system configurations for Kubernetes networking
   file:
     path: "/etc/sysctl.d/99-kubernetes-cri.conf"
     state: "touch"
 
-- name: Add conf for containerd
+- name: Add configuration for containerd networking
   blockinfile:
     path: "/etc/sysctl.d/99-kubernetes-cri.conf"
     block: |
-          vm.swapiness = 0
-          net.bridge.bridge-nf-call-iptables = 1
-          net.ipv4.ip_forward = 1
-          net.bridge.bridge-nf-call-ip6tables = 1
+      vm.swappiness = 0
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
 
-- name: Apply new settings
+- name: Apply new system settings
   command: sudo sysctl --system
 
-- name: Disable swappiness and pass bridged IPv4 traffic to iptable's chains
+- name: Disable swappiness and configure sysctl
   sysctl:
     name: "{{ item.name }}"
     value: "{{ item.value }}"
@@ -43,9 +43,9 @@
     - { name: 'vm.swappiness', value: '0' }
     - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
     - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
-    - { name: 'net.ipv4.ip_forward', value: '1'}
+    - { name: 'net.ipv4.ip_forward', value: '1' }
 
-- name: create folders for containerd
+- name: Create necessary directories for containerd
   file:
     path: "{{ item }}"
     state: directory
@@ -57,7 +57,31 @@
     - /logs/syslogs
     - /var/log/pods
 
-- name: create symlinks for containerd
+- name: Check if /var/lib/containerd is not a symlink
+  stat:
+    path: /var/lib/containerd
+  register: lib_containerd_stat
+
+- name: Check if /run/containerd is not a symlink
+  stat:
+    path: /run/containerd
+  register: run_containerd_stat
+
+- name: Remove /var/lib/containerd if it is not a symlink
+  file:
+    path: /var/lib/containerd
+    state: absent
+    force: yes
+  when: lib_containerd_stat.stat.exists and not lib_containerd_stat.stat.islnk
+
+- name: Remove /run/containerd if it is not a symlink
+  file:
+    path: /run/containerd
+    state: absent
+    force: yes
+  when: run_containerd_stat.stat.exists and not run_containerd_stat.stat.islnk
+
+- name: Create symlinks for containerd
   file:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -70,42 +94,41 @@
     - src: /logs/syslogs
       dest: /var/log/pods/syslogs
 
-- name: install containerd
+- name: Install containerd
   shell: |
-      apt-get update && sudo apt-get install -y containerd
+    apt-get update && sudo apt-get install -y containerd
   register: SHELL_STDOUT
 
-- name: debug output
-  ansible.builtin.debug: 
-    msg: "Containerd install: stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"      
+- name: Debug output of containerd installation
+  debug:
+    msg: "Containerd install: stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"
 
-- name: configure containerd
+- name: Configure containerd
   shell: |
-      containerd config default | sudo tee /etc/containerd/config.toml
-      sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
-      sed -i 's/\/var\/lib\/containerd/\/data\/lib\/containerd/g' /etc/containerd/config.toml
-      sed -i 's/\/run\/containerd/\/data\/run\/containerd/g' /etc/containerd/config.toml
-
-      systemctl restart containerd
-      systemctl enable containerd      
+    containerd config default | sudo tee /etc/containerd/config.toml
+    sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+    sed -i 's/\/var\/lib\/containerd/\/data\/lib\/containerd/g' /etc/containerd/config.toml
+    sed -i 's/\/run\/containerd/\/data\/run\/containerd/g' /etc/containerd/config.toml
+    systemctl restart containerd
+    systemctl enable containerd
   register: SHELL_STDOUT
 
-- name: Create crictl.yaml file for crictl tool
+- name: Create crictl.yaml file
   file:
     path: "/etc/crictl.yaml"
     state: "touch"
 
-- name: configure crictl.yaml for crictl tool
+- name: Configure crictl.yaml
   blockinfile:
     path: "/etc/crictl.yaml"
     block: |
-          runtime-endpoint: unix:///run/containerd/containerd.sock
-          image-endpoint: unix:///run/containerd/containerd.sock
-          timeout: 2
-          debug: false
-          pull-image-on-create: false
+      runtime-endpoint: unix:///run/containerd/containerd.sock
+      image-endpoint: unix:///run/containerd/containerd.sock
+      timeout: 2
+      debug: false
+      pull-image-on-create: false
 
-- name: disable swap
+- name: Disable swap
   shell: |
-          swapoff -a
-          sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+    swapoff -a
+    sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
