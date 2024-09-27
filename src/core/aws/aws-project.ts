@@ -483,4 +483,12 @@ export default class AWSProject extends BaseProject {
             }
         }
     }
+
+    async runAnsiblePlaybook5(projectPath: string) {
+        executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+     }
+     async runAnsiblePlaybook6(projectPath: string) {
+        executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+     }
 }
+

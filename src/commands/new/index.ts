@@ -16,6 +16,7 @@ import { Colours } from "../../prompts/constants.js";
 import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkStatus-utils.js";
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
+import AWSAccount from "../../core/aws/aws-account.js";
  
  
 function validateUserInput(input: string): void {
@@ -187,6 +188,9 @@ Creating a new magikube project named 'sample' in the current directory
     awsSecretKey,
     environment,
   };
+  const accountId = await AWSAccount.getAccountId(awsAccessKey, awsSecretKey, region);
+  SystemConfig.getInstance().mergeConfigs({ accountId: accountId });
+ 
   const setupGitopsServiceStatus = await createApp.setupGitops( projectConfig);
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
@@ -234,6 +238,8 @@ Creating a new magikube project named 'sample' in the current directory
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook3(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook4(process.cwd()+"/"+projectName);
+        await terraform?.runAnsiblePlaybook5(process.cwd()+"/"+projectName);
+        await terraform?.runAnsiblePlaybook6(process.cwd()+"/"+projectName);
         terraform?.startSSHProcess();
         const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName+"/infrastructure");
         await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
@@ -250,16 +256,9 @@ Creating a new magikube project named 'sample' in the current directory
         );
  
         // Running the actual app setups
-       
  
-        const statusAuthenticationService =
-          await createApp.setupAuthenticationService(projectConfig);
-        if (statusAuthenticationService) {
-          configObject.appName = "auth-service";
-          configObject.appType = "auth-service";
-          await ManageRepository.pushCode(configObject);
-        }
- 
+        
+        console.log(projectConfig,"<<<<<<<<<<<<projectConfig")
         const statusKeycloakService = await createApp.setupKeyCloak(
           projectConfig
         );

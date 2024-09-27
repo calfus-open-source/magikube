@@ -5,3 +5,4 @@
   become: yes
   roles:
     - { role: ../roles/kubernetes/nginx, tags: 'nginx' }
+
