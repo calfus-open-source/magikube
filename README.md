@@ -108,6 +108,3 @@ EXAMPLES
 Detailed documentation can be found [here](http://calfus-open-source.github.io/magikube-docs/) which includes:
 1. [Introduction](https://calfus-open-source.github.io/magikube-docs/docs/intro)
 2. [How to Guides](https://calfus-open-source.github.io/magikube-docs/docs/category/how-to-guides)
-# rstab-non-prod-gitops
-# rstab-non-prod-gitops
-# rstab-non-prod-gitops

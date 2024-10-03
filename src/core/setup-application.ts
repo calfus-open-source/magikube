@@ -265,7 +265,7 @@ export default class CreateApplication extends BaseProject {
 
     async setupGitops(projectConfig: any) {
         const path = process.cwd();
-        console.log("path",path)
+        // console.log("path",path)
         const appName = 'gitops';
         const { project_name: projectName, frontend_app_type, environment } = projectConfig;
     
@@ -277,8 +277,8 @@ export default class CreateApplication extends BaseProject {
             // Adjusted paths
             for (const file of gitopsFiles) {
                 console.log(fs.existsSync(`${path}/dist`))
-                console.log(`../../Repos/magikube/magikube-templates/gitops/auth-gitops/${file}.liquid`)
-                await this.createFile(file, `../../Repos/magikube/magikube-templates/gitops/auth-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
+                // console.log(`../../Repos/magikube/magikube-templates/gitops/auth-gitops/${file}.liquid`)
+                await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
             }
         
             for (const file of gitopsKeycloakFiles) {
