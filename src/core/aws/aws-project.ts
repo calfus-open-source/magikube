@@ -11,6 +11,7 @@ import { ProgressBar } from '../../logger/progressLogger.js';
 import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
 import { executeCommandWithRetry } from '../common-functions/execCommands.js';
+import { updateStatusFile } from '../utils/statusUpdater-utils.js';
 
 let sshProcess: any;
 
@@ -23,7 +24,8 @@ export default class AWSProject extends BaseProject {
                 this,
                 this.config.aws_region,
                 this.config.aws_access_key_id,
-                this.config.aws_secret_access_key
+                this.config.aws_secret_access_key,
+                this.config.project_name
                 );
         
             await AWSTerraformBackend.create(
@@ -153,7 +155,7 @@ export default class AWSProject extends BaseProject {
         AppLogger.info('AWS profile activated successfully.', true);
     }
 
-    async runTerraformInit(projectPath: string, backend: string): Promise<void> {
+    async runTerraformInit(projectPath: string, backend: string, projectName?: string): Promise<void> {
         AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
     
         const progressBar = ProgressBar.createProgressBar();
@@ -201,9 +203,11 @@ export default class AWSProject extends BaseProject {
                     if (code === 0) {
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         AppLogger.debug('Terraform init completed successfully.');
+                        updateStatusFile(projectName, "terraform-init", "success")
                         resolve(); // Resolve promise on successful completion
                     } else {
                         AppLogger.error(`Failed to initialize terraform process. Exit code: ${code}`, true);
+                        updateStatusFile(projectName, "terraform-init", "fail")
                         reject(new Error(`Terraform init failed with exit code ${code}`)); // Reject promise on error
                         setImmediate(() => process.exit(1)); 
                     }
@@ -251,6 +255,10 @@ export default class AWSProject extends BaseProject {
                 const terraformProcess = spawn('terraform', args, {
                     cwd: projectPath,
                     env: process.env
+                });                 
+                process.once('SIGINT', () => {
+                    terraformProcess.kill('SIGINT');
+                    process.exit(); 
                 });
     
                 // Set up progress bar

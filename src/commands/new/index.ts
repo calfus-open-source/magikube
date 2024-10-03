@@ -13,7 +13,8 @@ import { ConfigObject } from "../../core/interface.js";
 import { ManageRepository } from "../../core/manage-repository.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 import { Colours } from "../../prompts/constants.js";
-import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkStatus-utils.js";
+import {setupServices, waitForServiceToUP,} from "../../core/utils/healthCheck-utils.js";
+import { initializeStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -107,22 +108,14 @@ Creating a new magikube project named 'sample' in the current directory
         const dir = `${process.cwd()}/magikube-templates`;
         const path = process.cwd();
         if (!fs.existsSync(dir)) {
-          await executeCommandWithRetry(
-            "git clone https://github.com/calfus-open-source/magikube-templates.git",
-            { cwd: path },
-            1
-          );
+          await executeCommandWithRetry("git clone https://github.com/calfus-open-source/magikube-templates.git",{ cwd: path },1);
         }
 
         if (!fs.existsSync(`${process.cwd()}/dist`)) {
           await executeCommandWithRetry("mkdir dist", { cwd: path }, 1);
         }
 
-        const copyTemplateResult = executeCommandWithRetry(
-          "rsync -av magikube-templates/* dist/ --prune-empty-dirs",
-          { cwd: path },
-          1
-        );
+        const copyTemplateResult = await executeCommandWithRetry( "rsync -av magikube-templates/* dist/ --prune-empty-dirs",{ cwd: path },1 );
         await executeCommandWithRetry(`rm -rf ${dir}`, { cwd: path }, 1);
 
         AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
@@ -164,6 +157,8 @@ Creating a new magikube project named 'sample' in the current directory
         "module.environment",
         "module.rds",
       ];
+      const services = ["policy","terraform-init", "terraform-apply", "auth-service", "keycloak", "my-node-app", projectConfig["frontend_app_type"], "gitops"];
+      initializeStatusFile(projectName, services);
       if (terraform) {
         await terraform.createProject(projectName, process.cwd());
         if (responses["cloud_provider"] === "aws") {
@@ -175,30 +170,22 @@ Creating a new magikube project named 'sample' in the current directory
           responses["cluster_type"] === "eks-nodegroup"
         ) {
           await new Promise((resolve) => setTimeout(resolve, 15000));
-          await terraform?.runTerraformInit(
-            process.cwd() + "/" + projectName + "/infrastructure",
-            `${responses["environment"]}-config.tfvars`
-          );
+          await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure", `${responses["environment"]}-config.tfvars`, projectName);
+          let allModulesAppliedSuccessfully = true; 
           for (const module of modules) {
             try {
-              AppLogger.info(
-                `Starting Terraform apply for module: ${module}`,
-                true
-              );
-              await terraform?.runTerraformApply(
-                process.cwd() + "/" + projectName + "/infrastructure",
-                module,
-                "terraform.tfvars"
-              );
-              AppLogger.debug(
-                `Successfully applied Terraform for module: ${module}`
-              );
+              AppLogger.info( `Starting Terraform apply for module: ${module}`, true);
+              await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module, "terraform.tfvars");
+              AppLogger.debug( `Successfully applied Terraform for module: ${module}`);    
             } catch (error) {
-              AppLogger.error(
-                `Error applying Terraform for module: ${module}, ${error}`,
-                true
-              );
+              AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`, true ); allModulesAppliedSuccessfully = false;
+              allModulesAppliedSuccessfully = false;
             }
+          }
+          if (allModulesAppliedSuccessfully) {
+             updateStatusFile(projectName, "terraform-apply", "success");
+          } else {
+             updateStatusFile(projectName, "terraform-apply", "fail");
           }
         }
         if (responses["cluster_type"] === "k8s") {
@@ -216,12 +203,7 @@ Creating a new magikube project named 'sample' in the current directory
           await terraform?.editKubeConfigFile(
             process.cwd() + "/" + projectName + "/templates/aws/ansible/config/" + masterIP + "/etc/kubernetes/admin.conf"
           );
-          await terraform?.runTerraform(
-            process.cwd() + "/" + projectName + "/k8s_config",
-            `../${responses["environment"]}-config.tfvars`,
-            "module.ingress-controller",
-            "../terraform.tfvars"
-          );
+          await terraform?.runTerraform( process.cwd() + "/" + projectName + "/k8s_config", `../${responses["environment"]}-config.tfvars`, "module.ingress-controller", "../terraform.tfvars");
           terraform?.stopSSHProcess();
         }
 
@@ -275,22 +257,14 @@ Creating a new magikube project named 'sample' in the current directory
         }
 
         if (responses["backend_app_type"]) {
-          await createApp.handleAppCreation(
-            responses["backend_app_type"],
-            configObject
-          );
+          await createApp.handleAppCreation(responses["backend_app_type"], configObject, projectConfig);
         }
 
         if (responses["frontend_app_type"]) {
-          await createApp.handleAppCreation(
-            responses["frontend_app_type"],
-            configObject
-          );
+          await createApp.handleAppCreation(responses["frontend_app_type"], configObject, projectConfig);
         }
 
-        const setupGitopsServiceStatus = await createApp.setupGitops(
-          projectConfig
-        );
+        const setupGitopsServiceStatus = await createApp.setupGitops(projectConfig);
         if (setupGitopsServiceStatus) {
           configObject.appName = `${environment}`;
           configObject.appType = "gitops";
@@ -299,52 +273,13 @@ Creating a new magikube project named 'sample' in the current directory
       }
 
       await createApp.MoveFiles(projectName);
+       
+      await setupServices(args, responses, projectConfig);
+      process.exit(0);
 
-      const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
-      const keycloakurl = `http://${responses.domain}/keycloak`;
-      const frontendURL = `http://${responses.domain}`;
-      const argocdURL = `http://argocd.${responses.domain}`;
-      const isKeycloakUp = await waitForServiceToUP(keycloakurl, "keycloak");
-      if (isKeycloakUp && fs.existsSync(keycloakConfigPath)) {
-        await executeCommandWithRetry(
-          `chmod +x config.sh && /bin/sh ./config.sh`,
-          { cwd: `${process.cwd()}/${args.name}/keycloak` },
-          1
-        );
-      } else {
-        AppLogger.error(
-          "Cannot run the script because Keycloak service is not up or config.sh does not exist."
-        );
-      }
-      const frontendAppType = projectConfig.frontend_app_type;
-      const isArgoCDUp = await waitForServiceToUP(argocdURL, "argocd");
-      const isFrontendUp = await waitForServiceToUP(frontendURL, frontendAppType);
-       if (isKeycloakUp && isArgoCDUp && isFrontendUp) {
-       const clickableLink = `\u001b]8;;${frontendURL}\u001b\\\u001b[34;4m${frontendURL}\u001b[0m\u001b]8;;\u001b\\`;
-          const username = "magikube_user@example.com";
-          const password = "welcome";
-          AppLogger.info(
-            `Magikube application is up and running at ${clickableLink}`,
-            true
-          );
-         AppLogger.info(
-           `Login using\nUsername: ${username}\nPassword: ${password}`,
-           true
-         );
-       } else {
-           AppLogger.error(
-             "One or more services failed to start. Please check the service.",
-             true
-           );
-       }
-      
-      process.exit(1);
     } catch (error) {
-      AppLogger.error(
-        `An error occurred during the setup process: ${error}`,
-        true
-      );
-      process.exit(1);
+       AppLogger.error(`An error occurred during the setup process: ${error}`, true);
+       process.exit(1);
     }
   }
 }

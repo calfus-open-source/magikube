@@ -7,6 +7,7 @@ import SystemConfig from '../../config/system.js';
 import * as fs from 'fs';
 import { join } from 'path';
 import { AppLogger } from '../../logger/appLogger.js';
+import { dotMagikubeConfig } from '../../core/utils/projectConfigReader-utils.js';
 
 export default class DestroyProject extends BaseCommand {  
   static args = {
@@ -25,20 +26,12 @@ Destroying magikube project named 'sample' in the current directory
 `,
   ]
 
-  async readProjectConfig(name: string, path: string): Promise<any> {
-    //read config and responses form project level config
-    const projectPath = join(path, name);
-    const projectConfigFile = join(projectPath, '.magikube');
-    if (fs.existsSync(projectConfigFile)) {
-      return JSON.parse(fs.readFileSync(projectConfigFile).toString());
-    }
-  }
-
   async run(): Promise<void> {
     const {args, flags} = await this.parse(DestroyProject);
     AppLogger.configureLogger(args.name, false);
     //read config and responses form project level config
-    const responses = await this.readProjectConfig(args.name, process.cwd());
+    const responses = await dotMagikubeConfig(args.name, process.cwd());
+    console.log(responses,"<<<<<<responses")
     responses['dryrun'] = flags.dryrun || false;
 
     AppLogger.debug(`Destroying magikube project named '${args.name}' in the current directory`)

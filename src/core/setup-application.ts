@@ -6,8 +6,7 @@ import { AppTypeMap, ConfigObject } from "./interface.js";
 import { ManageRepository } from "./manage-repository.js";
 import BaseCommand from "../commands/base.js";
 import { executeCommandWithRetry } from "./common-functions/execCommands.js";
-
-
+import { updateStatusFile } from "./utils/statusUpdater-utils.js";
 
 export default class CreateApplication extends BaseProject {
     private appTypeMap: AppTypeMap;
@@ -65,11 +64,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${appName}`},3);
+            updateStatusFile(projectName, appName, "success")
             AppLogger.info('Auth-Service created successfully!', true);
             return true
 
         } catch (error) {
             AppLogger.error(`Failed to setup authentication service, ${error}`, true);
+            updateStatusFile(projectName, appName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
             process.exit(1);
   
@@ -97,11 +98,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             AppLogger.info('Keycloak service created successfully.', true);
+            updateStatusFile(projectName, appName, "success");
 
             return true
 
         } catch (error) {
             AppLogger.error(`Failed to setup keycloak, ${error}`, true);
+            updateStatusFile(projectName, appName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
             process.exit(1);
       }
@@ -133,10 +136,12 @@ export default class CreateApplication extends BaseProject {
 
             await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${nodeAppName}`, stdio: 'pipe'}, 3);
             AppLogger.info('Node Express app created successfully.',true);
+            updateStatusFile(projectName, nodeAppName, "success");
             return true;
 
         } catch (error) {
             AppLogger.error(`Failed to create Node-express Application: ${error}`, true);
+            updateStatusFile(projectName, nodeAppName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${nodeAppName}`, { recursive: true });
             process.exit(1);
         }
@@ -167,11 +172,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             await executeCommandWithRetry('npm install', { cwd: `${path}/${projectName}/${nextAppName}` },3);
-            AppLogger.info('Next.js application created successfully.', true);
+            updateStatusFile(projectName, nextAppName, "success");
+            AppLogger.info("Next.js application created successfully.", true);
             return true;
 
         } catch (error) {
             AppLogger.error(`Failed to create Next.js app: ${error}`, true);
+            updateStatusFile(projectName, nextAppName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${nextAppName}`, { recursive: true });
             process.exit(1);
         }
@@ -207,11 +214,13 @@ export default class CreateApplication extends BaseProject {
 
             await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`}, 3);
             AppLogger.info('React app created successfully.', true);
+            updateStatusFile(projectName, reactAppName, "success");
             return true;
 
     } catch (error) {
             AppLogger.error(`Failed to create React app:${error}`, true);
             AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
+            updateStatusFile(projectName, reactAppName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${reactAppName}`, { recursive: true });
             process.exit(1);
     }
@@ -253,10 +262,12 @@ export default class CreateApplication extends BaseProject {
             }
 
               AppLogger.info('Gitops setup is done.', true);
+              updateStatusFile(projectName, "gitops", "success");
               return true;
         
          }catch (error) {
-            AppLogger.error(`Failed to setup authentication service, ${error}`, true);
+            AppLogger.error(`Failed to setup Gitops service, ${error}`, true);
+            updateStatusFile(projectName, "gitops", "success");
             fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
             process.exit(1);
       }
@@ -264,9 +275,8 @@ export default class CreateApplication extends BaseProject {
 
     
     // Wrapper for app creation and repo setup
-    async handleAppCreation(appType: string, configObject: ConfigObject) {
+    async handleAppCreation(appType: string, configObject: ConfigObject, projectConfig: any) {
         try {
-            const projectConfig = SystemConfig.getInstance().getConfig();
             const appConfig = this.appTypeMap[appType];
             if (appConfig) {
                 configObject.appName = projectConfig[appConfig.appNameKey];

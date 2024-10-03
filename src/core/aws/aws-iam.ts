@@ -18,12 +18,13 @@ import {
   ListServiceSpecificCredentialsCommand,
   DeleteServiceSpecificCredentialCommand
 } from "@aws-sdk/client-iam";
-
 import * as fs from "fs";
-import { join } from "path";
 import SystemConfig from "../../config/system.js";
 import AWSAccount from "./aws-account.js";
 import { AppLogger } from "../../logger/appLogger.js";
+import { readStatusFile, updateStatusFile } from "../utils/statusUpdater-utils.js";
+import { join } from "path";
+
 
 export default class AWSPolicies {
 
@@ -31,7 +32,8 @@ export default class AWSPolicies {
         project: BaseProject,
         region: string,
         accessKeyId: string,
-        secretAccessKey: string
+        secretAccessKey: string,
+        projectName:string
     ): Promise<boolean> {
 
         const iamClient: IAMClient = new IAMClient({
@@ -41,7 +43,6 @@ export default class AWSPolicies {
                 secretAccessKey: secretAccessKey,
             },
         });
-
         const account = await AWSAccount.getAccountId(accessKeyId, secretAccessKey, region);
         AppLogger.debug(`Working with AWS Account Number: ${account}`);
 
@@ -103,43 +104,28 @@ export default class AWSPolicies {
             }
         };
 
-        //Get list of filenames in a directory
-        const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
-
-        for (const file of files) {
-            const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;
-            AppLogger.info(`Creating policy, user, group and adding the user to the group: ${policyName}`, true);
-            const policyDocument = await project.generateContent(`../templates/aws/policies/${file}`);
-            await createPolicy(policyName, policyDocument);
-            await createGroup(policyName);
-            await attachGroupPolicy(policyName, `arn:aws:iam::${account}:policy/${policyName}`);
-            await createUser(policyName);
-            await addUserToGroup(policyName, policyName);
-
-            // For gitops user, create HTTPS Git credentials and store them securely
-            if (file.split('.')[0] === "gitops" && SystemConfig.getInstance().getConfig().source_code_repository === "codecommit") {
-                try {
-                    const result = await iamClient.send(new CreateServiceSpecificCredentialCommand({
-                        UserName: policyName,
-                        ServiceName: 'codecommit.amazonaws.com'
-                    }));
-
-
-                    const credentials = result.ServiceSpecificCredential;
-                    const projectConfigFile = `${process.cwd()}/${SystemConfig.getInstance().getConfig().project_name}/.magikube`;
-                    const sysConfig = SystemConfig.getInstance().getConfig();
-                    const responses = { 
-                        ...sysConfig,
-                        "codecommit_git_username": credentials?.ServiceUserName,
-                        "codecommit_git_password": credentials?.ServicePassword
-                    };
-                    fs.writeFileSync(projectConfigFile, JSON.stringify(responses, null, 4));
-                    AppLogger.info(`Creating Git credentials and saved for user ${policyName}`);
-                } catch (err) {
-                    AppLogger.error(`Error creating Git credentials for user ${policyName}, ${err}`, true);
-                }
+        const status = await readStatusFile(projectName)
+        if (status["policy"] === "pending" || status["policy"] === "fail") {
+            const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
+            try{
+                for (const file of files) {
+                const policyName = `${projectName}-${file.split('.')[0]}`;
+                AppLogger.info(`Creating policy, user, group and adding the user to the group: ${policyName}`, true);
+                const policyDocument = await project.generateContent(`../templates/aws/policies/${file}`);
+                await createPolicy(policyName, policyDocument);
+                await createGroup(policyName);
+                await attachGroupPolicy(policyName, `arn:aws:iam::${account}:policy/${policyName}`);
+                await createUser(policyName);
+                await addUserToGroup(policyName, policyName);
+                AppLogger.info(`Policy ${policyName} created successfully`, true);
+                updateStatusFile(projectName, "policy", "success");
             }
-        }
+            }catch(error){
+                AppLogger.error(`Error in creating the polic`, true);
+                updateStatusFile(projectName, "policy", "fail");
+                process.exit(1);
+            }
+        } 
         return true;
     }
 

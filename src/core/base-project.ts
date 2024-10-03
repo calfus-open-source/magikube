@@ -17,17 +17,17 @@ export default abstract class BaseProject {
         this.command = command;
     }
 
-    async destroyProject(name: string, path: string): Promise<void> {
-        //initialize terraform in the path
-        this.projectPath = join(path, name);
-        // Run terraform destroy
-        AppLogger.debug(`Destroying project '${name}' in the path`, true);
-        await this.terraformDestroy();
-        await this.deleteFolder();
-    }
+  async destroyProject(projectName: string, path: string): Promise<void> {
+    //initialize terraform in the path
+    this.projectPath = join(path, projectName);
+    // Run terraform destroy
+    AppLogger.debug(`Destroying project '${projectName}' in the path`, true);
+    await this.terraformDestroy(projectName);
+    await this.deleteFolder();
+  }
 
 
-    async terraformDestroy(): Promise<void> {
+    async terraformDestroy(projectName:string): Promise<void> {
         // Run terraform destroy
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
@@ -45,7 +45,7 @@ export default abstract class BaseProject {
         ];
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
-            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`,projectName);
             
             // Destroy modules one by one
             for (const module of modules) {
@@ -61,7 +61,7 @@ export default abstract class BaseProject {
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`, projectName);
             terraform?.startSSHProcess();
             // Destroy the ingress and other helm modules
             await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `/infrastructure/terraform.tfvars`);
