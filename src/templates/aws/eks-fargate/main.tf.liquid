@@ -19,12 +19,25 @@ module "vpc" {
     cidr = "${ var.vpc_cidr }"
 }
 
+module "rds"{
+    source = "./modules/rds"  
+    name = "${ var.project_name }"
+    environment = "${ var.environment }"
+    region                 = var.region
+    vpc_id                 = module.vpc.id
+    vpc_private_subnets    = module.vpc.private_subnets
+    vpc_public_subnets     = module.vpc.public_subnets
+    vpc_database_subnets   = module.vpc.database_subnets
+    security_group_id      = module.vpc.default_security_group_id
+}
+
 {% comment %} module "security_group"{
     source = "./modules/security-groups"
     name                    = "${ var.project_name }"
     environment             = "${ var.environment }"
     vpc_id                  = module.vpc.id
 } {% endcomment %}
+
 
 {% comment %} module "alb-ingress" {
     source                    = "./modules/alb"
@@ -51,6 +64,7 @@ module "eks" {
     domain_name = coalesce(var.domain_name, replace(module.eks.cluster_endpoint, "https://", ""))
 } {% endcomment %}
 
+
 module "acm" {
     source = "./modules/acm"
     name = "${ var.project_name }"
@@ -58,7 +72,6 @@ module "acm" {
     domain_name = var.domain_name
     route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
 }
-
 {% if source_code_repository == 'github' %}
 module "gitops" {
     source = "./modules/gitops"
@@ -103,10 +116,12 @@ locals {
 
 {% endif %} {% endcomment %}
 
+
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
     name = module.eks.cluster_name
 }
-  
+
+
 module "ingress-controller" {
     source                 = "./modules/ingress-controller"
     name                   = "${ var.project_name }"
