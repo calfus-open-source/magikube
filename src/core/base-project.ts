@@ -5,6 +5,8 @@ import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 import TerraformProject from './terraform-project.js';
 import { AppLogger } from '../logger/appLogger.js';
+import { readModuleFile } from './utils/updateModule-utils.js';
+import { log } from 'console';
 
 export default abstract class BaseProject {    
     protected config: any = {};
@@ -22,40 +24,48 @@ export default abstract class BaseProject {
         this.projectPath = join(path, name);
         // Run terraform destroy
         AppLogger.debug(`Destroying project '${name}' in the path`, true);
-        await this.terraformDestroy();
+        await this.terraformDestroy(name);
         await this.deleteFolder();
     }
 
 
-    async terraformDestroy(): Promise<void> {
+    async terraformDestroy(name:string): Promise<void> {
         // Run terraform destroy
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         const modules = [
-            "module.rds",
-            "module.environment",
-            "module.argo",
-            "module.ingress-controller",
-            "module.repository",
-            "module.gitops",
-            "module.ecr-repo",
-            "module.acm",
+            "module.vpc",
             "module.eks",
-            "module.vpc"
-        ];
+            "module.acm",
+            "module.ecr-repo",
+            "module.gitops",
+            "module.repository",
+            "module.ingress-controller",
+            "module.argo",
+            "module.environment",
+            "module.rds",
+          ];
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
             await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
+            // console.log(name,"<<<<<<<<<<name")
             
+            const readfile = readModuleFile(name)
+            
+            // console.log(readfile,"<<<<<<<<readfile")
+
             // Destroy modules one by one
             for (const module of modules) {
-                try {
-                    AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
-                    await terraform?.runTerraformDestroy(this.projectPath+`/infrastructure`, module, 'terraform.tfvars');
-                    AppLogger.debug(`Successfully destroyed Terraform for module: ${module}`);
-                } catch (error) {
-                    AppLogger.error(`Error destroying Terraform for module: ${module}, ${error}`, true);
+                if(readfile[module]==="true"){
+                    try {
+                        AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
+                            await terraform?.runTerraformDestroy(this.projectPath+`/infrastructure`, module, 'terraform.tfvars');
+                        AppLogger.debug(`Successfully destroyed Terraform for module: ${module}`);
+                    } catch (error) {
+                        AppLogger.error(`Error destroying Terraform module: ${module}, ${error}`, true);
+                    }
                 }
+               
             }
         }
         // Check if it has multiple modules

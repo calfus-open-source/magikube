@@ -35,7 +35,7 @@ export default class AWSProject extends BaseProject {
             );
         }
     }
-
+      
     async destroyProject(name: string, path: string): Promise<void> {
         let awsStatus = false;
         if (this.config.cloud_provider === 'aws') {

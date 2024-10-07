@@ -14,6 +14,7 @@ import { ManageRepository } from "../../core/manage-repository.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 import { Colours } from "../../prompts/constants.js";
 import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkStatus-utils.js";
+import { initializeModuleFile, updateModuleFile } from "../../core/utils/updateModule-utils.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -118,7 +119,7 @@ Creating a new magikube project named 'sample' in the current directory
           await executeCommandWithRetry("mkdir dist", { cwd: path }, 1);
         }
 
-        const copyTemplateResult = executeCommandWithRetry(
+        const copyTemplateResult = await executeCommandWithRetry(
           "rsync -av magikube-templates/* dist/ --prune-empty-dirs",
           { cwd: path },
           1
@@ -164,6 +165,9 @@ Creating a new magikube project named 'sample' in the current directory
         "module.environment",
         "module.rds",
       ];
+      
+      initializeModuleFile(projectName, modules);
+      
       if (terraform) {
         await terraform.createProject(projectName, process.cwd());
         if (responses["cloud_provider"] === "aws") {
@@ -193,11 +197,13 @@ Creating a new magikube project named 'sample' in the current directory
               AppLogger.debug(
                 `Successfully applied Terraform for module: ${module}`
               );
+              updateModuleFile(projectName, module, "true");
             } catch (error) {
               AppLogger.error(
                 `Error applying Terraform for module: ${module}, ${error}`,
                 true
               );
+              updateModuleFile(projectName, module, "false");
             }
           }
         }
