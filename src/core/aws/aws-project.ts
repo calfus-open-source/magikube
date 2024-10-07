@@ -424,14 +424,62 @@ export default class AWSProject extends BaseProject {
     }
 
     async runAnsiblePlaybook1(projectPath: string) {
-       executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+    //    executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/create-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
     }   
      
     async runAnsiblePlaybook2(projectPath: string) {
-        executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        // executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/configure-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
     }
     async runAnsiblePlaybook3(projectPath: string) {
-        const maxRetries = 6;
+        const maxRetries = 3;
         let attempt = 0;
         let success = false;
         while (attempt < maxRetries && !success) {
@@ -485,10 +533,31 @@ export default class AWSProject extends BaseProject {
     }
 
     async runAnsiblePlaybook5(projectPath: string) {
-        executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-     }
-     async runAnsiblePlaybook6(projectPath: string) {
-        executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        // executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/ecr-helper.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Nginx configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
      }
 }
 

@@ -60,13 +60,19 @@ github_access_token: {{ github_access_token }}
 github_owner: {{ github_owner }}
 environment: {{ environment }}
 project_name: {{ project_name }} 
+gitops_base_path: {{ project_name }}-{{ environment }}
 
 
 aws_secret_access_key : {{ aws_secret_access_key }}
 aws_access_key_id : {{ aws_access_key_id }}
 accountId : {{ accountId }}
 aws_region: {{ aws_region }}
-
+namespace: {{ project_name }}-{{ environment }}-app
+frontend_app: {{ project_name }}-{{ frontend_app_type }}-app
+backend_app: {{ project_name }}-{{ backend_app_type }}-app
+keycloak_app: {{ project_name }}-keycloak-service-app
+auth_service: {{ project_name }}-auth-service-app
+argocd_namespace: {{ project_name }}-{{ environment }}-argocd
 
 run_as_uid: 1001
 run_as_gid: 1001

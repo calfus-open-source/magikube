@@ -31,7 +31,7 @@
   become: yes
   become_user: kube
   shell: |
-    kubectl get svc argocd-server -n argocd -o jsonpath='{.spec.clusterIP}'
+    kubectl get svc argocd-server -n {{ argocd_namespace }} -o jsonpath='{.spec.clusterIP}'
   register: argocd_service_ip
   changed_when: false
 
@@ -98,7 +98,7 @@
   become: yes
   become_user: kube
   shell: |
-    kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode
+    kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode
   register: argocd_admin_password
   changed_when: false
 

@@ -118,9 +118,7 @@ Creating a new magikube project named 'sample' in the current directory
           );
         }
 
-        if (!fs.existsSync(`${process.cwd()}/dist`)) {
-          await executeCommandWithRetry("mkdir dist", { cwd: path }, 1);
-        }
+        await executeCommandWithRetry("rsync -av magikube-templates/* dist/ --prune-empty-dirs > /dev/null 2>&1", { cwd: path },1);
  
         const copyTemplateResult = executeCommandWithRetry(
           "rsync -av magikube-templates/* dist/ --prune-empty-dirs",
@@ -209,6 +207,11 @@ Creating a new magikube project named 'sample' in the current directory
               AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
           }
       }
+      if (setupGitopsServiceStatus) {
+        configObject.appName = `${environment}`;
+        configObject.appType = "gitops";
+        await ManageRepository.pushCode(configObject);
+      }
       }
       if (responses['cluster_type'] === 'k8s') {
  
@@ -233,18 +236,17 @@ Creating a new magikube project named 'sample' in the current directory
           configObject.appType = "gitops";
           await ManageRepository.pushCode(configObject);
         }
+        terraform?.startSSHProcess();
         await terraform?.runAnsiblePlaybook1(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook2(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook3(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook4(process.cwd()+"/"+projectName);
         await terraform?.runAnsiblePlaybook5(process.cwd()+"/"+projectName);
-        await terraform?.runAnsiblePlaybook6(process.cwd()+"/"+projectName);
-        terraform?.startSSHProcess();
         const masterIP = await terraform?.getMasterIp(process.cwd()+"/"+projectName+"/infrastructure");
         await terraform?.editKubeConfigFile(process.cwd()+"/"+projectName+"/templates/aws/ansible/config/"+masterIP+"/etc/kubernetes/admin.conf");
         // await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
         terraform?.stopSSHProcess();
-      
+      }
  
         const projectConfig = SystemConfig.getInstance().getConfig();
         
@@ -253,7 +255,13 @@ Creating a new magikube project named 'sample' in the current directory
           command as BaseCommand,
           projectConfig
         );
- 
+        const statusAuthenticationService =
+          await createApp.setupAuthenticationService(projectConfig);
+        if (statusAuthenticationService) {
+          configObject.appName = "auth-service";
+          configObject.appType = "auth-service";
+          await ManageRepository.pushCode(configObject);
+        }
         // Running the actual app setups
         const statusKeycloakService = await createApp.setupKeyCloak(
           projectConfig
@@ -277,10 +285,6 @@ Creating a new magikube project named 'sample' in the current directory
             configObject
           );
         }
-        
-       
-      }
- 
       }
       await createApp.MoveFiles(projectName);
  
