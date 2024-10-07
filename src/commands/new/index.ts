@@ -18,7 +18,6 @@ import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
 import AWSAccount from "../../core/aws/aws-account.js";
 
-
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
   if (pattern.test(input)) {
@@ -52,7 +51,7 @@ Creating a new magikube project named 'sample' in the current directory
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CreateProject);
- 
+
     // Check the project name condition
     validateUserInput(args.name);
     AppLogger.configureLogger(args.name);
@@ -119,17 +118,17 @@ Creating a new magikube project named 'sample' in the current directory
         }
 
         await executeCommandWithRetry("rsync -av magikube-templates/* dist/ --prune-empty-dirs > /dev/null 2>&1", { cwd: path },1);
- 
+
         const copyTemplateResult = executeCommandWithRetry(
           "rsync -av magikube-templates/* dist/ --prune-empty-dirs",
           { cwd: path },
           1
         );
         await executeCommandWithRetry(`rm -rf ${dir}`, { cwd: path }, 1);
- 
+
         AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
       }
- 
+
       // Asking for the frontend and backend prompts
       for (const prompt of promptGenerator.getFrontendApplicationType()) {
         const resp = await inquirer.prompt(prompt);
@@ -139,12 +138,11 @@ Creating a new magikube project named 'sample' in the current directory
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
       }
- 
+
     AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
     SystemConfig.getInstance().mergeConfigs(responses);
- 
+
     // Get the project name from the command line arguments
- 
     const projectName = args.name;
     const terraform = await TerraformProject.getProject(this);
     const projectConfig = SystemConfig.getInstance().getConfig();
@@ -187,7 +185,7 @@ Creating a new magikube project named 'sample' in the current directory
   };
   const accountId = await AWSAccount.getAccountId(awsAccessKey, awsSecretKey, region);
   SystemConfig.getInstance().mergeConfigs({ accountId: accountId });
- 
+
   const setupGitopsServiceStatus = await createApp.setupGitops( projectConfig);
     if (terraform) {
       await terraform.createProject(projectName, process.cwd());
@@ -214,7 +212,7 @@ Creating a new magikube project named 'sample' in the current directory
       }
       }
       if (responses['cluster_type'] === 'k8s') {
- 
+
         const dotmagikube = readProjectConfig(projectName,process.cwd())
         // console.log(fs.existsSync(`${process.cwd()}/${projectName}/templates/aws/ansible/environments`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
@@ -247,9 +245,9 @@ Creating a new magikube project named 'sample' in the current directory
         // await terraform?.runTerraform(process.cwd()+"/"+projectName+"/k8s_config", `../${responses['environment']}-config.tfvars`, "module.ingress-controller", '../terraform.tfvars');
         terraform?.stopSSHProcess();
       }
- 
+
         const projectConfig = SystemConfig.getInstance().getConfig();
-        
+
         let command: BaseCommand | undefined;
         const createApp = new CreateApplication(
           command as BaseCommand,
@@ -271,14 +269,14 @@ Creating a new magikube project named 'sample' in the current directory
           configObject.appType = "keycloak-service";
           await ManageRepository.pushCode(configObject);
         }
- 
+
         if (responses["backend_app_type"]) {
           await createApp.handleAppCreation(
             responses["backend_app_type"],
             configObject
           );
         }
- 
+
         if (responses["frontend_app_type"]) {
           await createApp.handleAppCreation(
             responses["frontend_app_type"],
@@ -287,7 +285,7 @@ Creating a new magikube project named 'sample' in the current directory
         }
       }
       await createApp.MoveFiles(projectName);
- 
+
       const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
       const keycloakurl = `http://${responses.domain}/keycloak`;
       const frontendURL = `http://${responses.domain}`;
@@ -325,7 +323,7 @@ Creating a new magikube project named 'sample' in the current directory
              true
            );
        }
-      
+
       process.exit(1);
     } catch (error) {
       AppLogger.error(
@@ -336,5 +334,3 @@ Creating a new magikube project named 'sample' in the current directory
     }
   }
 }
- 
- 

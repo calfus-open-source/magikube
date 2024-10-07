@@ -425,7 +425,7 @@ export default class AWSProject extends BaseProject {
 
     async runAnsiblePlaybook1(projectPath: string) {
     //    executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-        const maxRetries = 3;
+        const maxRetries = 6;
         let attempt = 0;
         let success = false;
         while (attempt < maxRetries && !success) {
@@ -437,7 +437,7 @@ export default class AWSProject extends BaseProject {
                     stdio: 'inherit',
                     env: process.env
                 });
-                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
+                AppLogger.info('Creation of cluster completed successfully.', true);
                 success = true;
             } catch (error) {
                 AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
@@ -465,7 +465,7 @@ export default class AWSProject extends BaseProject {
                     stdio: 'inherit',
                     env: process.env
                 });
-                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
+                AppLogger.info('Setting up cluster completed successfully.', true);
                 success = true;
             } catch (error) {
                 AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
@@ -546,7 +546,7 @@ export default class AWSProject extends BaseProject {
                     stdio: 'inherit',
                     env: process.env
                 });
-                AppLogger.info('Nginx configuration completed successfully.', true);
+                AppLogger.info('ECR and argocd configuration completed successfully.', true);
                 success = true;
             } catch (error) {
                 AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
