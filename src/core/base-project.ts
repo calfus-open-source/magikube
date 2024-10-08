@@ -48,11 +48,8 @@ export default abstract class BaseProject {
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
             await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
-            // console.log(name,"<<<<<<<<<<name")
             
             const readfile = readModuleFile(name)
-            
-            // console.log(readfile,"<<<<<<<<readfile")
 
             // Destroy modules one by one
             for (const module of modules) {
