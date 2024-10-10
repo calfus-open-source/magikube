@@ -1,0 +1,27 @@
+## server configuration for ArgoCD
+server {
+    listen 80;
+    server_name argocd.{{ hostname }};  # Dynamic domain name from Ansible inventory
+
+    if ($http_x_forwarded_proto = '') {
+        set $http_x_forwarded_proto  $scheme;
+    }
+
+    ## Application specific logs
+    chunked_transfer_encoding on;
+    client_max_body_size 0;
+    
+    location / {
+        proxy_read_timeout  2400s;
+        proxy_pass_header   Server;
+        proxy_cookie_path   ~*^/.* /;
+        proxy_pass          http://{{ argocd_service_ip }}:80;  
+        proxy_next_upstream error timeout non_idempotent;
+        proxy_next_upstream_tries    1;
+        proxy_set_header    X-Forwarded-Port  $server_port;
+        proxy_set_header    X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_set_header    Host              $http_host;
+        proxy_set_header    X-Forwarded-For   $proxy_add_x_forwarded_for;
+    }
+    
+}

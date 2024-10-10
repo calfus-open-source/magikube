@@ -29,11 +29,13 @@ export default class AWSK8SProject extends AWSProject {
             this.createFile('variables.tf', '../templates/aws/k8s/variables.tf.liquid' , "/infrastructure"),
             this.createFile(
                 `${this.config.environment}-config.tfvars`,
-                "../templates/aws/k8s/backend-config.tfvars.liquid" ,"/infrastructure"
+                "../templates/aws/k8s/backend-config.tfvars.liquid" ,"/infrastructure/"
             ),
-            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', '/infrastructure'),
+            this.createFile('main.tf', '../templates/aws/k8s/k8s_config/main.tf.liquid', '/infrastructure/'),
             this.createFile('variables.tf', '../templates/aws/k8s/k8s_config/variables.tf.liquid', '/infrastructure'),
-            this.createCommon(),        
+            this.createCommon(),
+            this.createSecurityGroup(),
+            this.createALB(),       
             this.createSSHKeyPair(),
             this.createBastionHost(),
             this.createMasterNode(),
@@ -41,9 +43,17 @@ export default class AWSK8SProject extends AWSProject {
             this.copyFolderAndRender('../templates/aws/ansible', '/templates/aws/ansible'),
             this.createFile('ssh-config.tftpl', '../templates/aws/k8s/ssh-config.tftpl', '/infrastructure'),
             gitOpsInstance.createGitOps(this.path, this.projectName),
-            repositoryInstance.createrepository(this.path, this.projectName)
+            repositoryInstance.createrepository(this.path, this.projectName) ,
         ]);
-    }    
+    } 
+    async createSecurityGroup(): Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/security-groups/main.tf.liquid', '/infrastructure/modules/security-groups');
+        this.createFile('variables.tf', '../templates/aws/modules/security-groups/variables.tf.liquid', '/infrastructure/modules/security-groups');
+    } 
+    async createALB() :Promise<void> {
+        this.createFile('main.tf', '../templates/aws/modules/alb/main.tf.liquid', '/infrastructure/modules/alb');
+        this.createFile('variables.tf', '../templates/aws/modules/alb/variables.tf.liquid', '/infrastructure/modules/alb');
+    }  
     
     async createSSHKeyPair() {
         this.createFile('main.tf', '../templates/aws/k8s/ssh-key/main.tf.liquid', '/infrastructure/modules/ssh-key');

@@ -20,7 +20,6 @@ variable "vpc_cidr" {
 
 variable "domain_name" {
     description = "The domain name for the project"
-    default = null
 }
 
 variable "source_code_repository" {
@@ -41,3 +40,25 @@ variable "appType" {
    description = "List of app names"
    type        = list(string)
  }
+ variable "cluster_type" {
+  description = "Type of Kubernetes cluster (either 'eks' or 'k8s')"
+  type        = string
+  default     = "k8s"  # Default can be adjusted based on your needs
+}
+
+variable "cluster_endpoint" {
+  description = "The endpoint of the Kubernetes cluster"
+  default     = ""
+}
+
+variable "cluster_certificate_authority_data" {
+  description = "The certificate authority data for the Kubernetes cluster"
+  default     = ""
+}
+
+variable "cluster_token" {
+  description = "The token for the Kubernetes cluster"
+  default     = ""
+}
+
+

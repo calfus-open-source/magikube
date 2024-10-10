@@ -1,0 +1,78 @@
+---
+- name: Install ArgoCD CLI
+  become: yes
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/v2.7.8/argocd-linux-amd64"
+    dest: /usr/local/bin/argocd
+    mode: '0755'
+ 
+- name: Creates ingress-controller directory
+  become: yes
+  become_user: kube
+  file:
+    path: $HOME/ingress-controller
+    state: directory
+ 
+- name: Ingress-controller-values template
+  become: yes
+  become_user: kube
+  template:
+    src: ./templates/ingress-controller-values.j2
+    dest: $HOME/ingress-controller/ingress-controller-values.yaml
+ 
+- name: Deploy ingress-controller helm chart
+  become: yes
+  become_user: kube
+  shell: |
+    helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx -f $HOME/ingress-controller/ingress-controller-values.yaml --namespace ingress-nginx --create-namespace
+    exit 0
+  args:
+    executable: /bin/bash
+  register: SHELL_STDOUT
+ 
+- name: Debug output
+  ansible.builtin.debug:
+    msg: "Helm Install (ingress-controller): stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"
+ 
+- name: Delete ingress-controller directory
+  become: yes
+  become_user: kube
+  file:
+    path: $HOME/ingress-controller
+    state: absent
+ 
+- name: Creates argocd directory
+  become: yes
+  become_user: kube
+  file:
+    path: $HOME/argocd
+    state: directory
+ 
+- name: ArgoCD values template
+  become: yes
+  become_user: kube
+  template:
+    src: ./templates/argocd-values.j2
+    dest: $HOME/argocd/argocd-values.yaml
+ 
+- name: Add ArgoCD helm chart
+  become: yes
+  become_user: kube
+  shell: |
+    helm repo add argo https://argoproj.github.io/argo-helm
+    helm repo update
+ 
+- name: Deploy ArgoCD helm chart
+  become: yes
+  become_user: kube
+  shell: |
+    helm upgrade --install argocd argo/argo-cd --namespace {{ argocd_namespace }} --create-namespace -f $HOME/argocd/argocd-values.yaml --namespace {{ argocd_namespace }} --create-namespace
+    exit 0
+  args:
+    executable: /bin/bash
+  register: SHELL_STDOUT
+ 
+- name: Debug output
+  ansible.builtin.debug:
+    msg: "Helm Install (ArgoCD): stderr: {{ SHELL_STDOUT.stderr_lines }} stdout: {{ SHELL_STDOUT.stdout_lines }}"
+

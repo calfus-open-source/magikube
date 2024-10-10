@@ -20,7 +20,7 @@ data "terraform_remote_state" "output_state" {
 output "referenced_master_ip" {
     value = data.terraform_remote_state.output_state.outputs.master_ip
 }
-
+{% comment %}
 {% if cluster_type == "k8s" %}
 module "ingress-controller" {
     source                 = "../modules/ingress-controller"
@@ -33,3 +33,4 @@ module "ingress-controller" {
     vpc_public_subnets     = data.terraform_remote_state.output_state.outputs.vpc_public_subnets
 }
 {% endif %}
+{% endcomment %}
