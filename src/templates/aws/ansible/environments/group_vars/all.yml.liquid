@@ -43,6 +43,8 @@ system_reserved_cpu: {{ system_reserved_cpu }}
 system_reserved_memory: {{ system_reserved_memory }}
 eviction_memory_threshold: {{ eviction_memory_threshold }}
 
+ingress_controller_replicas: {{ ingress_controller_replicas }}
+
 # temporary directory used by additional features
 tmp_dir: /tmp/kubeadm-ansible-files
 
@@ -51,7 +53,26 @@ worker_name: {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['inventory_hostname'
 worker_ip:  {% raw %}"{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4'].address }}"{% endraw %}
 
 lifecycle: {{ environment }}
-external_hostname: {{ external_hostname }}
+
+hostname: {{ domain }}
+git_user_name: {{ git_user_name }}
+github_access_token: {{ github_access_token }} 
+github_owner: {{ github_owner }}
+environment: {{ environment }}
+project_name: {{ project_name }} 
+gitops_base_path: {{ project_name }}-{{ environment }}
+
+
+aws_secret_access_key : {{ aws_secret_access_key }}
+aws_access_key_id : {{ aws_access_key_id }}
+accountId : {{ accountId }}
+aws_region: {{ aws_region }}
+namespace: {{ project_name }}-{{ environment }}-app
+frontend_app: {{ project_name }}-{{ frontend_app_type }}-app
+backend_app: {{ project_name }}-{{ backend_app_type }}-app
+keycloak_app: {{ project_name }}-keycloak-service-app
+auth_service: {{ project_name }}-auth-service-app
+argocd_namespace: {{ project_name }}-{{ environment }}-argocd
 
 run_as_uid: 1001
 run_as_gid: 1001

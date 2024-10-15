@@ -1,0 +1,81 @@
+---
+
+- name: Ensure the namespace exists
+  become: yes
+  become_user: kube
+  shell: kubectl get namespace {{ namespace }}
+  register: namespace_check
+  ignore_errors: true
+
+- name: Create the namespace if it does not exist
+  become: yes
+  become_user: kube
+  shell: kubectl create namespace {{ namespace }}
+  when: namespace_check.rc != 0
+
+- name: Get ECR login password
+  become: yes
+  become_user: kube
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+  shell: aws ecr get-login-password --region {{ aws_region }}
+  register: ecr_login_password
+
+- name: Delete existing Kubernetes secret
+  become: yes
+  become_user: kube
+  shell: kubectl delete secret -n {{ namespace }} rcred
+  ignore_errors: true
+
+- name: Create new Kubernetes secret
+  become: yes
+  become_user: kube
+  shell: kubectl create secret docker-registry rcred --docker-server={{ accountId }}.dkr.ecr.{{ aws_region }}.amazonaws.com --docker-username=AWS --namespace={{ namespace }} --docker-password={{ ecr_login_password.stdout }}
+  ignore_errors: true
+
+- name: Find YAML files
+  find:
+    paths: "../../../../gitops/{{ gitops_base_path }}"
+    patterns: "*.yaml"
+  register: found_files
+  delegate_to: localhost
+  become: no
+
+- name: Copy multiple files from localhost to remote machine
+  copy:
+    src: "{{ item }}"
+    dest: "/tmp/"
+  with_fileglob:
+    - "../../../../gitops/{{ gitops_base_path }}/*.yml"
+  delegate_to: localhost
+  become: no
+
+- name: Find YAML files on localhost
+  find:
+    paths: "../../../../gitops/{{ gitops_base_path }}/"
+    patterns: "*.yml"
+  delegate_to: localhost
+  register: found_files
+  become: no
+
+- name: Copy YAML files to remote machine
+  copy:
+    src: "{{ item.path }}"
+    dest: "/tmp/{{ item.path | basename }}"
+  with_items: "{{ found_files.files }}"
+  when: found_files.matched > 0
+
+- name: Apply Kubernetes configurations
+  become: yes
+  become_user: kube
+  command: kubectl apply -f "/tmp/{{ item.path | basename }}"
+  args:
+    chdir: /tmp/
+  loop: "{{ found_files.files }}"
+
+- name: Clean up temporary files
+  file:
+    path: "/tmp/{{ item.path | basename }}"
+    state: absent
+  loop: "{{ found_files.files }}"

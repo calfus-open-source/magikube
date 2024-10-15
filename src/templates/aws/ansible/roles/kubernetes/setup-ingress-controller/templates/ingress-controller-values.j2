@@ -1,0 +1,19 @@
+## https://artifacthub.io/packages/helm/bitnami/nginx-ingress-controller?modal=values
+
+## @param kind Install as Deployment or DaemonSet
+##
+kind: DaemonSet
+## Daemonset configuration
+##
+daemonset:
+  ## @param daemonset.useHostPort If `kind` is `DaemonSet`, this will enable `hostPort` for `TCP/80` and `TCP/443`
+  ##
+  useHostPort: true
+  ## @param daemonset.hostPorts [object] HTTP and HTTPS ports
+  ##
+  hostPorts:
+    http: 80
+    https: 443
+
+defaultBackend:
+  replicaCount: {{ ingress_controller_replicas }}

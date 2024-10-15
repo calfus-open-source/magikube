@@ -10,7 +10,7 @@
 # }
 
 
-resource "aws_ecr_repository" "ecr-repo" {
+resource "aws_ecr_repository" "ecr_repo" {
   name                 = "${var.name}-${var.appType}-app"
   image_tag_mutability = var.image_tag_mutability
   tags = {
@@ -20,7 +20,6 @@ resource "aws_ecr_repository" "ecr-repo" {
   }
 }
 
-output "repository_uri" {
-  description = "The URI of the ECR repository."
-  value = aws_ecr_repository.ecr-repo.repository_url
+output "repository_urls" {
+  value = aws_ecr_repository.ecr_repo[*].repository_url
 }

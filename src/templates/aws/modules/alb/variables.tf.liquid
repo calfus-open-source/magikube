@@ -34,3 +34,26 @@ variable "master_hosts" {
 variable "worker_hosts" {
   description = "worker host ids"
 }  {% endcomment %}
+
+variable "route53_zoneid" {
+  description = "route53 zone id"
+}
+
+variable "domain_name" {
+  description = "domain name"
+}
+
+variable "master-node-ips" {
+  type = list(string)
+  description = "List of private IP addresses for master nodes"
+}
+
+variable "worker-node-ips" {
+  type = list(string)
+  description = "List of private IP addresses for worker nodes"
+}
+
+variable "vpc_id" {
+  description = "The VPC ID where the ALB is deployed"
+  type        = string
+}
