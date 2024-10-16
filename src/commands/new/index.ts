@@ -158,7 +158,7 @@ Creating a new magikube project named 'sample' in the current directory
         "module.rds",
       ];
       const services = ["policy","terraform-init", "terraform-apply", "auth-service", "keycloak", "my-node-app", projectConfig["frontend_app_type"], "gitops"];
-      initializeStatusFile(projectName, services);
+       initializeStatusFile(projectName, modules, services);
       if (terraform) {
         await terraform.createProject(projectName, process.cwd());
         if (responses["cloud_provider"] === "aws") {
@@ -176,9 +176,11 @@ Creating a new magikube project named 'sample' in the current directory
             try {
               AppLogger.info( `Starting Terraform apply for module: ${module}`, true);
               await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module, "terraform.tfvars");
-              AppLogger.debug( `Successfully applied Terraform for module: ${module}`);    
+              AppLogger.debug( `Successfully applied Terraform for module: ${module}`);
+              updateStatusFile(projectName, module, "success");    
             } catch (error) {
               AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`, true ); allModulesAppliedSuccessfully = false;
+              updateStatusFile(projectName, module, "fail");
               allModulesAppliedSuccessfully = false;
             }
           }
