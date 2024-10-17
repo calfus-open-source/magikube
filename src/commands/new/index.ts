@@ -17,6 +17,7 @@ import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkSta
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
 import AWSAccount from "../../core/aws/aws-account.js";
+import { initializeStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -161,6 +162,8 @@ Creating a new magikube project named 'sample' in the current directory
       "module.argo",
       "module.environment"
   ];
+ const services = ["policy","terraform-init", "terraform-apply", "auth-service", "keycloak", "my-node-app", projectConfig["frontend_app_type"], "gitops"];
+ initializeStatusFile(projectName, modules, services);
   const {
     github_access_token: token,
     git_user_name: userName,
@@ -192,25 +195,33 @@ Creating a new magikube project named 'sample' in the current directory
       if (responses['cloud_provider'] === 'aws') {
         await terraform.AWSProfileActivate(responses['aws_profile']);
       }
-      // Delay of 15 seconds to allow the user to review the terraform files
-      if (responses['cluster_type'] === 'eks-fargate' || responses['cluster_type'] === 'eks-nodegroup' ) {
-        await new Promise(resolve => setTimeout(resolve, 15000));
-        await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
-        for (const module of modules) {
-          try {
-              AppLogger.info(`Starting Terraform apply for module: ${module}`, true);
-              await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure", module, 'terraform.tfvars');        
-              AppLogger.debug(`Successfully applied Terraform for module: ${module}`);
-          } catch (error) {
-              AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
+
+      if (
+          responses["cluster_type"] === "eks-fargate" ||
+          responses["cluster_type"] === "eks-nodegroup"
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 15000));
+          await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure", `${responses["environment"]}-config.tfvars`,);
+          let allModulesAppliedSuccessfully = true; 
+          for (const module of modules) {
+            try {
+              AppLogger.info( `Starting Terraform apply for module: ${module}`, true);
+              await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module, "terraform.tfvars");
+              AppLogger.debug( `Successfully applied Terraform for module: ${module}`);  
+              updateStatusFile(projectName, module, "success");
+            } catch (error) {
+              AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`, true ); allModulesAppliedSuccessfully = false;
+              updateStatusFile(projectName, module, "fail");
+              allModulesAppliedSuccessfully = false;
+            }
           }
-      }
-      if (setupGitopsServiceStatus) {
-        configObject.appName = `${environment}`;
-        configObject.appType = "gitops";
-        await ManageRepository.pushCode(configObject);
-      }
-      }
+          if (allModulesAppliedSuccessfully) {
+             updateStatusFile(projectName, "terraform-apply", "success");
+          } else {
+             updateStatusFile(projectName, "terraform-apply", "fail");
+          }
+        }
+
       if (responses['cluster_type'] === 'k8s') {
 
         const dotmagikube = readProjectConfig(projectName,process.cwd())
