@@ -13,11 +13,11 @@ import { ConfigObject } from "../../core/interface.js";
 import { ManageRepository } from "../../core/manage-repository.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 import { Colours } from "../../prompts/constants.js";
-import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkStatus-utils.js";
+import { initializeStatusFile, readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
 import AWSAccount from "../../core/aws/aws-account.js";
-import { initializeStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
+import { setupServices } from "../../core/utils/healthCheck-utils.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -111,20 +111,12 @@ Creating a new magikube project named 'sample' in the current directory
         const dir = `${process.cwd()}/magikube-templates`;
         const path = process.cwd();
         if (!fs.existsSync(dir)) {
-          await executeCommandWithRetry(
-            "git clone https://github.com/calfus-open-source/magikube-templates.git",
-            { cwd: path },
-            1
-          );
+          await executeCommandWithRetry("git clone https://github.com/calfus-open-source/magikube-templates.git",{ cwd: path },1);
         }
 
         await executeCommandWithRetry("rsync -av magikube-templates/* dist/ --prune-empty-dirs > /dev/null 2>&1", { cwd: path },1);
 
-        const copyTemplateResult = executeCommandWithRetry(
-          "rsync -av magikube-templates/* dist/ --prune-empty-dirs",
-          { cwd: path },
-          1
-        );
+        const copyTemplateResult = await executeCommandWithRetry( "rsync -av magikube-templates/* dist/ --prune-empty-dirs",{ cwd: path },1 );
         await executeCommandWithRetry(`rm -rf ${dir}`, { cwd: path }, 1);
 
         AppLogger.debug(`Templates copied | ${copyTemplateResult}`);
@@ -201,7 +193,7 @@ Creating a new magikube project named 'sample' in the current directory
           responses["cluster_type"] === "eks-nodegroup"
         ) {
           await new Promise((resolve) => setTimeout(resolve, 15000));
-          await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure", `${responses["environment"]}-config.tfvars`,);
+          await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure", `${responses["environment"]}-config.tfvars`, projectName);
           let allModulesAppliedSuccessfully = true; 
           for (const module of modules) {
             try {
@@ -213,21 +205,19 @@ Creating a new magikube project named 'sample' in the current directory
               AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`, true ); allModulesAppliedSuccessfully = false;
               updateStatusFile(projectName, module, "fail");
               allModulesAppliedSuccessfully = false;
+              updateStatusFile(projectName, "terraform-apply", "fail");
             }
           }
           if (allModulesAppliedSuccessfully) {
              updateStatusFile(projectName, "terraform-apply", "success");
-          } else {
-             updateStatusFile(projectName, "terraform-apply", "fail");
           }
         }
 
       if (responses['cluster_type'] === 'k8s') {
-
         const dotmagikube = readProjectConfig(projectName,process.cwd())
         // console.log(fs.existsSync(`${process.cwd()}/${projectName}/templates/aws/ansible/environments`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
-        await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`);
+        await terraform?.runTerraformInit(process.cwd()+"/"+projectName+"/infrastructure", `${responses['environment']}-config.tfvars`, projectName);
         await terraform?.runTerraformApply(process.cwd()+"/"+projectName+"/infrastructure");
         try{
           AppLogger.info("AWS export command executing... ",true)
@@ -282,56 +272,21 @@ Creating a new magikube project named 'sample' in the current directory
         }
 
         if (responses["backend_app_type"]) {
-          await createApp.handleAppCreation(
-            responses["backend_app_type"],
-            configObject
-          );
+          await createApp.handleAppCreation(responses["backend_app_type"], configObject, projectConfig);
         }
 
         if (responses["frontend_app_type"]) {
-          await createApp.handleAppCreation(
-            responses["frontend_app_type"],
-            configObject
-          );
+          await createApp.handleAppCreation(responses["frontend_app_type"], configObject, projectConfig);
         }
       }
       await createApp.MoveFiles(projectName);
+       
+      await setupServices(args, responses, projectConfig);
+      process.exit(0);
 
-      const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
-      const keycloakurl = `http://${responses.domain}/keycloak`;
-      const frontendURL = `http://${responses.domain}`;
-      const argocdURL = `http://argocd.${responses.domain}`;
-      const isKeycloakUp = await waitForServiceToUP(keycloakurl, "keycloak");
-     if (isKeycloakUp && fs.existsSync(keycloakConfigPath)) {
-     try {
-        await executeCommandWithRetry(`chmod +x config.sh && /bin/sh ./config.sh`, { cwd: `${process.cwd()}/${args.name}/keycloak` }, 1);
-        AppLogger.info("Script executed successfully.", true);
-      } catch (error) {
-        AppLogger.error("Failed to execute script: " + error, true);
-      }
-     } else {
-      AppLogger.error("Cannot run the script because Keycloak service is not up or config.sh does not exist.", true);
-     }
-      const frontendAppType = projectConfig.frontend_app_type;
-      const isArgoCDUp = await waitForServiceToUP(argocdURL, "argocd");
-      let isFrontendUp;
-      if(isKeycloakUp){ 
-        isFrontendUp = await waitForServiceToUP(frontendURL, frontendAppType) 
-      }
-      if (isKeycloakUp && isArgoCDUp && isFrontendUp) {
-       const clickableLink = `\u001b]8;;${frontendURL}\u001b\\\u001b[34;4m${frontendURL}\u001b[0m\u001b]8;;\u001b\\`;
-          const username = "magikube_user@example.com";
-          const password = "welcome";
-          AppLogger.info(`Magikube application is up and running at ${clickableLink}`,true);
-         AppLogger.info(`Login using\nUsername: ${username}\nPassword: ${password}`,true);
-       } else {
-           AppLogger.error( "One or more services failed to start. Please check the service.",true);
-       }
-
-      process.exit(1);
     } catch (error) {
-      AppLogger.error(`An error occurred during the setup process: ${error}`,true);
-      process.exit(1);
+       AppLogger.error(`An error occurred during the setup process: ${error}`, true);
+       process.exit(1);
     }
   }
 }
