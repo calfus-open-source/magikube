@@ -13,11 +13,10 @@ import { ConfigObject } from "../../core/interface.js";
 import { ManageRepository } from "../../core/manage-repository.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 import { Colours } from "../../prompts/constants.js";
-import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkStatus-utils.js";
+import { initializeStatusFile, readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
 import AWSAccount from "../../core/aws/aws-account.js";
-import { initializeStatusFile, readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { setupServices } from "../../core/utils/healthCheck-utils.js";
 
 function validateUserInput(input: string): void {
