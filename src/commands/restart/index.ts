@@ -14,6 +14,8 @@ import { dotMagikubeConfig } from "../../core/utils/projectConfigReader-utils.js
 import RestartTerraformProject from "../../core/restartTerraform-project.js";
 import { readStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { setupServices } from "../../core/utils/healthCheck-utils.js";
+import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
+import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 
 export default class RestartProject extends BaseCommand {
   static args = {
@@ -46,6 +48,7 @@ export default class RestartProject extends BaseCommand {
        
       const projectName = args.name;
       const status =  await readStatusFile(projectName)
+      console.log(status,"<<<<<<<<,status")
       const terraform = await RestartTerraformProject.getProject(this, projectName);
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(
@@ -63,6 +66,8 @@ export default class RestartProject extends BaseCommand {
         "module.argo",
         "module.environment",
       ];
+      const projectPath = path.join(process.cwd(), args.name);
+      const infrastructurePath = path.join(projectPath, 'infrastructure');
       if (terraform) {
         await terraform.createProject(projectName, process.cwd());
         if (project_config.cloud_provider === "aws") {
@@ -76,8 +81,15 @@ export default class RestartProject extends BaseCommand {
           // Delay of 15 seconds to allow the user to review the terraform files
           await new Promise((resolve) => setTimeout(resolve, 15000));
           await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure",`${project_config["environment"]}-config.tfvars`, projectName);
-          if (status["terraform-apply"] === "fail" || status["terraform-apply"] === "pending") {
+          if (status.services["terraform-apply"] === "fail" || status.services["terraform-apply"] === "pending") {
+          await runTerraformUnlockCommands(projectPath, responses.aws_profile);
+          
           for (const module of modules) {
+            console.log(status.modules[module],"<<<<<<module")
+            if(status.modules[module] === "pending" || status.modules[module] === "fail"){
+              await executeCommandWithRetry(`export AWS_PROFILE=${responses.aws_profile}`, { cwd: infrastructurePath }, 1);
+              await executeCommandWithRetry(`terraform destroy -target=${module}`, { cwd: infrastructurePath }, 1);
+            }
             try {
               AppLogger.info( `Starting Terraform apply for module: ${module}`, true );
               await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module, "terraform.tfvars");
@@ -112,7 +124,7 @@ export default class RestartProject extends BaseCommand {
 
         
         const configObject: ConfigObject = {token,userName,orgName, sourceCodeRepo, region, projectName, awsAccessKey, awsSecretKey, environment,};
-        if (status["auth-service"] === "fail" || status["auth-service"] === "pending") {
+        if (status.services["auth-service"] === "fail" || status.services["auth-service"] === "pending") {
           const statusAuthenticationService =
             await createApp.setupAuthenticationService(project_config);
           if (statusAuthenticationService) {
@@ -122,7 +134,7 @@ export default class RestartProject extends BaseCommand {
           }
         }
 
-        if (status["keycloak"] === "fail" || status["keycloak"] === "pending") {
+        if (status.services["keycloak"] === "fail" || status.services["keycloak"] === "pending") {
           const statusKeycloakService = await createApp.setupKeyCloak(project_config);
           if (statusKeycloakService) {
             configObject.appName = "keycloak";
@@ -131,7 +143,7 @@ export default class RestartProject extends BaseCommand {
           }
         }
 
-        if (status["my-node-app"] === "fail" || status["my-node-app"] === "pending") {
+        if (status.services["my-node-app"] === "fail" || status.services["my-node-app"] === "pending") {
           if (project_config["backend_app_type"]) {
             const projectConfig = dotMagikubeConfig(configObject.projectName, process.cwd())
             configObject.appName = project_config["node_app_name"];
@@ -142,7 +154,7 @@ export default class RestartProject extends BaseCommand {
 
         if (project_config["frontend_app_type"]) {
             const frontendAppType = project_config["frontend_app_type"]
-            if (status[frontendAppType] === "fail" || status[frontendAppType] === "pending") {  
+            if (status.services[frontendAppType] === "fail" || status.services[frontendAppType] === "pending") {  
             const projectConfig = dotMagikubeConfig(configObject.projectName, process.cwd())
             configObject.appType = project_config["frontend_app_type"]
             await createApp.handleAppCreation(project_config["frontend_app_type"], configObject, projectConfig);
@@ -150,7 +162,7 @@ export default class RestartProject extends BaseCommand {
         }
 
 
-        if (status["gitops"] === "fail" || status["gitops"] === "pending"){
+        if (status.services["gitops"] === "fail" || status.services["gitops"] === "pending"){
         const setupGitopsServiceStatus = await createApp.setupGitops(project_config);
           if (setupGitopsServiceStatus) {
             configObject.appName = `${environment}`;
@@ -160,7 +172,7 @@ export default class RestartProject extends BaseCommand {
        }
       }
 
-      await createApp.MoveFiles(projectName);
+      createApp.MoveFiles(projectName);
       await setupServices(args, responses, project_config);
     } catch (error) {
       AppLogger.error(

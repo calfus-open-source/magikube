@@ -1,0 +1,140 @@
+---
+- name: Run apt update before installing prerequisites
+  apt:
+    update_cache: yes
+
+- name: install nginx
+  apt: name=nginx state=latest
+
+- name: Ensure /etc/nginx is writable
+  file:
+    path: /etc/nginx
+    mode: '0755'
+    state: directory
+    recurse: yes
+
+- name: Ensure Nginx log directory permissions
+  file:
+    path: /var/log/nginx
+    mode: '0755'
+    state: directory
+    owner: www-data
+    group: adm
+    recurse: yes
+
+- name: start nginx
+  service:
+    name: nginx
+    state: started
+
+- name: Fetch ArgoCD service IP
+  become: yes
+  become_user: kube
+  shell: |
+    kubectl get svc argocd-server -n {{ argocd_namespace }} -o jsonpath='{.spec.clusterIP}'
+  register: argocd_service_ip
+  changed_when: false
+
+- name: Save ArgoCD service IP to a file (to be used by other playbooks)
+  become: yes
+  copy:
+    content: "{{ argocd_service_ip.stdout }}"
+    dest: /tmp/argocd_service_ip.txt
+
+- name: Set fact for ArgoCD service IP
+  set_fact:
+    argocd_service_ip: "{{ argocd_service_ip.stdout }}"
+# Fetch ArgoCD service IP from file
+- name: Fetch ArgoCD service IP from file
+  become: yes
+  slurp:
+    src: /tmp/argocd_service_ip.txt
+  register: argocd_service_ip_file
+
+- name: Set fact for ArgoCD service IP from file
+  set_fact:
+    argocd_service_ip: "{{ argocd_service_ip_file.content | b64decode }}"
+
+# Place the nginx configuration file in sites-available
+- name: Setup nginx conf
+  template:
+    src: ./templates/magikube-nginx-conf.j2
+    dest: /etc/nginx/sites-available/magikube-nginx.conf
+  vars:
+    argocd_service_ip: "{{ argocd_service_ip }}"
+  notify:
+    - restart nginx
+
+# Check if the existing Nginx config file exists
+- name: Check if the existing Nginx config file exists
+  stat:
+    path: /etc/nginx/sites-enabled/magikube-nginx.conf
+  register: ansible_stat
+
+# Remove existing Nginx config file if it exists
+- name: Remove existing Nginx config file if it exists
+  file:
+    path: /etc/nginx/sites-enabled/magikube-nginx.conf
+    state: absent
+  when: 
+    - ansible_stat.stat.exists  # Ensure this runs only if the file exists
+
+# Create the symlink in sites-enabled
+- name: Create symlink nginx vhost
+  file:
+    src: /etc/nginx/sites-available/magikube-nginx.conf
+    dest: /etc/nginx/sites-enabled/magikube-nginx.conf
+    state: link
+  notify:
+    - restart nginx
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+
+ # Retrieve ArgoCD admin password
+- name: Retrieve ArgoCD admin password
+  become: yes
+  become_user: kube
+  shell: |
+    kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode
+  register: argocd_admin_password
+  changed_when: false
+
+- name: Debug output for ArgoCD admin password
+  debug:
+    msg: "ArgoCD Admin Password: {{ argocd_admin_password.stdout }}"
+
+# Login to ArgoCD
+- name: Login to ArgoCD
+  become: yes
+  shell: |
+    argocd login argocd.{{ hostname }} --username admin --password {{ argocd_admin_password.stdout }} --insecure
+  register: argocd_login
+
+
+- name: Form the GitOps HTTPS clone URL
+  set_fact:
+    gitops_https_clone_url: "https://github.com/{{ github_owner }}/{{ project_name }}-{{ 'non-prod' if environment is defined else 'prod' }}-gitops.git"
+
+- name: Display the constructed GitOps HTTPS clone URL
+  debug:
+    msg: "The constructed GitOps HTTPS clone URL is: {{ gitops_https_clone_url }}"
+
+- name: Add GitHub repository to ArgoCD
+  become: yes
+  shell: |
+    argocd repo add https://github.com/{{ github_owner }}/{{ project_name }}-{{ 'non-prod' if environment is defined else 'prod' }}-gitops.git --username {{ git_user_name }} --password {{ github_access_token }}
+  args:
+    executable: /bin/bash
+  register: repo_add_output
+
+
+- name: Debug output for repository addition
+  debug:
+    msg: "Repository Addition: stdout: {{ repo_add_output.stdout_lines }} stderr: {{ repo_add_output.stderr_lines }}"
+
+
+
+

@@ -155,7 +155,7 @@ export default class AWSProject extends BaseProject {
         AppLogger.info('AWS profile activated successfully.', true);
     }
 
-    async runTerraformInit(projectPath: string, backend: string, projectName?: string): Promise<void> {
+    async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
         AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
     
         const progressBar = ProgressBar.createProgressBar();
@@ -236,89 +236,92 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-    async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
-        AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
-    
-        return new Promise((resolve, reject) => {
-            try {
-                AppLogger.info(`Creating module: ${module}`, true);
-    
-                // Prepare the Terraform apply command with necessary arguments
-                let args = ['apply', '-no-color', '-auto-approve'];
-                if (module) {
-                    args.push(`-target=${module}`);
-                }
-                if (varFile) {
-                    args.push(`-var-file=${varFile}`);
-                }
-    
-                const terraformProcess = spawn('terraform', args, {
-                    cwd: projectPath,
-                    env: process.env
-                });                 
-                process.once('SIGINT', () => {
-                    terraformProcess.kill('SIGINT');
-                    process.exit(); 
-                });
-    
-                // Set up progress bar
-                const totalSteps = 100; // Adjust based on your estimation
-                const progressBar = ProgressBar.createProgressBar();
-                progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
-    
-                terraformProcess.stdout.on('data', (data) => {
-                    const output = data.toString();
-                    AppLogger.info(`stdout: ${output}`);
-    
-                    // Regex to match "Creation complete" messages and update the progress bar
-                    const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
-                    let match;
-                    while ((match = creationCompleteRegex.exec(output)) !== null) {
-                        progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
-                    }
-                });
-    
-                terraformProcess.stderr.on('data', (data) => {
-                    progressBar.stop();
-                    AppLogger.error(`stderr: ${data.toString()}`);
-                });
-    
-                terraformProcess.on('close', (code) => {
-                    if (code === 0) {
-                        progressBar.update(100, { message: 'Terraform apply completed.' });
-                        progressBar.stop();
-                        AppLogger.debug('Terraform apply completed successfully.', true);
-                        resolve();
-                    } else {
-                        progressBar.stop();
-                        AppLogger.error(`Terraform apply process exited with code ${code}`, true);
-                        reject(new Error(`Terraform apply process exited with code ${code}`));
-                        setImmediate(() => process.exit(1));
-                    }
-                });
-    
-                terraformProcess.on('error', (err) => {
-                    progressBar.stop();
-                    AppLogger.error(`Failed to run Terraform process: ${err}`, true);
-                    reject(err);
-                });
-    
-            } catch (error) {
-                AppLogger.error(`Failed to apply Terraform process: ${error}`, true);
-                reject(error);
-            }
-        });
-    }
-    
-    async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
+async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
+    AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
 
+    return new Promise((resolve, reject) => {
         try {
-            await this.runTerraformInit(projectPath, backend);
-            await this.runTerraformApply(projectPath, module, varFile);
+            AppLogger.info(`Creating module: ${module}`, true);
+
+            // Prepare the Terraform apply command with necessary arguments
+            let args = ['apply', '-no-color', '-auto-approve'];
+            if (module) {
+                args.push(`-target=${module}`);
+            }
+            if (varFile) {
+                args.push(`-var-file=${varFile}`);
+            }
+
+            const terraformProcess = spawn('terraform', args, {
+                cwd: projectPath,
+                env: process.env,
+                stdio: ['inherit', 'pipe', 'pipe'] // Inherit stdin for proper signal handling
+            });
+
+            // Set up progress bar
+            const totalSteps = 100; // Adjust based on your estimation
+            const progressBar = ProgressBar.createProgressBar();
+            progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
+
+            terraformProcess.stdout.on('data', (data) => {
+                const output = data.toString();
+                AppLogger.info(`stdout: ${output}`);
+
+                // Regex to match "Creation complete" messages and update the progress bar
+                const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
+                let match;
+                while ((match = creationCompleteRegex.exec(output)) !== null) {
+                    progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
+                }
+            });
+
+            terraformProcess.stderr.on('data', (data) => {
+                const errorOutput = data.toString();
+                progressBar.stop();
+                AppLogger.error(`stderr: ${errorOutput}`);
+                // Reject the promise on stderr output
+                reject(new Error(`Terraform apply error: ${errorOutput}`));
+            });
+
+            terraformProcess.on('close', (code) => {
+                if (code === 0) {
+                    progressBar.update(100, { message: 'Terraform apply completed.' });
+                    progressBar.stop();
+                    AppLogger.debug('Terraform apply completed successfully.', true);
+                    resolve();
+                } else {
+                    progressBar.stop();
+                    AppLogger.error(`Terraform apply process exited with code ${code}`, true);
+                    reject(new Error(`Terraform apply process exited with code ${code}`));
+                    setImmediate(() => process.exit(1));
+                }
+            });
+
+            terraformProcess.on('error', (err) => {
+                progressBar.stop();
+                AppLogger.error(`Failed to run Terraform process: ${err}`, true);
+                reject(err);
+            });
+
         } catch (error) {
-            AppLogger.error(`Terraform process failed: ${error}`, true);
+            AppLogger.error(`Failed to apply Terraform process: ${error}`, true);
+            reject(error);
         }
-    }
+    });
+}
+
+
+
+    
+    // async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
+
+    //     try {
+    //         await this.runTerraformInit(projectPath, backend, projectName);
+    //         await this.runTerraformApply(projectPath, module, varFile);
+    //     } catch (error) {
+    //         AppLogger.error(`Terraform process failed: ${error}`, true);
+    //     }
+    // }
 
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
     AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
@@ -432,10 +435,140 @@ export default class AWSProject extends BaseProject {
     }
 
     async runAnsiblePlaybook1(projectPath: string) {
-       executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+    //    executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        const maxRetries = 6;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/create-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Creation of cluster completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
     }   
      
     async runAnsiblePlaybook2(projectPath: string) {
-        executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        // executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/configure-k8s-cluster.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Setting up cluster completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
     }
+    async runAnsiblePlaybook3(projectPath: string) {
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/create-ingress-controller.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
+    }
+
+    async runAnsiblePlaybook4(projectPath: string) {
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/nginx.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('Nginx configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
+    }
+
+    async runAnsiblePlaybook5(projectPath: string) {
+        // executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+        while (attempt < maxRetries && !success) {
+            try {
+                attempt++;
+                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
+                execSync('ansible-playbook -v ../playbooks/ecr-helper.yml', {
+                    cwd: `${projectPath}/templates/aws/ansible/environments`,
+                    stdio: 'inherit',
+                    env: process.env
+                });
+                AppLogger.info('ECR and argocd configuration completed successfully.', true);
+                success = true;
+            } catch (error) {
+                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+                if (attempt >= maxRetries) {
+                    AppLogger.error('Max retries reached. Exiting...', true);
+                    throw error;
+                } else {
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
+            }
+        }
+     }
 }
+

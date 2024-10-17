@@ -5,6 +5,8 @@ import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
 import TerraformProject from './terraform-project.js';
 import { AppLogger } from '../logger/appLogger.js';
+import { executeCommandWithRetry } from './common-functions/execCommands.js';
+import { readStatusFile } from './utils/statusUpdater-utils.js';
 
 export default abstract class BaseProject {    
     protected config: any = {};
@@ -32,23 +34,24 @@ export default abstract class BaseProject {
         AppLogger.info(`Running terraform destroy in the path`, true);
         const terraform = await TerraformProject.getProject(this.command);
         const modules = [
-            "module.rds",
-            "module.environment",
-            "module.argo",
-            "module.ingress-controller",
-            "module.repository",
-            "module.gitops",
-            "module.ecr-repo",
-            "module.acm",
-            "module.eks",
-            "module.vpc"
-        ];
+      "module.vpc",
+      "module.eks",
+      "module.acm",
+      "module.ecr-repo",
+      "module.gitops",
+      "module.repository",
+      "module.ingress-controller",
+      "module.argo",
+      "module.environment"
+  ];
+      
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
-            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`,projectName);
-            
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`, projectName);
+            const readFile = readStatusFile(projectName);
             // Destroy modules one by one
             for (const module of modules) {
+                if(readFile.modules[module] == "success"){
                 try {
                     AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
                     await terraform?.runTerraformDestroy(this.projectPath+`/infrastructure`, module, 'terraform.tfvars');
@@ -57,15 +60,26 @@ export default abstract class BaseProject {
                     AppLogger.error(`Error destroying Terraform for module: ${module}, ${error}`, true);
                 }
             }
+         } 
         }
         // Check if it has multiple modules
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
-            await terraform?.runTerraformInit(`${this.projectPath}/k8s_config`, `/infrastructure/${this.config.environment}-config.tfvars`, projectName);
-            terraform?.startSSHProcess();
-            // Destroy the ingress and other helm modules
-            await terraform?.runTerraformDestroy(this.projectPath+'/k8s_config', 'module.ingress-controller', `/infrastructure/terraform.tfvars`);
-            terraform?.stopSSHProcess();
+            // await terraform?.runTerraformInit(`${this.projectPath}/infrastructure`, `/infrastructure/${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`, projectName);
+            for (const module of modules) {
+                try{
+                    terraform?.startSSHProcess();
+                    // Destroy the ingress and other helm modules
+                    await terraform?.runTerraformDestroy(this.projectPath+'/infrastructure', module, `terraform.tfvars`);
+                    terraform?.stopSSHProcess();
+                    AppLogger.debug(`Successfully destroyed Terraform for module: ${module}`,true);
+                }catch(error){
+                    AppLogger.error(`Error destroying Terraform for module: ${module}, ${error}`, true);
+                }
+              
+            }
+         
         }
         //await terraform?.runTerraformDestroy(this.projectPath);
     }

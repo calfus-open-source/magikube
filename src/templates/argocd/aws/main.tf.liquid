@@ -11,9 +11,9 @@ provider "kubernetes" {
   config_path = "~/.kube/config"
   config_context = "${var.name}-${var.environment}-context"
 }
-{% comment %} else condition {% endcomment %}
+{% comment %}else condition {% endcomment %}
 {% else %}
-{% comment %} Get the config from the cluster {% endcomment %}
+{% comment %}Get the config from the cluster {% endcomment %}
 provider "kubernetes" {
   host                   = var.cluster_endpoint
   cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
@@ -22,7 +22,7 @@ provider "kubernetes" {
 {% endif %}
 
 {% if cluster_type == "k8s" %}
-  {% comment %} Get the config from ~/.kube/config {% endcomment %}
+{% comment %} Get the config from ~/.kube/config {% endcomment %}
   provider "helm" {
     kubernetes {
       config_path = "~/.kube/config"
@@ -32,10 +32,10 @@ provider "kubernetes" {
   {% else %}  
   provider "helm" {
     kubernetes {
-      host                   = var.cluster_endpoint
-      cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
-      token                  = var.cluster_token
-    }
+    host                   = var.cluster_endpoint
+    cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+    token                  = var.cluster_token
+  }
   }
 {% endif %}
 

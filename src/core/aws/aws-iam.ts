@@ -104,8 +104,9 @@ export default class AWSPolicies {
             }
         };
 
-        const status = await readStatusFile(projectName)
-        if (status["policy"] === "pending" || status["policy"] === "fail") {
+        // const status = await readStatusFile(projectName)
+        const readFile = readStatusFile(projectName);
+        if (readFile.services["policy"] === "pending" || readFile.services["policy"] === "fail") {
             const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
             try{
                 for (const file of files) {
