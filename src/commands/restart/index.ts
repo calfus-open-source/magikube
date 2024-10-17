@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { dotMagikubeConfig } from "../../core/utils/projectConfigReader-utils.js";
 import RestartTerraformProject from "../../core/restartTerraform-project.js";
-import { readStatusFile } from "../../core/utils/statusUpdater-utils.js";
+import { readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { setupServices } from "../../core/utils/healthCheck-utils.js";
 import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
@@ -32,7 +32,6 @@ export default class RestartProject extends BaseCommand {
     `<%= config.bin %> <%= command.id %> sample 
      Restarting magikube project named 'sample' from where it left off`,
   ];
-
   async run(): Promise<void> {
     AppLogger.configureLogger();
     AppLogger.info("Logger Started ...");
@@ -85,18 +84,22 @@ export default class RestartProject extends BaseCommand {
           await runTerraformUnlockCommands(projectPath, responses.aws_profile);
           
           for (const module of modules) {
-            console.log(status.modules[module],"<<<<<<module")
-            if(status.modules[module] === "pending" || status.modules[module] === "fail"){
+            if(status.modules[module] === "fail"){
               await executeCommandWithRetry(`export AWS_PROFILE=${responses.aws_profile}`, { cwd: infrastructurePath }, 1);
               await executeCommandWithRetry(`terraform destroy -target=${module}`, { cwd: infrastructurePath }, 1);
             }
+            if(status.modules[module] === "fail" || status.modules[module] === "pending"){
             try {
               AppLogger.info( `Starting Terraform apply for module: ${module}`, true );
+              updateStatusFile(projectName, module, "fail");
               await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module, "terraform.tfvars");
               AppLogger.debug( `Successfully applied Terraform for module: ${module}`);
+              updateStatusFile(projectName, module, "success");
             } catch (error) {
               AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
+              updateStatusFile(projectName, module, "fail");
             }
+          }
           }
         }
         }

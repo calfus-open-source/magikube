@@ -17,7 +17,7 @@ import {checkServiceStatus, waitForServiceToUP,} from "../../core/utils/checkSta
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
 import AWSAccount from "../../core/aws/aws-account.js";
-import { initializeStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
+import { initializeStatusFile, readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { setupServices } from "../../core/utils/healthCheck-utils.js";
 
 function validateUserInput(input: string): void {
@@ -206,17 +206,15 @@ Creating a new magikube project named 'sample' in the current directory
               AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`, true ); allModulesAppliedSuccessfully = false;
               updateStatusFile(projectName, module, "fail");
               allModulesAppliedSuccessfully = false;
+              updateStatusFile(projectName, "terraform-apply", "fail");
             }
           }
           if (allModulesAppliedSuccessfully) {
              updateStatusFile(projectName, "terraform-apply", "success");
-          } else {
-             updateStatusFile(projectName, "terraform-apply", "fail");
           }
         }
 
       if (responses['cluster_type'] === 'k8s') {
-
         const dotmagikube = readProjectConfig(projectName,process.cwd())
         // console.log(fs.existsSync(`${process.cwd()}/${projectName}/templates/aws/ansible/environments`),)
         await new Promise(resolve => setTimeout(resolve, 20000));
