@@ -175,13 +175,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             await executeCommandWithRetry('npm install', { cwd: `${path}/${projectName}/${nextAppName}` },3);
-            updateStatusFile(projectName, nextAppName, "success");
+            updateStatusFile(projectName, projectConfig.appType, "success");
             AppLogger.info("Next.js application created successfully.", true);
             return true;
 
         } catch (error) {
             AppLogger.error(`Failed to create Next.js app: ${error}`, true);
-            updateStatusFile(projectName, nextAppName, "fail");
+            updateStatusFile(projectName, projectConfig.appType, "fail");
             fs.rmdirSync(`${path}/${projectName}/${nextAppName}`, { recursive: true });
             process.exit(1);
         }
@@ -231,7 +231,6 @@ export default class CreateApplication extends BaseProject {
 
     async setupGitops(projectConfig: any) {
         const path = process.cwd();
-        // console.log("path",path)
         const appName = 'gitops';
         const { project_name: projectName, frontend_app_type, environment } = projectConfig;
     
@@ -272,12 +271,13 @@ export default class CreateApplication extends BaseProject {
             for (const file of commonGitopsFiles) {
                 await this.createFile(`${file}`, `${path}/dist/gitops/common-gitops-files/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true);
             }
-    
             AppLogger.info('Gitops setup is done.', true);
+            updateStatusFile(projectName, appName, "success");
             return true;
     
         } catch (error) {
             AppLogger.error(`Failed to setup Gitops service, ${error}`, true);
+            updateStatusFile(projectName, appName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
             process.exit(1);
         }

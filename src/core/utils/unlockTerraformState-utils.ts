@@ -3,12 +3,6 @@ import path from 'path';
 import { executeCommandWithRetry } from '../common-functions/execCommands.js';
 import { execSync } from 'child_process';
 
-/**
- * Reads the Terraform state file and runs the necessary terraform commands for project destruction.
- *
- * @param {string} projectPath - The project path where Terraform state exists.
- * @param {string} awsProfile - The AWS profile to use.
- */
 export async function runTerraformUnlockCommands(projectPath:string, awsProfile:string) {
   try {
     const infrastructurePath = path.join(projectPath, 'infrastructure');

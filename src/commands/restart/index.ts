@@ -47,7 +47,6 @@ export default class RestartProject extends BaseCommand {
        
       const projectName = args.name;
       const status =  await readStatusFile(projectName)
-      console.log(status,"<<<<<<<<,status")
       const terraform = await RestartTerraformProject.getProject(this, projectName);
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(
@@ -80,13 +79,17 @@ export default class RestartProject extends BaseCommand {
           // Delay of 15 seconds to allow the user to review the terraform files
           await new Promise((resolve) => setTimeout(resolve, 15000));
           await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure",`${project_config["environment"]}-config.tfvars`, projectName);
+          let allModulesAppliedSuccessfully = true; 
+          let unlockCommandsExecuted = false
           if (status.services["terraform-apply"] === "fail" || status.services["terraform-apply"] === "pending") {
-          await runTerraformUnlockCommands(projectPath, responses.aws_profile);
-          
+           if (!unlockCommandsExecuted) {
+              await runTerraformUnlockCommands(projectPath, responses.aws_profile);
+              unlockCommandsExecuted = true;
+          }
           for (const module of modules) {
             if(status.modules[module] === "fail"){
               await executeCommandWithRetry(`export AWS_PROFILE=${responses.aws_profile}`, { cwd: infrastructurePath }, 1);
-              await executeCommandWithRetry(`terraform destroy -target=${module}`, { cwd: infrastructurePath }, 1);
+              await executeCommandWithRetry(`terraform destroy -target=${module} `, { cwd: infrastructurePath }, 1);
             }
             if(status.modules[module] === "fail" || status.modules[module] === "pending"){
             try {
@@ -97,12 +100,19 @@ export default class RestartProject extends BaseCommand {
               updateStatusFile(projectName, module, "success");
             } catch (error) {
               AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`, true);
+              allModulesAppliedSuccessfully = false; 
               updateStatusFile(projectName, module, "fail");
             }
+           }
           }
+           if (allModulesAppliedSuccessfully) {
+             updateStatusFile(projectName, "terraform-apply", "success");
+          }else{
+            updateStatusFile(projectName, "terraform-apply", "fail");
           }
         }
         }
+
         // if (project_config.cluster_type === "k8s") {
         //   await new Promise((resolve) => setTimeout(resolve, 10000));
         //   await terraform?.runAnsiblePlaybook1(process.cwd() + "/" + projectName);
