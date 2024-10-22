@@ -217,13 +217,13 @@ export default class CreateApplication extends BaseProject {
 
             await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`}, 3);
             AppLogger.info('React app created successfully.', true);
-            updateStatusFile(projectName, reactAppName, "success");
+            updateStatusFile(projectName, projectConfig.appType, "success");
             return true;
 
     } catch (error) {
             AppLogger.error(`Failed to create React app:${error}`, true);
             AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
-            updateStatusFile(projectName, reactAppName, "fail");
+            updateStatusFile(projectName, projectConfig.appType, "fail");
             fs.rmdirSync(`${path}/${projectName}/${reactAppName}`, { recursive: true });
             process.exit(1);
     }
