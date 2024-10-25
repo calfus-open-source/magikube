@@ -47,7 +47,11 @@ export default abstract class BaseProject {
       
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
+            console.log(this.projectPath,"<<<<<this.projectPath")
+            console.log(this.config.environment,"<<<<this.config.environment")
+            console.log(projectName)
             await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`, projectName);
+            console.log("+++++++++++++++")
             const readFile = readStatusFile(projectName);
             // Destroy modules one by one
             for (const module of modules) {
@@ -104,7 +108,6 @@ export default abstract class BaseProject {
 
         await this.createProviderFile();
     }
-
     async createFolder(): Promise<void> {
         //create a folder with the name in the path
 

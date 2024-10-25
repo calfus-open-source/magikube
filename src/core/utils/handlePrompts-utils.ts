@@ -7,13 +7,28 @@ export async function handlePrompts(args: any, flags: any): Promise<Answers> {
   let responses: Answers = {
     project_name: args.name,
     project_id: uuidv4(),
-    dryrun: flags.dryrun || false,
+    empty: flags.empty || false,
   };
-
+  
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
+   if (flags.empty){
+      for (const prompt of promptGenerator.getCloudProvider()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+      }
 
-  // Cloud Provider Prompt
+      for (const cloudPrompt of promptGenerator.getRegion()) {
+        const cloudResp = await inquirer.prompt(cloudPrompt);
+        responses = { ...responses, ...cloudResp };
+      }
+
+      for (const envPrompt of promptGenerator.getEnvironment()) {
+        const envResp = await inquirer.prompt(envPrompt);
+        responses = { ...responses, ...envResp };
+      }
+   }else{
+    // Cloud Provider Prompt
   for (const prompt of promptGenerator.getCloudProvider()) {
     const resp = await inquirer.prompt(prompt);
     responses = { ...responses, ...resp };
@@ -70,5 +85,7 @@ export async function handlePrompts(args: any, flags: any): Promise<Answers> {
     responses = { ...responses, ...backendResp };
   }
 
+   }
+  
   return responses;
 }

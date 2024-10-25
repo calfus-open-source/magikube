@@ -157,10 +157,12 @@ export default class AWSProject extends BaseProject {
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
         AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
-    
+    console.log(backend,"<<<<<<backend")
+        console.log(projectPath,"<<<<<<<projectPath")
+        console.log(projectName,"<<<<<<<projectName")
         const progressBar = ProgressBar.createProgressBar();
         progressBar.start(100, 0, { message: 'Terraform Init in progress...' });
-    
+        
         return new Promise<void>((resolve, reject) => {
             try {
                 const terraformProcess = spawn('terraform', ['init', `-backend-config=${backend}`], {
@@ -168,6 +170,7 @@ export default class AWSProject extends BaseProject {
                     env: process.env,
                     stdio: ['ignore', 'pipe', 'pipe']
                 });
+                console.log(terraformProcess,"<<<<<terraformProcess")
 
                 terraformProcess.stdout.on('data', (data) => {
                     const output = data.toString();
