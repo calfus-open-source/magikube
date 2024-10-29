@@ -40,11 +40,9 @@ Destroying magikube project named 'sample' in the current directory`,
  
     const terraform = await TerraformProject.getProject(this);
     if (terraform && responses.cloud_provider === 'aws') {
-      console.log(responses.aws_profile, "<<<<<<<<responses.aws_profile")
-      console.log(fs.existsSync(infrastructurePath))
         await executeCommandWithRetry(`export AWS_PROFILE=${responses.aws_profile}`, { cwd: infrastructurePath }, 1);
       if (readFile.services["terraform-apply"] === "fail") {
-        await runTerraformUnlockCommands(projectPath, responses.aws_profile);
+        await runTerraformUnlockCommands(projectPath, responses.aws_profile, responses.environment);
       }  
       // Destroy the project
       await terraform.destroyProject(args.name, process.cwd());

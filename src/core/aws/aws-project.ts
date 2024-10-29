@@ -170,8 +170,6 @@ export default class AWSProject extends BaseProject {
                     env: process.env,
                     stdio: ['ignore', 'pipe', 'pipe']
                 });
-                console.log(terraformProcess,"<<<<<terraformProcess")
-
                 terraformProcess.stdout.on('data', (data) => {
                     const output = data.toString();
                     AppLogger.debug(output);
