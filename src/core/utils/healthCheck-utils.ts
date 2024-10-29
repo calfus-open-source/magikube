@@ -44,7 +44,7 @@ export async function waitForServiceToUP(
   return false;
 }
 
- export async function setupServices(args:any, responses:any, projectConfig:any) {
+ export async function serviceHealthCheck(args:any, responses:any, projectConfig:any) {
     const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
     const keycloakUrl = `http://${responses.domain}/keycloak`;
     const frontendURL = `http://${responses.domain}`;

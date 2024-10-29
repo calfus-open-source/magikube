@@ -13,7 +13,7 @@ import path from "path";
 import { dotMagikubeConfig } from "../../core/utils/projectConfigReader-utils.js";
 import RestartTerraformProject from "../../core/restartTerraform-project.js";
 import { readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater-utils.js";
-import { setupServices } from "../../core/utils/healthCheck-utils.js";
+import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 
@@ -186,7 +186,7 @@ export default class RestartProject extends BaseCommand {
       }
 
       createApp.MoveFiles(projectName);
-      await setupServices(args, responses, project_config);
+      await serviceHealthCheck(args, responses, project_config);
     } catch (error) {
       AppLogger.error(
         `An error occurred during the setup process: ${error}`,

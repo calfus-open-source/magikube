@@ -17,7 +17,7 @@ import { initializeStatusFile, readStatusFile, updateStatusFile } from "../../co
 import { execSync } from "child_process";
 import { readProjectConfig } from "../../core/utils/magikubeConfigreader.js";
 import AWSAccount from "../../core/aws/aws-account.js";
-import { setupServices } from "../../core/utils/healthCheck-utils.js";
+import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -286,7 +286,7 @@ Creating a new magikube project named 'sample' in the current directory
 
       createApp.MoveFiles(projectName);
        
-      await setupServices(args, responses, projectConfig);
+      await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
 
     } catch (error) {
