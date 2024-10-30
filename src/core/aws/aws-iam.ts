@@ -122,7 +122,7 @@ export default class AWSPolicies {
                 updateStatusFile(projectName, "policy", "success");
             }
             }catch(error){
-                AppLogger.error(`Error in creating the polic`, true);
+                AppLogger.error(`Error in creating the policy`, true);
                 updateStatusFile(projectName, "policy", "fail");
                 process.exit(1);
             }

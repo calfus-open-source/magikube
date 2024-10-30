@@ -310,19 +310,6 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
     });
 }
 
-
-
-    
-    // async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
-
-    //     try {
-    //         await this.runTerraformInit(projectPath, backend, projectName);
-    //         await this.runTerraformApply(projectPath, module, varFile);
-    //     } catch (error) {
-    //         AppLogger.error(`Terraform process failed: ${error}`, true);
-    //     }
-    // }
-
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
     AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
     try {

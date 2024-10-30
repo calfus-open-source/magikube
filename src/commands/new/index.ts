@@ -9,7 +9,7 @@ import { ConfigObject } from "../../core/interface.js";
 import { Colours } from "../../prompts/constants.js";
 import { initializeStatusFile, readStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import AWSAccount from "../../core/aws/aws-account.js";
-import { setupServices } from "../../core/utils/healthCheck-utils.js";
+import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
 import { getServices, modules } from "../../core/constants/constants.js";
@@ -114,7 +114,7 @@ function validateUserInput(input: string): void {
 
       createApp.MoveFiles(projectName);
        
-      await setupServices(args, responses, projectConfig);
+      await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
 
     } catch (error) {
