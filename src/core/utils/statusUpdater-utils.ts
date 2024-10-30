@@ -42,11 +42,12 @@ export function initializeStatusFile(
 
 
 export function updateStatusFile(
-  projectName: string,
+  projectName: string ,
   serviceOrModule: string,
   status: "success" | "fail"
 ) {
-  const statusFilePath = path.join(process.cwd(), projectName, "status.json");
+  // const statusFilePath = path.join(process.cwd(), projectName, "status.json");
+   const statusFilePath = path.join(process.cwd(), projectName, "status.json"); 
   let statusData: {
     modules: { [key: string]: string };
     services: { [key: string]: string };

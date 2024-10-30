@@ -19,14 +19,14 @@ export default abstract class BaseProject {
         this.command = command;
     }
 
-    async destroyProject(name: string, path: string): Promise<void> {
-        //initialize terraform in the path
-        this.projectPath = join(path, name);
-        // Run terraform destroy
-        AppLogger.debug(`Destroying project '${name}' in the path`, true);
-        await this.terraformDestroy(name);
-        await this.deleteFolder();
-    }
+  async destroyProject(projectName: string, path: string): Promise<void> {
+    //initialize terraform in the path
+    this.projectPath = join(path, projectName);
+    // Run terraform destroy
+    AppLogger.debug(`Destroying project '${projectName}' in the path`, true);
+    await this.terraformDestroy(projectName);
+    await this.deleteFolder();
+  }
 
 
     async terraformDestroy(projectName:string): Promise<void> {
@@ -47,7 +47,7 @@ export default abstract class BaseProject {
       
         if (this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup') {
             // Initialize Terraform once
-            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`, projectName);
             const readFile = readStatusFile(projectName);
             // Destroy modules one by one
             for (const module of modules) {
@@ -66,7 +66,7 @@ export default abstract class BaseProject {
         if (this.config.cluster_type === 'k8s') {
             // Initialize the terraform
             // await terraform?.runTerraformInit(`${this.projectPath}/infrastructure`, `/infrastructure/${this.config.environment}-config.tfvars`);
-            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`);
+            await terraform?.runTerraformInit(this.projectPath+`/infrastructure`, `${this.config.environment}-config.tfvars`, projectName);
             for (const module of modules) {
                 try{
                     terraform?.startSSHProcess();
