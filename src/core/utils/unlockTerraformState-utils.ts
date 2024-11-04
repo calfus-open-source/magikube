@@ -20,9 +20,7 @@ export async function runTerraformUnlockCommands(projectPath:string, project_con
       if (lockId) {
         // Initialize Terraform and force unlock
         await executeCommandWithRetry(`terraform force-unlock ${lockId}`, { cwd: infrastructurePath }, 1);
-      } else {
-        throw new Error('Failed to retrieve Lock ID from DynamoDB.');
-      }
+      } 
     } else {
       throw new Error(`Terraform state file not found: ${terraformStateFile}`);
     }

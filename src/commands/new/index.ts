@@ -17,13 +17,13 @@ import { handleEKS, handleK8s} from "../../core/utils/terraformHandlers-utils.js
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 
 function validateUserInput(input: string): void {
-    const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
-    if (pattern.test(input)) {
-      AppLogger.info("Input is valid.", true);
-    } else {
-      AppLogger.error(`\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`, true);
-      process.exit(1);
-    }
+  const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
+  if (pattern.test(input)) {
+    console.log("Input is valid.");
+  } else {
+    console.error(`\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`);
+    process.exit(1);
+  }
 }
   export default class CreateProject extends BaseCommand {
     static args = {
