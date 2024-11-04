@@ -1,7 +1,0 @@
----
-
-- hosts: k8s_master
-  gather_facts: yes
-  become: yes
-  roles:
-    - { role: ../roles/kubernetes/ecr-helper, tags: 'ecr' }
