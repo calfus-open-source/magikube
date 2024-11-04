@@ -157,9 +157,6 @@ export default class AWSProject extends BaseProject {
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
         AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
-    console.log(backend,"<<<<<<backend")
-        console.log(projectPath,"<<<<<<<projectPath")
-        console.log(projectName,"<<<<<<<projectName")
         const progressBar = ProgressBar.createProgressBar();
         progressBar.start(100, 0, { message: 'Terraform Init in progress...' });
         
@@ -310,19 +307,6 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
         }
     });
 }
-
-
-
-    
-    // async runTerraform(projectPath: string, backend: string, module?: string, varFile?: string): Promise<void> {
-
-    //     try {
-    //         await this.runTerraformInit(projectPath, backend, projectName);
-    //         await this.runTerraformApply(projectPath, module, varFile);
-    //     } catch (error) {
-    //         AppLogger.error(`Terraform process failed: ${error}`, true);
-    //     }
-    // }
 
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
     AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);

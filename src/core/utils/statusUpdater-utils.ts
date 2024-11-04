@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import path from "path";
+import { AppLogger } from "../../logger/appLogger.js";
 
 export function initializeStatusFile(
   projectName: string,
@@ -67,7 +68,7 @@ export function updateStatusFile(
   } else if (statusData.services && statusData.services[serviceOrModule] !== undefined) {
     statusData.services[serviceOrModule] = status;
   } else {
-    console.log(`Service or module "${serviceOrModule}" not found in the status file.`);
+    AppLogger.error(`Service or module "${serviceOrModule}" not found in the status file.`, true);
     return; // Exit if the service or module does not exist
   }
 
