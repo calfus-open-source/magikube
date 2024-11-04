@@ -75,7 +75,7 @@ export default class RestartProject extends BaseCommand {
           let unlockCommandsExecuted = false
           if (status.services["terraform-apply"] === "fail" || status.services["terraform-apply"] === "pending") {
            if (!unlockCommandsExecuted) {
-              await runTerraformUnlockCommands(projectPath, responses.aws_profile);
+              await runTerraformUnlockCommands(projectPath, project_config);
               unlockCommandsExecuted = true;
           }
           for (const module of modules) {

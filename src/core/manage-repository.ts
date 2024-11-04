@@ -60,7 +60,7 @@ export class ManageRepository {
                 keyId: response.data.key_id,
                 };
             } catch (error) {
-                console.error('Error fetching public key:', error);
+                AppLogger.error(`Error fetching public key:${error}` , true);
                 throw error; // Re-throw the error after logging it
             }
         }
@@ -80,10 +80,10 @@ export class ManageRepository {
                         return result;
                     } catch (error) {
                         if (attempts >= maxRetries) {
-                            console.error('Max retry attempts reached for fetching public key and keyId');
+                            AppLogger.error('Max retry attempts reached for fetching public key and keyId', true);
                             throw error;
                         } else {
-                            console.error(`Attempt ${attempts} failed to fetch public key and keyId. Retrying...`);
+                            AppLogger.error(`Attempt ${attempts} failed to fetch public key and keyId. Retrying...`, true);
                         }
                     }
                 }
@@ -96,12 +96,12 @@ export class ManageRepository {
                 publicKey = key;
                 publicKeyId = keyId;
             } catch (error) {
-                console.error('Failed to fetch public key and keyId:', error);
+                AppLogger.error(`Failed to fetch public key and keyId ${error}`, true);
             }
 
            }
         await fetchkey()
-        console.log('Starting encryption process...');
+        AppLogger.info('Starting encryption process...', true);
         async function encryptSecret(secret: string, publicKey: string): Promise<string> {
         await sodium.ready; 
         const binkey = sodium.from_base64(publicKey, sodium.base64_variants.ORIGINAL);
@@ -155,10 +155,7 @@ export class ManageRepository {
             // Execute Git commands with progress bar
             commands.forEach((command, index) => {
             progressBar.update(chunk, { message: command.message });
-            // console.log("command.cmd",command.cmd)
-            // AppLogger.debug(command.cmd)
-            // console.log("command.message",command.message)
-            // AppLogger.debug(command.message)
+
             execAndLog(command.cmd, command.message);
             chunk += progressUpdateValue
             });
