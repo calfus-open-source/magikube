@@ -219,7 +219,7 @@ export default class PromptGenerator {
     }
     else {
       // Handle unknown cloud providers or invalid input
-      console.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`);
+      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
       process.exit(1);
     }
   }

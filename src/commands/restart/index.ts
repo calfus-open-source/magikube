@@ -16,6 +16,8 @@ import { readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
+import { modules } from "../../core/constants/constants.js";
+import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 
 export default class RestartProject extends BaseCommand {
   static args = {
@@ -53,17 +55,7 @@ export default class RestartProject extends BaseCommand {
         command as BaseCommand,
         project_config
       );
-      const modules = [
-        "module.vpc",
-        "module.eks",
-        "module.acm",
-        "module.ecr-repo",
-        "module.gitops",
-        "module.repository",
-        "module.ingress-controller",
-        "module.argo",
-        "module.environment",
-      ];
+
       const projectPath = path.join(process.cwd(), args.name);
       const infrastructurePath = path.join(projectPath, 'infrastructure');
       if (terraform) {
@@ -83,7 +75,7 @@ export default class RestartProject extends BaseCommand {
           let unlockCommandsExecuted = false
           if (status.services["terraform-apply"] === "fail" || status.services["terraform-apply"] === "pending") {
            if (!unlockCommandsExecuted) {
-              await runTerraformUnlockCommands(projectPath, responses.aws_profile);
+              await runTerraformUnlockCommands(projectPath, project_config);
               unlockCommandsExecuted = true;
           }
           for (const module of modules) {
@@ -134,55 +126,10 @@ export default class RestartProject extends BaseCommand {
           aws_secret_access_key: awsSecretKey,
           environment: environment,
         } = project_config;
-
-        
+ 
         const configObject: ConfigObject = {token,userName,orgName, sourceCodeRepo, region, projectName, awsAccessKey, awsSecretKey, environment,};
-        if (status.services["auth-service"] === "fail" || status.services["auth-service"] === "pending") {
-          const statusAuthenticationService =
-            await createApp.setupAuthenticationService(project_config);
-          if (statusAuthenticationService) {
-            configObject.appName = "auth-service";
-            configObject.appType = "auth-service";
-            await ManageRepository.pushCode(configObject);
-          }
-        }
+        await setupAndPushServices(status, project_config, configObject )
 
-        if (status.services["keycloak"] === "fail" || status.services["keycloak"] === "pending") {
-          const statusKeycloakService = await createApp.setupKeyCloak(project_config);
-          if (statusKeycloakService) {
-            configObject.appName = "keycloak";
-            configObject.appType = "keycloak-service";
-            await ManageRepository.pushCode(configObject);
-          }
-        }
-
-        if (status.services["my-node-app"] === "fail" || status.services["my-node-app"] === "pending") {
-          if (project_config["backend_app_type"]) {
-            const projectConfig = dotMagikubeConfig(configObject.projectName, process.cwd())
-            configObject.appName = project_config["node_app_name"];
-            configObject.appType = project_config["backend_app_type"];
-            await createApp.handleAppCreation(project_config["backend_app_type"],configObject, projectConfig);
-          }
-        }
-
-        if (project_config["frontend_app_type"]) {
-            const frontendAppType = project_config["frontend_app_type"]
-            if (status.services[frontendAppType] === "fail" || status.services[frontendAppType] === "pending") {  
-            const projectConfig = dotMagikubeConfig(configObject.projectName, process.cwd())
-            configObject.appType = project_config["frontend_app_type"]
-            await createApp.handleAppCreation(project_config["frontend_app_type"], configObject, projectConfig);
-          }
-        }
-
-
-        if (status.services["gitops"] === "fail" || status.services["gitops"] === "pending"){
-        const setupGitopsServiceStatus = await createApp.setupGitops(project_config);
-          if (setupGitopsServiceStatus) {
-            configObject.appName = `${environment}`;
-            configObject.appType = "gitops";
-            await ManageRepository.pushCode(configObject);
-          }
-       }
       }
 
       createApp.MoveFiles(projectName);

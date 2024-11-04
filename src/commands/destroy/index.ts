@@ -40,12 +40,12 @@ Destroying magikube project named 'sample' in the current directory`,
 
     const terraform = await TerraformProject.getProject(this);
     if (terraform && responses.cloud_provider === 'aws') {  
+      await terraform.AWSProfileActivate(responses['aws_profile'])
       if (readFile.services["terraform-apply"] === "fail") {
-        await runTerraformUnlockCommands(projectPath, responses.aws_profile);
-      }else{
-        await terraform.AWSProfileActivate(responses['aws_profile']);
+        await runTerraformUnlockCommands(projectPath, responses);
       }
       // Destroy the project
+      
       await terraform.destroyProject(args.name, process.cwd());
     } else {
       AppLogger.error('Terraform project initialization failed or unsupported cloud provider.', true);
