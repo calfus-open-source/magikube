@@ -5,10 +5,10 @@ regions:
   - {{ aws_region}}
 
 filters:
-  tag:Group:
-    - bastion
-    - k8s-master
-    - k8s-worker
+  "tag:Name":
+    - "{{ project_name }}-{{ environment }}-bastion"
+    - "{{ project_name }}-{{ environment }}-master"
+    - "{{ project_name }}-{{ environment }}-worker"
   instance-state-name: running
 
 keyed_groups:
