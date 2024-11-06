@@ -421,141 +421,39 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
         AppLogger.debug('New cluster added to the kubeconfig file.');
     }
 
-    async runAnsiblePlaybook1(projectPath: string) {
-    //    executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
+    //playing Ansible Playbook one by one
+    async runAnsiblePlaybook(playbook: string, projectPath: string) {
+        let attempt = 0;
+        let success = false;
         const maxRetries = 6;
-        let attempt = 0;
-        let success = false;
+        const FIVE_MINUTES = 5 * 60 * 1000; 
         while (attempt < maxRetries && !success) {
             try {
                 attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/create-k8s-cluster.yml', {
+                AppLogger.debug(`Running ansible playbook ${playbook}... Attempt ${attempt}, ${projectPath}`);
+                execSync(`ansible-playbook -v ../playbooks/${playbook}`, {
                     cwd: `${projectPath}/templates/aws/ansible/environments`,
                     stdio: 'inherit',
-                    env: process.env
+                    env: process.env,
+                    timeout: FIVE_MINUTES 
                 });
-                AppLogger.info('Creation of cluster completed successfully.', true);
+                AppLogger.info(`${playbook} completed successfully.`, true);
                 success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
+            } catch (error:any) {
+                if (error.signal === 'SIGTERM') {
+                    AppLogger.error(`Timeout reached for ${playbook}. Process terminated.`, true);
+                } else {
+                    AppLogger.error(`An error occurred while running ${playbook}: ${error}`, true);
+                }
+                
                 if (attempt >= maxRetries) {
                     AppLogger.error('Max retries reached. Exiting...', true);
                     throw error;
                 } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-    }   
-     
-    async runAnsiblePlaybook2(projectPath: string) {
-        // executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/configure-k8s-cluster.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Setting up cluster completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-    }
-    async runAnsiblePlaybook3(projectPath: string) {
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/create-ingress-controller.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
+                  
             }
         }
     }
 
-    async runAnsiblePlaybook4(projectPath: string) {
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/nginx.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Nginx configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-    }
-
-    async runAnsiblePlaybook5(projectPath: string) {
-        // executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/ecr-helper.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('ECR and argocd configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-     }
 }
 
