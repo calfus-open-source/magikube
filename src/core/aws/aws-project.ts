@@ -450,7 +450,8 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
                     AppLogger.error('Max retries reached. Exiting...', true);
                     throw error;
                 } else {
-                  
+                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
+                }
             }
         }
     }
