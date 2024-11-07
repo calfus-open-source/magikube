@@ -107,22 +107,24 @@ export default class AWSPolicies {
         // const status = await readStatusFile(projectName)
         const readFile = readStatusFile(projectName);
         if (readFile.services["policy"] === "pending" || readFile.services["policy"] === "fail") {
-            const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
-            try{
+            const files = fs.readdirSync(join(process.cwd(), 'dist/templates/aws/policies'));
+            try {
                 for (const file of files) {
-                const policyName = `${projectName}-${file.split('.')[0]}`;
-                AppLogger.info(`Creating policy, user, group and adding the user to the group: ${policyName}`, true);
-                const policyDocument = await project.generateContent(`../templates/aws/policies/${file}`);
-                await createPolicy(policyName, policyDocument);
-                await createGroup(policyName);
-                await attachGroupPolicy(policyName, `arn:aws:iam::${account}:policy/${policyName}`);
-                await createUser(policyName);
-                await addUserToGroup(policyName, policyName);
-                AppLogger.info(`Policy ${policyName} created successfully`, true);
-                updateStatusFile(projectName, "policy", "success");
-            }
-            }catch(error){
-                AppLogger.error(`Error in creating the policy`, true);
+                    const policyName = `${projectName}-${file.split('.')[0]}`;
+                    AppLogger.info(`Creating policy, user, group, and adding the user to the group: ${policyName}`, true);
+                    
+                    const policyDocument = await project.generateContent(`dist/templates/aws/policies/${file}`);
+                    await createPolicy(policyName, policyDocument);
+                    await createGroup(policyName);
+                    await attachGroupPolicy(policyName, `arn:aws:iam::${account}:policy/${policyName}`);
+                    await createUser(policyName);
+                    await addUserToGroup(policyName, policyName);
+                    
+                    AppLogger.info(`Policy ${policyName} created successfully`, true);
+                    updateStatusFile(projectName, "policy", "success");
+                }
+            } catch (error:any) {
+                AppLogger.error(`Error in creating the policy: ${error.message}`, true);
                 updateStatusFile(projectName, "policy", "fail");
                 process.exit(1);
             }
@@ -150,7 +152,7 @@ export default class AWSPolicies {
         AppLogger.debug(`Working with AWS Account Number: ${account}`);
 
         //Get list of filenames in a directory
-        const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, '../../templates/aws/policies'));
+        const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, `${process.cwd}/dist/templates/aws/policies`));
 
         for (const file of files) {
             const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;

@@ -8,24 +8,28 @@ export default class repositoryProject extends BaseProject {
     if (this.config.source_code_repository === "codecommit") {
        this.createFile(
          "main.tf",
-         "../templates/code-repository/aws/main.tf.liquid",
-         "infrastructure/modules/code-repository"
+         `${process.cwd()}/dist/templates/code-repository/aws/main.tf.liquid`,
+         "infrastructure/modules/code-repository",
+         true
        );
        this.createFile(
          "variables.tf",
-         "../templates/code-repository/aws/variables.tf.liquid",
-         "infrastructure/modules/code-repository"
+         `${process.cwd()}/dist/templates/code-repository/aws/variables.tf.liquid`,
+         "infrastructure/modules/code-repository",
+         true
        );
      } else if (this.config.source_code_repository === "github") {
          this.createFile(
              "main.tf",
-             "../templates/code-repository/github/main.tf.liquid",
+             `${process.cwd()}/dist/templates/code-repository/github/main.tf.liquid`,
              "infrastructure/modules/code-repository",
+             true
          );
          this.createFile(
              "variables.tf",
-             "../templates/code-repository/github/variables.tf.liquid",
+             `${process.cwd()}/dist/templates/code-repository/github/variables.tf.liquid`,
              "infrastructure/modules/code-repository",
+             true
          );
      }
   }
