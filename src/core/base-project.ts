@@ -87,6 +87,7 @@ export default abstract class BaseProject {
     async deleteFolder(): Promise<void> {
         if (fs.existsSync(this.projectPath)) {
             AppLogger.debug(`Removing folder '${this.projectPath}'`, true);
+            console.log(this.projectPath,"<<<<<<<<this.projectPath")
             fs.rmSync(this.projectPath, { recursive: true });
         } else {
             AppLogger.debug(`Folder '${this.projectPath}' does not exist in the path`, true);

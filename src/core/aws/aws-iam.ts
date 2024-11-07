@@ -152,7 +152,11 @@ export default class AWSPolicies {
         AppLogger.debug(`Working with AWS Account Number: ${account}`);
 
         //Get list of filenames in a directory
-        const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, `${process.cwd}/dist/templates/aws/policies`));
+        // const files = fs.readdirSync(join(new URL('.', import.meta.url).pathname, `${process.cwd}/dist/templates/aws/policies`));
+        //const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
+        const files = fs.readdirSync(join(`${process.cwd()}/dist/templates/aws/policies`));
+        // const templateFile = fs.readFileSync(join(process.cwd(), templateFilename), 'utf8');
+
 
         for (const file of files) {
             const policyName = `${SystemConfig.getInstance().getConfig().project_name}-${file.split('.')[0]}`;
