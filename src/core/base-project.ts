@@ -118,7 +118,7 @@ export default abstract class BaseProject {
 
     async createProviderFile(): Promise<void> {
         //create a providers.tf file in the path
-        await this.createFile('providers.tf', '../templates/common/providers.tf.liquid',"/infrastructure");
+        await this.createFile('providers.tf', `${process.cwd()}/dist/templates/common/providers.tf.liquid`,"/infrastructure", true);
     }
 
     async createFile(filename: string, templateFilename: string, folderName: string = '.', CreateProjectFile : boolean= false): Promise<void> {
@@ -144,9 +144,9 @@ export default abstract class BaseProject {
 
     async generateContent(templateFilename: string): Promise<any> {
         AppLogger.debug(`Creating content from ${templateFilename}`);
-        const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
-        return await this.engine.parseAndRender(templateFile, { ...this.config } );
-    }   
+        const templateFile = fs.readFileSync(join(process.cwd(), templateFilename), 'utf8');
+        return await this.engine.parseAndRender(templateFile, { ...this.config });
+    }
     
     async copyFolderAndRender(source: string, destination: string): Promise<void> {
         const fullPath = join(new URL('.', import.meta.url).pathname, source);

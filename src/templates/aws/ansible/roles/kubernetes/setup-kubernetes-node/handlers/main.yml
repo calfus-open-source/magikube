@@ -1,5 +1,0 @@
----
-- name: Reload Logrotate
-  service:
-    name: logrotate
-    state: reloaded

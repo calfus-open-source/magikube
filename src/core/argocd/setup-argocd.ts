@@ -6,18 +6,21 @@ export default class argoCdProject extends BaseProject {
     this.projectPath = join(path, name);
        this.createFile(
          "main.tf",
-         "../templates/argocd/aws/main.tf.liquid",
-         "infrastructure/modules/argocd"
+         `${process.cwd()}/dist/templates/argocd/aws/main.tf.liquid`,
+         "infrastructure/modules/argocd",
+         true
        );
        this.createFile(
          "variables.tf",
-         "../templates/argocd/aws/variables.tf.liquid",
-         "infrastructure/modules/argocd"
+         `${process.cwd()}/dist/templates/argocd/aws/variables.tf.liquid`,
+         "infrastructure/modules/argocd",
+         true
        );
       this.createFile(
         "argocd-values.yaml",
-        "../templates/argocd/aws/argocd-values.yaml.liquid",
-        "infrastructure/"
+        `${process.cwd()}/dist/templates/argocd/aws/argocd-values.yaml.liquid`,
+        "infrastructure/",
+        true
       );
     }
 }
