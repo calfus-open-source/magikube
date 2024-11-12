@@ -42,6 +42,14 @@ const awsRegion: any[] = [
   },
   },
 ];
+const awsProfile: any[] = [
+  {
+    message: "Enter AWS profile to use: ",
+    name: "aws_profile",
+    type: "input",
+    default: "sample",
+  },
+];
 const awsPrompts: any[] = [
   {
     message: "Select a Region: ",
@@ -218,6 +226,10 @@ export default class PromptGenerator {
   
   getRegion(): any[]{
     return awsRegion;
+  }
+  
+  getAwsProfile():any[]{
+    return awsProfile;
   }
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {

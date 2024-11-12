@@ -3,89 +3,104 @@ import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
 
-export async function handlePrompts(args: any, flags: any): Promise<Answers> {
+export async function handlePrompts(args: any, flags: any, commandName?: any): Promise<Answers> {
   let responses: Answers = {
     project_name: args.name,
     project_id: uuidv4(),
-    empty: flags.empty || false,
   };
-  
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
-   if (flags.empty){
-      for (const prompt of promptGenerator.getCloudProvider()) {
-        const resp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...resp };
-      }
-
-      for (const cloudPrompt of promptGenerator.getRegion()) {
-        const cloudResp = await inquirer.prompt(cloudPrompt);
-        responses = { ...responses, ...cloudResp };
-      }
-
-      for (const envPrompt of promptGenerator.getEnvironment()) {
-        const envResp = await inquirer.prompt(envPrompt);
-        responses = { ...responses, ...envResp };
-      }
-   }else{
-    // Cloud Provider Prompt
-  for (const prompt of promptGenerator.getCloudProvider()) {
-    const resp = await inquirer.prompt(prompt);
-    responses = { ...responses, ...resp };
-
-    // Cloud Provider Specific Prompts
-    for (const cloudPrompt of promptGenerator.getCloudProviderPrompts(resp["cloud_provider"])) {
-      const cloudResp = await inquirer.prompt(cloudPrompt);
-      responses = { ...responses, ...cloudResp };
+  if (commandName === "new_sub") {
+    // For the 'new-sub' command, prompt only for Cloud Provider, Region, and Environment
+    for (const prompt of promptGenerator.getCloudProvider()) {
+      const resp = await inquirer.prompt(prompt);
+      responses = { ...responses, ...resp };
     }
 
-    // Credentials Prompt
-    const credentialPrompts = credentialsPrompts.getCredentialsPrompts(resp["cloud_provider"], responses);
-    if (credentialPrompts.length > 0) {
-      for (const prompt of credentialPrompts) {
-        const credentialResp = await inquirer.prompt(prompt);
-        responses = { ...responses, ...credentialResp };
-      }
-      credentialsPrompts.saveCredentials(responses);
+    for (const regionPrompt of promptGenerator.getRegion()) {
+      const regionResp = await inquirer.prompt(regionPrompt);
+      responses = { ...responses, ...regionResp };
     }
 
-    // Version Control Prompts
-    for (const vcPrompt of promptGenerator.getVersionControlPrompts(responses["source_code_repository"])) {
-      const vcResp = await inquirer.prompt(vcPrompt);
-      responses = { ...responses, ...vcResp };
+    for (const regionPrompt of promptGenerator.getAwsProfile()) {
+      const regionResp = await inquirer.prompt(regionPrompt);
+      responses = { ...responses, ...regionResp };
     }
 
-    // Environment Prompts
     for (const envPrompt of promptGenerator.getEnvironment()) {
       const envResp = await inquirer.prompt(envPrompt);
       responses = { ...responses, ...envResp };
+    }
+  } 
+    // Original logic for other commands
+    // if (flags.empty) {
+    //   for (const prompt of promptGenerator.getCloudProvider()) {
+    //     const resp = await inquirer.prompt(prompt);
+    //     responses = { ...responses, ...resp };
+    //   }
 
-      // Lifecycle Prompts
-      for (const lifecyclePrompt of promptGenerator.getLifecycles(envResp["environment"])) {
-        const lifecycleResp = await inquirer.prompt(lifecyclePrompt);
-        responses = { ...responses, ...lifecycleResp };
+    //   for (const cloudPrompt of promptGenerator.getRegion()) {
+    //     const cloudResp = await inquirer.prompt(cloudPrompt);
+    //     responses = { ...responses, ...cloudResp };
+    //   }
+
+    //   for (const envPrompt of promptGenerator.getEnvironment()) {
+    //     const envResp = await inquirer.prompt(envPrompt);
+    //     responses = { ...responses, ...envResp };
+    //   }
+    // }
+     else {
+      // Continue with the full set of prompts as in the original code
+      for (const prompt of promptGenerator.getCloudProvider()) {
+        const resp = await inquirer.prompt(prompt);
+        responses = { ...responses, ...resp };
+
+        for (const cloudPrompt of promptGenerator.getCloudProviderPrompts(resp["cloud_provider"])) {
+          const cloudResp = await inquirer.prompt(cloudPrompt);
+          responses = { ...responses, ...cloudResp };
+        }
+
+        const credentialPrompts = credentialsPrompts.getCredentialsPrompts(resp["cloud_provider"], responses);
+        if (credentialPrompts.length > 0) {
+          for (const prompt of credentialPrompts) {
+            const credentialResp = await inquirer.prompt(prompt);
+            responses = { ...responses, ...credentialResp };
+          }
+          credentialsPrompts.saveCredentials(responses);
+        }
+
+        for (const vcPrompt of promptGenerator.getVersionControlPrompts(responses["source_code_repository"])) {
+          const vcResp = await inquirer.prompt(vcPrompt);
+          responses = { ...responses, ...vcResp };
+        }
+
+        for (const envPrompt of promptGenerator.getEnvironment()) {
+          const envResp = await inquirer.prompt(envPrompt);
+          responses = { ...responses, ...envResp };
+
+          for (const lifecyclePrompt of promptGenerator.getLifecycles(envResp["environment"])) {
+            const lifecycleResp = await inquirer.prompt(lifecyclePrompt);
+            responses = { ...responses, ...lifecycleResp };
+          }
+        }
+
+        for (const domainPrompt of promptGenerator.getDomainPrompt()) {
+          const domainResp = await inquirer.prompt(domainPrompt);
+          responses = { ...responses, ...domainResp };
+        }
       }
-    }
 
-    // Domain Prompt
-    for (const domainPrompt of promptGenerator.getDomainPrompt()) {
-      const domainResp = await inquirer.prompt(domainPrompt);
-      responses = { ...responses, ...domainResp };
-    }
+      for (const frontendPrompt of promptGenerator.getFrontendApplicationType()) {
+        const frontendResp = await inquirer.prompt(frontendPrompt);
+        responses = { ...responses, ...frontendResp };
+      }
+
+      for (const backendPrompt of promptGenerator.getBackendApplicationType()) {
+        const backendResp = await inquirer.prompt(backendPrompt);
+        responses = { ...responses, ...backendResp };
+      }
+    
   }
-
-  // Frontend and Backend Prompts
-  for (const frontendPrompt of promptGenerator.getFrontendApplicationType()) {
-    const frontendResp = await inquirer.prompt(frontendPrompt);
-    responses = { ...responses, ...frontendResp };
-  }
-
-  for (const backendPrompt of promptGenerator.getBackendApplicationType()) {
-    const backendResp = await inquirer.prompt(backendPrompt);
-    responses = { ...responses, ...backendResp };
-  }
-
-   }
   
   return responses;
 }

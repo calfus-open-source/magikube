@@ -7,18 +7,22 @@ import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
 import * as fs from "fs";
 import path, { join } from "path";
 import { Colours } from "../../../prompts/constants.js";
+import RestartTerraformProject from "../../../core/restartTerraform-project.js";
+import { eksVpcmodules } from "../../../core/constants/constants.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
   if (pattern.test(input)) {
     console.log("Input is valid.");
   } else {
-    console.error(`\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`);
+    console.error(
+      `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`
+    );
     process.exit(1);
   }
 }
 
-export default class CreateEmptyProject extends BaseCommand {
+export default class CustomTemplatesProject extends BaseCommand {
   static args = {
     name: Args.string({
       description: "Project name to be created",
@@ -33,54 +37,91 @@ export default class CreateEmptyProject extends BaseCommand {
     }),
   };
 
-  static description = "Create a project either using a template or as an empty project with .magikube";
+  static description =
+    "Create a project either using a template or as an empty project with .magikube";
 
   // List of predefined templates
-  private predefinedTemplates = ["template1", "template2", "template3", "template4", "template5", "template6"];
+  private predefinedTemplates = ["demoeks", "demonode", "demovpc"];
 
   async run(): Promise<void> {
-    const { args, flags } = await this.parse(CreateEmptyProject);
+    const { args, flags } = await this.parse(CustomTemplatesProject);
+    console.log(flags.template, "flags.template");
     validateUserInput(args.name);
-    AppLogger.configureLogger(args.name);
-    AppLogger.info("Logger Started ...");
-
     const projectFolderPath = path.join(process.cwd(), args.name);
-    const projectConfigFile = join(projectFolderPath, '.magikube');
+    const projectConfigFile = join(projectFolderPath, ".magikube");
 
-    // Check if the template flag is provided and not empty
+    // Check if the template is present
     if (flags.template) {
+      AppLogger.configureLogger();
+      AppLogger.info("Logger Started ...");
       const template = flags.template.trim();
-       console.log(template,"<<<<<<template")
       if (this.predefinedTemplates.includes(template)) {
-        // Create the project folder and the .magikube file after handling template logic
-        AppLogger.info(`Creating project with template: ${template}`, true);
-
-        const responses: Answers = await handlePrompts(args, flags);
+        const responses: Answers = await handlePrompts(args, flags, this.id);
+        responses.template = template;
         SystemConfig.getInstance().mergeConfigs(responses);
         const projectConfig = SystemConfig.getInstance().getConfig();
-
-        AppLogger.debug(`Creating project '${args.name}' in the path`, true);
         if (!fs.existsSync(projectFolderPath)) {
           fs.mkdirSync(projectFolderPath, { recursive: true });
-          fs.writeFileSync(projectConfigFile, JSON.stringify(projectConfig, null, 4));
+          fs.writeFileSync(
+            projectConfigFile,
+            JSON.stringify(projectConfig, null, 4)
+          );
+        }
+        AppLogger.info(`Creating project with template: ${template}`, true);
+        AppLogger.debug(`Creating project '${args.name}' in the path`, true);
+        const terraform = await RestartTerraformProject.getProject(
+          this,
+          args.name
+        );
+        //const projectPath = path.join(process.cwd(), args.name);
+        const infrastructurePath = path.join(
+          projectFolderPath,
+          "infrastructure"
+        );
+        console.log(terraform, "<<<<<<terraform");
+        if (terraform) {
+          await terraform.createProject(args.name, process.cwd());
+          if (projectConfig.cloud_provider === "aws") {
+            console.log(projectConfig["aws_profile"],"projectConfig[aws_profile]");
+            await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
+          }
+          // await new Promise((resolve) => setTimeout(resolve, 15000));
+          console.log("***************")
+          console.log(`${projectConfig["environment"]}-config.tfvars`,"________________________");
+          
+          await terraform?.runTerraformInit(
+            process.cwd() + "/" + args.name + "/infrastructure",
+            `${projectConfig["environment"]}-config.tfvars`,
+            args.name
+          );
+          console.log("++++++++++++++++++++++++++++++")
+          for (const module of eksVpcmodules) {
+            await terraform?.runTerraformApply(
+              process.cwd() + "/" + args.name + "/infrastructure",
+              module,
+              "terraform.tfvars"
+            );
+          }
+          console.log("##############")
         }
       } else {
         AppLogger.error(`Template : ${flags.template} is not valid `);
         process.exit(1);
       }
-    } 
-    else {
-      // If no template is provided, create an empty project
+    } else {
+      AppLogger.configureLogger(args.name);
+      AppLogger.info("Logger Started ...");
+      const responses: Answers = await handlePrompts(args, flags, this.id);
       AppLogger.info("Creating an empty project...", true);
-
-      const responses: Answers = await handlePrompts(args, flags);
       SystemConfig.getInstance().mergeConfigs(responses);
       const projectConfig = SystemConfig.getInstance().getConfig();
-
       AppLogger.debug(`Creating project '${args.name}' in the path`, true);
       if (!fs.existsSync(projectFolderPath)) {
         fs.mkdirSync(projectFolderPath, { recursive: true });
-        fs.writeFileSync(projectConfigFile, JSON.stringify(projectConfig, null, 4));
+        fs.writeFileSync(
+          projectConfigFile,
+          JSON.stringify(projectConfig, null, 4)
+        );
       }
     }
 

@@ -56,6 +56,7 @@ function validateUserInput(input: string): void {
       // Get the project name from the command line arguments
       const projectName = args.name;
       const terraform = await TerraformProject.getProject(this);
+      console.log(terraform, "<<<<<<terraform");
       const projectConfig = SystemConfig.getInstance().getConfig();
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(command as BaseCommand, projectConfig)

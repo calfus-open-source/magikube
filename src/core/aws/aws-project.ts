@@ -60,7 +60,7 @@ export default class AWSProject extends BaseProject {
                 backend_app_name = this.config.node_app_name;
             }
             await createApplication.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name, project_name);
-            
+
             if (awsStatus) {
                 await super.destroyProject(name, path);
             }
@@ -156,6 +156,9 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
+        console.log(projectPath);
+        console.log(backend);
+        console.log(projectName);
         AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
         const progressBar = ProgressBar.createProgressBar();
         progressBar.start(100, 0, { message: 'Terraform Init in progress...' });
@@ -211,9 +214,9 @@ export default class AWSProject extends BaseProject {
                     }
                 });
     
-            } catch (error) {
+            } catch (error:any) {
                 progressBar.stop(); // Close progress bar on error
-                AppLogger.error(`Failed to initialize terraform process: ${error}`, true);
+                AppLogger.error(`Failed to initialize terraform process: ${error.message}`, true);
                 reject(error); // Reject promise on error     
             }
         });
