@@ -11,7 +11,6 @@ export async function handlePrompts(args: any, flags: any, commandName?: any): P
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
   if (commandName === "new_sub") {
-    // For the 'new-sub' command, prompt only for Cloud Provider, Region, and Environment
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);
       responses = { ...responses, ...resp };
@@ -26,30 +25,22 @@ export async function handlePrompts(args: any, flags: any, commandName?: any): P
       const regionResp = await inquirer.prompt(regionPrompt);
       responses = { ...responses, ...regionResp };
     }
+    
+    const credentialPrompts = credentialsPrompts.getCredentialsPrompts(responses["cloud_provider"], responses );
+      if (credentialPrompts.length > 0) {
+        for (const prompt of credentialPrompts) {
+          const credentialResp = await inquirer.prompt(prompt);
+          responses = { ...responses, ...credentialResp };
+        }
+        credentialsPrompts.saveCredentials(responses);
+      }
 
     for (const envPrompt of promptGenerator.getEnvironment()) {
       const envResp = await inquirer.prompt(envPrompt);
       responses = { ...responses, ...envResp };
     }
-  } 
-    // Original logic for other commands
-    // if (flags.empty) {
-    //   for (const prompt of promptGenerator.getCloudProvider()) {
-    //     const resp = await inquirer.prompt(prompt);
-    //     responses = { ...responses, ...resp };
-    //   }
-
-    //   for (const cloudPrompt of promptGenerator.getRegion()) {
-    //     const cloudResp = await inquirer.prompt(cloudPrompt);
-    //     responses = { ...responses, ...cloudResp };
-    //   }
-
-    //   for (const envPrompt of promptGenerator.getEnvironment()) {
-    //     const envResp = await inquirer.prompt(envPrompt);
-    //     responses = { ...responses, ...envResp };
-    //   }
-    // }
-     else {
+    
+  } else {
       // Continue with the full set of prompts as in the original code
       for (const prompt of promptGenerator.getCloudProvider()) {
         const resp = await inquirer.prompt(prompt);
@@ -98,9 +89,7 @@ export async function handlePrompts(args: any, flags: any, commandName?: any): P
       for (const backendPrompt of promptGenerator.getBackendApplicationType()) {
         const backendResp = await inquirer.prompt(backendPrompt);
         responses = { ...responses, ...backendResp };
-      }
-    
+      }  
   }
-  
   return responses;
 }

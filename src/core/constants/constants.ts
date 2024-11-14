@@ -22,4 +22,4 @@ export const getServices = (frontendAppType: string) => [
     "gitops"
 ];
 
-export const eksVpcmodules = ["module.vpc", "module.eks"];
+export const eksVpcModules = ["module.vpc", "module.eks"];

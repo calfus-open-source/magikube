@@ -4,7 +4,7 @@ import TerraformProject from '../../core/terraform-project.js';
 import SystemConfig from '../../config/system.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { readStatusFile } from '../../core/utils/statusUpdater-utils.js';
-import { readProjectConfig } from '../../core/utils/magikubeConfigreader.js';
+import { dotMagikubeConfig } from "../../core/utils/projectConfigReader-utils.js";
 import { runTerraformUnlockCommands } from '../../core/utils/unlockTerraformState-utils.js';
 import path from 'path';
 import { executeCommandWithRetry } from '../../core/common-functions/execCommands.js';
@@ -30,7 +30,7 @@ Destroying magikube project named 'sample' in the current directory`,
     const { args, flags } = await this.parse(DestroyProject);
     const projectPath = path.join(process.cwd(), args.name);
     AppLogger.configureLogger(args.name, false);
-    const responses = readProjectConfig(args.name, process.cwd());
+    const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(args.name);
     const infrastructurePath = path.join(projectPath, 'infrastructure')
     responses.dryrun = flags.dryrun || false;
