@@ -148,44 +148,59 @@ export default abstract class BaseProject {
         const templateFile = fs.readFileSync(join(process.cwd(), templateFilename), 'utf8');
         return await this.engine.parseAndRender(templateFile, { ...this.config });
     }
-    
-    async copyFolderAndRender(source: string, destination: string): Promise<void> {
-        const fullPath = join(new URL('.', import.meta.url).pathname, source);
+
+    async copyFolderAndRender( source: string,destination: string): Promise<void> {
+        try {
+        const fullPath = join(source);
         const destFullPath = join(this.projectPath, destination);
-        
+
         if (!fs.existsSync(fullPath)) {
-            AppLogger.error(`Source path ${fullPath} does not exist`);
-            return;
+            const errorMsg = `Source path ${fullPath} does not exist`;
+            AppLogger.error(errorMsg);
+            throw new Error(errorMsg);
         }
-        
-        const files = fs.readdirSync(fullPath, 'utf8');
-    
+
+        const files = fs.readdirSync(fullPath, "utf8");
         for (const file of files) {
+            if (file === ".DS_Store") continue;
+
             const srcPath = join(fullPath, file);
             const destPath = join(destFullPath, file);
+            try {
             const stat = fs.statSync(srcPath);
-        
             if (stat.isDirectory()) {
                 if (!fs.existsSync(destPath)) {
-                    fs.mkdirSync(destPath, { recursive: true });
+                fs.mkdirSync(destPath, { recursive: true });
                 }
-                await this.copyFolderAndRender(join(source, file), join(destination, file));
-            } else if (file.endsWith('.liquid')) {
-                const templateFile = fs.readFileSync(srcPath, 'utf8');
-                const output = await this.engine.parseAndRender(templateFile, { ...this.config });
-    
-                const outputFilePath = destPath.replace('.liquid', '');
+                await this.copyFolderAndRender(
+                join(source, file),
+                join(destination, file)
+                );
+            } else if (file.endsWith(".liquid")) {
+                const templateFile = fs.readFileSync(srcPath, "utf8");
+                const output = await this.engine.parseAndRender(templateFile, {
+                ...this.config,
+                });
+
+                const outputFilePath = destPath.replace(".liquid", "");
                 if (!fs.existsSync(dirname(outputFilePath))) {
-                    fs.mkdirSync(dirname(outputFilePath), { recursive: true });
+                fs.mkdirSync(dirname(outputFilePath), { recursive: true });
                 }
-    
+
                 fs.writeFileSync(outputFilePath, output);
             } else {
                 if (!fs.existsSync(dirname(destPath))) {
-                    fs.mkdirSync(dirname(destPath), { recursive: true });
+                fs.mkdirSync(dirname(destPath), { recursive: true });
                 }
                 fs.copyFileSync(srcPath, destPath);
             }
+            } catch (fileError: any) {
+            AppLogger.error(`Error processing file or directory: ${srcPath}. Details: ${fileError.message}`,true);
+            }
+        }
+        } catch (error: any) {
+        AppLogger.error(`Error in copyFolderAndRender: ${error.message}`,true);
+        throw error; 
         }
     }
 }
