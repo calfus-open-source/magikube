@@ -21,18 +21,18 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
 
-    this.createFile("main.tf", "../templates/aws/eks-nodegroup/main.tf.liquid", "/infrastructure");
+    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/eks-nodegroup/main.tf.liquid`, "/infrastructure", true);
     this.createFile(
       "terraform.tfvars",
-      "../templates/aws/eks-nodegroup/terraform.tfvars.liquid" , "/infrastructure"
+      `${process.cwd()}/dist/templates/aws/eks-nodegroup/terraform.tfvars.liquid` , "/infrastructure", true
     );
     this.createFile(
       "variables.tf",
-      "../templates/aws/eks-nodegroup/variables.tf.liquid" , "/infrastructure"
+      `${process.cwd()}/dist/templates/aws/eks-nodegroup/variables.tf.liquid` , "/infrastructure", true
     );
     this.createFile(
       `${this.config.environment}-config.tfvars`,
-      "../templates/aws/eks-nodegroup/backend-config.tfvars.liquid" , "/infrastructure"
+      `${process.cwd()}/dist/templates/aws/eks-nodegroup/backend-config.tfvars.liquid` , "/infrastructure", true
     );
     this.createCommon();
     this.createEKSng();
@@ -44,13 +44,15 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
   async createEKSng(): Promise<void> {
     this.createFile(
       "main.tf",
-      "../templates/aws/modules/eks-nodegroup/main.tf.liquid",
-      "/infrastructure/modules/eks-nodegroup"
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/main.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
     );
     this.createFile(
       "variables.tf",
-      "../templates/aws/modules/eks-nodegroup/variables.tf.liquid",
-      "/infrastructure/modules/eks-nodegroup"
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/variables.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
     );
   }
 }

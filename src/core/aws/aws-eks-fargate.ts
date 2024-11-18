@@ -3,6 +3,7 @@ import gitOpsProject from "../gitops/common-gitops.js";
 import AWSProject from "./aws-project.js";
 import repositoryProject from "../code-repository/common-repository.js";
 import argoCdProject from "../argocd/setup-argocd.js";
+import fs from 'fs-extra';
 
 export default class EKSFargateProject extends AWSProject {
   private path:string | undefined
@@ -20,20 +21,10 @@ export default class EKSFargateProject extends AWSProject {
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
-    
-    this.createFile("main.tf", "../templates/aws/eks-fargate/main.tf.liquid" , "/infrastructure");
-    this.createFile(
-      "terraform.tfvars",
-      "../templates/aws/eks-fargate/terraform.tfvars.liquid" ,"/infrastructure"
-    );
-    this.createFile(
-      "variables.tf",
-      "../templates/aws/eks-fargate/variables.tf.liquid" , "/infrastructure"
-    );
-    this.createFile(
-      `${this.config.environment}-config.tfvars`,
-      "../templates/aws/eks-fargate/backend-config.tfvars.liquid" , "/infrastructure"
-    );
+    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/eks-fargate/main.tf.liquid` , `/infrastructure`, true);
+    this.createFile( "terraform.tfvars",`${process.cwd()}/dist/templates/aws/eks-fargate/terraform.tfvars.liquid` ,`/infrastructure`, true);
+    this.createFile( "variables.tf",`${process.cwd()}/dist/templates/aws/eks-fargate/variables.tf.liquid`, "/infrastructure", true);
+    this.createFile( `${this.config.environment}-config.tfvars`, `${process.cwd()}/dist/templates/aws/eks-fargate/backend-config.tfvars.liquid` , "/infrastructure", true);
 
     this.createCommon();
     this.createEKS();
@@ -45,13 +36,15 @@ export default class EKSFargateProject extends AWSProject {
   async createEKS(): Promise<void> {
     this.createFile(
       "main.tf",
-      "../templates/aws/modules/eks-fargate/main.tf.liquid",
-      "/infrastructure/modules/eks-fargate"
+      `${process.cwd()}/dist/templates/aws/modules/eks-fargate/main.tf.liquid`,
+      "/infrastructure/modules/eks-fargate",
+      true
     );
     this.createFile(
       "variables.tf",
-      "../templates/aws/modules/eks-fargate/variables.tf.liquid",
-      "/infrastructure/modules/eks-fargate"
+      `${process.cwd()}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
+      "/infrastructure/modules/eks-fargate",
+      true
     );
   }
 }
