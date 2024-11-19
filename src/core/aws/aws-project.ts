@@ -16,27 +16,34 @@ import { updateStatusFile } from '../utils/statusUpdater-utils.js';
 let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
-    async createProject(name: string, path: string): Promise<void> {
-        await super.createProject(name, path);
-    
-        if (!this.config.dryrun) {
-            await AWSPolicies.create(
-                this,
-                this.config.aws_region,
-                this.config.aws_access_key_id,
-                this.config.aws_secret_access_key,
-                this.config.project_name
-                );
-        
-            await AWSTerraformBackend.create(
-                this,
-                this.config.project_id,
-                this.config.aws_region,
-                this.config.aws_access_key_id,
-                this.config.aws_secret_access_key
-            );
-        }
+    async createProject(name: string, path: string, commandName?: string): Promise<void> {
+      console.log(`Command Name: ${commandName}`);    
+      if(commandName!=="new_module"){
+        await super.createProject(name, path); 
+        console.log("^^^^^^^^^^^")
+      }
+      console.log("&&&&&&&&&&");
+  
+      if (!this.config.dryrun) {
+        await AWSPolicies.create(
+          this,
+          this.config.aws_region,
+          this.config.aws_access_key_id,
+          this.config.aws_secret_access_key,
+          this.config.project_name
+        );
+  
+        await AWSTerraformBackend.create(
+          this,
+          this.config.project_id,
+          this.config.aws_region,
+          this.config.aws_access_key_id,
+          this.config.aws_secret_access_key
+        );
+      }
     }
+  
+  
 
     async destroyProject(name: string, path: string): Promise<void> {
         let awsStatus = false;
@@ -99,6 +106,22 @@ export default class AWSProject extends BaseProject {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/vpc/main.tf.liquid`, '/infrastructure/modules/vpc',true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/vpc/variables.tf.liquid`, '/infrastructure/modules/vpc',true);
     }
+
+    async createEKS(): Promise<void> {
+        this.createFile(
+          "main.tf",
+          `${process.cwd()}/dist/templates/aws/modules/eks-fargate/main.tf.liquid`,
+          "/infrastructure/modules/eks-fargate",
+          true
+        );
+        this.createFile(
+          "variables.tf",
+          `${process.cwd()}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
+          "/infrastructure/modules/eks-fargate",
+          true
+        );
+      }
+
     async createRds() : Promise<void> {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/rds/main.tf.liquid`, '/infrastructure/modules/rds',true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/rds/variables.tf.liquid` , '/infrastructure/modules/rds', true);
