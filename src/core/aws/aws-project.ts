@@ -3,7 +3,6 @@ import AWSTerraformBackend from "./aws-tf-backend.js";
 import AWSPolicies from "./aws-iam.js";
 import { spawn, execSync } from 'child_process';
 import fs from 'fs';
-import * as path from 'path';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
 import { AppLogger } from '../../logger/appLogger.js';
@@ -12,18 +11,16 @@ import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
 import { executeCommandWithRetry } from '../common-functions/execCommands.js';
 import { updateStatusFile } from '../utils/statusUpdater-utils.js';
+import { join } from 'path';
+import SystemConfig from '../../config/system.js';
 
 let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
-    async createProject(name: string, path: string, commandName?: string): Promise<void> {
-      console.log(`Command Name: ${commandName}`);    
-      if(commandName!=="new_module"){
-        await super.createProject(name, path); 
-        console.log("^^^^^^^^^^^")
-      }
-      console.log("&&&&&&&&&&");
-  
+    async createProject(name: string, path: string, commandName?: string): Promise<void> {  
+         const projectConfig = SystemConfig.getInstance().getConfig();
+         console.log(projectConfig, "<<<<<<<<<<<<projectConfig");
+        await super.createProject(name, path);      
       if (!this.config.dryrun) {
         await AWSPolicies.create(
           this,
@@ -259,7 +256,7 @@ export default class AWSProject extends BaseProject {
 
 async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
     AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
-
+    console.log(module, "<<<<<<<<<<module");
     return new Promise((resolve, reject) => {
         try {
             AppLogger.info(`Creating module: ${module}`, true);
@@ -357,8 +354,8 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
 
     async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {
         // Path to the existing kubeconfig file
-        const kubeconfigDir = path.join(os.homedir(), '.kube');
-        const kubeconfigFilePath = path.join(kubeconfigDir, 'config');
+        const kubeconfigDir = join(os.homedir(), '.kube');
+        const kubeconfigFilePath = join(kubeconfigDir, 'config');
 
         // Ensure the .kube directory exists
         if (!fs.existsSync(kubeconfigDir)) {

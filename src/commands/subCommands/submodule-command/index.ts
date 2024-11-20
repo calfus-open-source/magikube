@@ -1,77 +1,110 @@
-
-import * as fs from "fs";
-import * as path from "path";
-import { AppLogger } from "../../../logger/appLogger.js";
-import { Colours } from "../../../prompts/constants.js";
+import { Args, Flags } from "@oclif/core";
 import BaseCommand from "../../base.js";
-import { Args,Flags } from "@oclif/core";
-import SubModuleTemplate from "../../../core/submoduleTerraform.js";
+import SystemConfig from "../../../config/system.js";
+import { AppLogger } from "../../../logger/appLogger.js";
+import { initializeStatusFile, readStatusFile } from "../../../core/utils/statusUpdater-utils.js";
+import {eksVpcModules,getServices,modules,} from "../../../core/constants/constants.js";
+import AWSAccount from "../../../core/aws/aws-account.js";
+import path from "path";
+import fs from "fs"
+import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
+import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
+import { Colours } from "../../../prompts/constants.js";
+import TerraformProject from "../../../core/terraform-project.js";
 
-
-function validateUserInput(input: string): void {
-    const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
-    if (pattern.test(input)) {
-      console.log("Input is valid.");
-    } else {
-      console.error(
-        `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`
-      );
-      process.exit(1);
-    }
+function validateModuleInput(input: string): void {
+  const pattern = /^[a-zA-Z0-9_-]+$/;
+  if (pattern.test(input)) {
+    console.log("Module name is valid.");
+  } else {
+    console.error(
+      `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Module Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must contain only alphanumeric characters, dashes (-), or underscores (_).\n \n`
+    );
+    process.exit(1);
   }
+}
 
-  export default class SingleModuleTemplatesProject extends BaseCommand{
-    static args = {
-        moduleType: Args.string({
-            description:"Module to be created",
-            required:true
-        }),
-        moduleName: Args.string({
-            description:"Module name to be created",
-            required:true
-        }),
-    };
+export default class NewModule extends BaseCommand {
+  static args = {
+    projectName: Args.string({
+      description: "Base project name",
+      required: true,
+    }),
+    moduleType: Args.string({
+      description: "Type of module (e.g., eks-fargate, k8s)",
+      required: true,
+    }),
+    moduleName: Args.string({
+      description: "Name of the module to be created",
+      required: true,
+    }),
+  };
 
-    // static flags:{
-    //     template: Flags.string({
-    //         char:"p"
-    //     }),
-    // };
+  static description = "Create a new module in an existing Magikube project";
+  static examples = [
+    `<%= config.bin %> <%= command.id %> myProject eks-fargate myNewModule
+    Creates a new module named 'myNewModule' of type 'eks-fargate' in the project 'myProject'`,
+  ];
 
-    static description = "Create an individual module";
+ async run(): Promise<void> {
+  const { args } = await this.parse(NewModule);
 
-    static examples = [
-        `<%= config.bin %> <%= command.id %> sample
-        Creating a new module in the project of the current directory`,
-        `<%= config.bin %> <%= command.id %> sample -p templateName
-        Creating a new module named 'sample' using 'templateName' template in the current directory`,
-    ];
+  // Validate module name
+  validateModuleInput(args.moduleName);
+  const { projectName, moduleType, moduleName } = args;
+  AppLogger.configureLogger();
+  AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
-    async run(): Promise<void>{
-        const { args, flags } = await this.parse(SingleModuleTemplatesProject);
-        validateUserInput(args.moduleName);
-        const moduleType = args.moduleType;
-        const moduleName = args.moduleName || ''; // Default to an empty string if not provided
-        AppLogger.configureLogger(args.moduleName);
-        AppLogger.info("Logger Started ...");
+  try {
+    // Check for .magikube file
+    const projectDir = path.resolve(projectName); // Resolve the project path
+    const magikubeFilePath = path.join(projectDir, ".magikube");
 
-        const currentWorkingDirectory = process.cwd();
-        const magikubeFilePath = path.join(currentWorkingDirectory, ".magikube");
-
-        if (!fs.existsSync(magikubeFilePath)) {
-            console.error(
-              `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} The .magikube file is missing in the current directory (${currentWorkingDirectory}). Please ensure the file exists before proceeding. \n \n`
-            );
-            process.exit(1);
-          }
-      
-          // Continue execution if the file exists
-          AppLogger.info(`The .magikube file exists in the directory: ${currentWorkingDirectory}. Proceeding...`);
-          
-          const commandId = this.id || "unknown_command";
-          console.log(commandId,"<<<<<<<<commandId")
-          const terraform = await SubModuleTemplate.getProject(this,moduleType, commandId);
-
-        }
-
+    if (!fs.existsSync(magikubeFilePath)) {
+       throw new Error(`The .magikube file is missing in the project: ${projectName}`);
     }
+    // Read and update .magikube file
+    const magikubeContent = JSON.parse(fs.readFileSync(magikubeFilePath, "utf-8"));
+    magikubeContent.moduleType = moduleType;
+    magikubeContent.moduleName = moduleName;
+    magikubeContent.command = this.id;
+    fs.writeFileSync(magikubeFilePath,JSON.stringify(magikubeContent, null, 2),"utf-8");
+    SystemConfig.getInstance().mergeConfigs(magikubeContent);
+    const terraform = await SubModuleTemplateProject.getProject(this, args.projectName);
+    const responses:any={}
+    const services = getServices(responses["frontend_app_type"]);
+    initializeStatusFile(projectName, modules, services);
+    
+    if (!terraform) { 
+      throw new Error("Failed to initialize Terraform project.");
+    }
+    const projectConfig = SystemConfig.getInstance().getConfig( );
+
+    const status = await readStatusFile(projectName);
+      if (terraform) {
+        await terraform.createProject(projectName, process.cwd());
+        if (projectConfig["cloud_provider"] === "aws") {
+          await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 15000));
+        await terraform?.runTerraformInit( process.cwd() + "/" + projectName + "/infrastructure",`${projectConfig["environment"]}-config.tfvars`,projectName);
+          try {AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
+            await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType,"terraform.tfvars");
+            AppLogger.debug(`Successfully applied Terraform for module: ${moduleType}`,true);
+          } catch (error) {
+            AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`,true);
+          }
+        
+      }
+
+    process.exit(0);
+  } catch (error) {
+    AppLogger.error(
+      `An error occurred during the module creation process: ${error}`,
+      true
+    );
+    process.exit(1);
+  }
+}
+}
+
