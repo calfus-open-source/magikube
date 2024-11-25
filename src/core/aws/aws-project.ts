@@ -421,40 +421,80 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
         AppLogger.debug('New cluster added to the kubeconfig file.');
     }
 
-    //playing Ansible Playbook one by one
-    async runAnsiblePlaybook(playbook: string, projectPath: string) {
-        let attempt = 0;
-        let success = false;
-        const maxRetries = 6;
-        const FIVE_MINUTES = 5 * 60 * 1000; 
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ${playbook}... Attempt ${attempt}, ${projectPath}`);
-                execSync(`ansible-playbook -v ../playbooks/${playbook}`, {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env,
-                    timeout: FIVE_MINUTES 
-                });
-                AppLogger.info(`${playbook} completed successfully.`, true);
-                success = true;
-            } catch (error:any) {
-                if (error.signal === 'SIGTERM') {
-                    AppLogger.error(`Timeout reached for ${playbook}. Process terminated.`, true);
-                } else {
-                    AppLogger.error(`An error occurred while running ${playbook}: ${error}`, true);
-                }
-                
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-    }
+  async runAnsiblePlaybook(playbook: string, projectPath: string) {
+    const maxRetries = 2;
+    const timeoutDuration = 10 * 60 * 1000; // 10 minutes
+    let attempt = 0;
+    let success = false;
 
+    while (attempt < maxRetries && !success) {
+      attempt++;
+      try {
+        AppLogger.debug( `Running ansible playbook ${playbook}... Attempt ${attempt}`);
+        const ansibleProcess = spawn(
+          "ansible-playbook",
+          [`-v`, `../playbooks/${playbook}`],
+          {
+            cwd: `${projectPath}/templates/aws/ansible/environments`,
+            env: process.env,
+            stdio: ["inherit", "pipe", "pipe"],
+          }
+        );
+
+        let lastLogTimestamp = Date.now();
+
+        // Monitor activity on stdout
+        ansibleProcess.stdout.on("data", (data) => {
+          lastLogTimestamp = Date.now();
+          process.stdout.write(data);
+        });
+
+        // Monitor activity on stderr
+        ansibleProcess.stderr.on("data", (data) => {
+          lastLogTimestamp = Date.now();
+          process.stderr.write(data);
+        });
+
+        // Monitor timeout
+        const timeout = setInterval(() => {
+          if (Date.now() - lastLogTimestamp > timeoutDuration) {
+            AppLogger.error(`No activity detected for ${timeoutDuration / 60000} minutes. Terminating playbook.`);
+            // ansibleProcess.kill("SIGTERM"); // Terminate the process
+            process.exit(1);
+          }
+        }, 10000); // Check every 10 seconds
+
+        // Wait for the process to complete
+        await new Promise((resolve, reject) => {
+          ansibleProcess.on("close", (code) => {
+            clearInterval(timeout); // Clear the timeout when the process exits
+            if (code === 0) {
+              resolve(code);
+            } else {
+              reject(
+                new Error(`Playbook ${playbook} exited with code ${code}`)
+              );
+            }
+          });
+
+          ansibleProcess.on("error", (err) => {
+            clearInterval(timeout); // Clear the timeout on error
+            reject(err);
+          });
+        });
+
+        AppLogger.info(`${playbook} completed successfully.`, true);
+        success = true; // Mark success if no errors
+      } catch (error: any) {
+        AppLogger.error(`An error occurred while running ${playbook}: ${error.message}`,true);
+        if (attempt >= maxRetries) {
+          AppLogger.error("Max retries reached. Exiting...", true);
+          process.exit(1); // Exit after max retries
+        }
+        AppLogger.debug( `Retrying playbook ${playbook}... (${attempt}/${maxRetries})`);
+      }
+    }
+  }
 }
+
 
