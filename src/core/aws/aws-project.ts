@@ -18,9 +18,7 @@ let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
     async createProject(name: string, path: string, commandName?: string): Promise<void> {  
-         const projectConfig = SystemConfig.getInstance().getConfig();
-         console.log(projectConfig, "<<<<<<<<<<<<projectConfig");
-        await super.createProject(name, path);      
+     await super.createProject(name, path);      
       if (!this.config.dryrun) {
         await AWSPolicies.create(
           this,
@@ -40,8 +38,6 @@ export default class AWSProject extends BaseProject {
       }
     }
   
-  
-
     async destroyProject(name: string, path: string): Promise<void> {
         let awsStatus = false;
         if (this.config.cloud_provider === 'aws') {

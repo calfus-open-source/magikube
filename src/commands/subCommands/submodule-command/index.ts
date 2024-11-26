@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs"
 import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
 import { Colours } from "../../../prompts/constants.js";
+import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
 
 function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
@@ -54,30 +55,26 @@ export default class NewModule extends BaseCommand {
 
   try {
     // Check for .magikube file
-    const projectDir = path.resolve(projectName); // Resolve the project path
-    const magikubeFilePath = path.join(projectDir, ".magikube");
-
-    if (!fs.existsSync(magikubeFilePath)) {
+    const projectDir = path.resolve(projectName);
+    const dotmagikubeFilePath = path.join(projectDir, ".magikube");
+    if (!fs.existsSync(dotmagikubeFilePath)) {
        throw new Error(`The .magikube file is missing in the project: ${projectName}`);
     }
-    // Read and update .magikube file
-    const magikubeContent = JSON.parse(fs.readFileSync(magikubeFilePath, "utf-8"));
+   
+    await cloneAndCopyTemplates();
+    const magikubeContent = JSON.parse(fs.readFileSync(dotmagikubeFilePath, "utf-8"));
     magikubeContent.moduleType = moduleType;
     magikubeContent.moduleName = moduleName;
     magikubeContent.command = this.id;
-    fs.writeFileSync(magikubeFilePath,JSON.stringify(magikubeContent, null, 2),"utf-8");
+    fs.writeFileSync(dotmagikubeFilePath,JSON.stringify(magikubeContent, null, 2),"utf-8");
     SystemConfig.getInstance().mergeConfigs(magikubeContent);
     const terraform = await SubModuleTemplateProject.getProject(this, args.projectName);
     const responses:any={}
     const services = getServices(responses["frontend_app_type"]);
     initializeStatusFile(projectName, modules, services);
-    
-    if (!terraform) { 
-      throw new Error("Failed to initialize Terraform project.");
-    }
     const projectConfig = SystemConfig.getInstance().getConfig( );
-
-    const status = await readStatusFile(projectName);
+    await readStatusFile(projectName);
+    
       if (terraform) {
         await terraform.createProject(projectName, process.cwd());
         if (projectConfig["cloud_provider"] === "aws") {
