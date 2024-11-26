@@ -1,16 +1,13 @@
-import { Args, Flags } from "@oclif/core";
+import { Args } from "@oclif/core";
 import BaseCommand from "../../base.js";
 import SystemConfig from "../../../config/system.js";
 import { AppLogger } from "../../../logger/appLogger.js";
 import { initializeStatusFile, readStatusFile } from "../../../core/utils/statusUpdater-utils.js";
-import {eksVpcModules,getServices,modules,} from "../../../core/constants/constants.js";
-import AWSAccount from "../../../core/aws/aws-account.js";
+import {getServices,modules,} from "../../../core/constants/constants.js";
 import path from "path";
 import fs from "fs"
 import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
-import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
 import { Colours } from "../../../prompts/constants.js";
-import TerraformProject from "../../../core/terraform-project.js";
 
 function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
@@ -89,7 +86,7 @@ export default class NewModule extends BaseCommand {
         await new Promise((resolve) => setTimeout(resolve, 15000));
         await terraform?.runTerraformInit( process.cwd() + "/" + projectName + "/infrastructure",`${projectConfig["environment"]}-config.tfvars`,projectName);
           try {AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
-            await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType,"terraform.tfvars");
+            await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType, moduleName, "terraform.tfvars");
             AppLogger.debug(`Successfully applied Terraform for module: ${moduleType}`,true);
           } catch (error) {
             AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`,true);

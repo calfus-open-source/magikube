@@ -254,22 +254,22 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
+async runTerraformApply(projectPath: string, module?: string, moduleName?:string, varFile?: string): Promise<void> {
     AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
     console.log(module, "<<<<<<<<<<module");
     return new Promise((resolve, reject) => {
         try {
             AppLogger.info(`Creating module: ${module}`, true);
-
             // Prepare the Terraform apply command with necessary arguments
             let args = ['apply', '-no-color', '-auto-approve'];
-            if (module) {
-                args.push(`-target=${module}`);
+            if (moduleName && module) {
+              args.push(`-target=module.${module}`);
+            } else if (module) {
+              args.push(`-target=${module}`);
             }
             if (varFile) {
                 args.push(`-var-file=${varFile}`);
             }
-
             const terraformProcess = spawn('terraform', args, {
                 cwd: projectPath,
                 env: process.env,
