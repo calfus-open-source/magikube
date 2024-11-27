@@ -50,7 +50,7 @@ export default class NewModule extends BaseCommand {
   // Validate module name
   validateModuleInput(args.moduleName);
   const { projectName, moduleType, moduleName } = args;
-  AppLogger.configureLogger();
+  AppLogger.configureLogger(projectName);
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
   try {
@@ -64,7 +64,7 @@ export default class NewModule extends BaseCommand {
     await cloneAndCopyTemplates();
     const magikubeContent = JSON.parse(fs.readFileSync(dotmagikubeFilePath, "utf-8"));
     magikubeContent.moduleType = moduleType;
-    magikubeContent.moduleName = moduleName;
+    magikubeContent.moduleNames = moduleName;
     magikubeContent.command = this.id;
     fs.writeFileSync(dotmagikubeFilePath,JSON.stringify(magikubeContent, null, 2),"utf-8");
     SystemConfig.getInstance().mergeConfigs(magikubeContent);
