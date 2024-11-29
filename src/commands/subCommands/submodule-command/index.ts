@@ -50,7 +50,7 @@ export default class NewModule extends BaseCommand {
   // Validate module name
   validateModuleInput(args.moduleName);
   const { projectName, moduleType, moduleName } = args;
-  AppLogger.configureLogger();
+  AppLogger.configureLogger(projectName);
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
   try {
