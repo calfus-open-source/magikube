@@ -21,20 +21,23 @@ export default class CommonSubModuleProject extends AWSProject {
     this.createFile("variables.tf",`${process.cwd()}/dist/templates/aws/predefined/submodule/${ moduleType}-module/variables.tf.liquid`,"/infrastructure",true);
     this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
 
-    // Call module-specific methods based on moduleType
-    if (moduleType.toLowerCase() === "vpc") {
-      this.createVpc();
-    } else if (moduleType.toLowerCase() === "eks") {
-      this.createEKS();
-    } else if (moduleType.toLowerCase() === "rds") {
-      this.createRds();
-    } else if (moduleType.toLowerCase() === "acm") {
-      this.createACM();
-    } else if (moduleType.toLowerCase() === "ecr") {
-      this.createECR();
-    } else {
-      console.error(`Unknown module type: ${moduleType}`);
-      process.exit(1);
+    if (Array.isArray(moduleType)) {
+      moduleType.forEach((type) => {
+        if (type.toLowerCase() === "vpc") {
+          this.createVpc();
+        } else if (type.toLowerCase() === "eks") {
+          this.createEKS();
+        } else if (type.toLowerCase() === "rds") {
+          this.createRds();
+        } else if (type.toLowerCase() === "acm") {
+          this.createACM();
+        } else if (type.toLowerCase() === "ecr") {
+          this.createECR();
+        } else {
+          console.error(`Unknown module type: ${type}`);
+          process.exit(1);
+        }
+      });
     }
   }
 }
