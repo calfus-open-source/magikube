@@ -63,16 +63,26 @@ export default class NewModule extends BaseCommand {
    
     await cloneAndCopyTemplates();
     const magikubeContent = JSON.parse(fs.readFileSync(dotmagikubeFilePath, "utf-8"));
-    magikubeContent.moduleType = moduleType;
-    magikubeContent.moduleNames = moduleName;
+    if (!Array.isArray(magikubeContent.moduleType)) {
+      magikubeContent.moduleType = magikubeContent.moduleType ? [magikubeContent.moduleType] : [];
+    }
+    if (!magikubeContent.moduleType.includes(moduleType)) {
+      magikubeContent.moduleType.push(moduleType);
+    }
+    if (!Array.isArray(magikubeContent.moduleName)) {
+      magikubeContent.moduleName = magikubeContent.moduleName ? [magikubeContent.moduleName] : [];
+    }
+    if (!magikubeContent.moduleName.includes(moduleName)) {
+      magikubeContent.moduleName.push(moduleName);
+    }
     magikubeContent.command = this.id;
-    fs.writeFileSync(dotmagikubeFilePath,JSON.stringify(magikubeContent, null, 2),"utf-8");
+    fs.writeFileSync(dotmagikubeFilePath, JSON.stringify(magikubeContent, null, 2), "utf-8");
     SystemConfig.getInstance().mergeConfigs(magikubeContent);
     const terraform = await SubModuleTemplateProject.getProject(this, args.projectName);
     const responses:any={}
     const services = getServices(responses["frontend_app_type"]);
     initializeStatusFile(projectName, modules, services);
-    const projectConfig = SystemConfig.getInstance().getConfig( );
+    const projectConfig = SystemConfig.getInstance().getConfig();
     await readStatusFile(projectName);
     
       if (terraform) {

@@ -252,7 +252,7 @@ export default class AWSProject extends BaseProject {
 
 async runTerraformApply(projectPath: string, module?: string, moduleName?:string, varFile?: string): Promise<void> {
     AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
-    console.log(module, "<<<<<<<<<<module");
+
     return new Promise((resolve, reject) => {
         try {
             AppLogger.info(`Creating module: ${module}`, true);
