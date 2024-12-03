@@ -256,7 +256,6 @@ async runTerraformApply(projectPath: string, module?: string, moduleName?:string
     return new Promise((resolve, reject) => {
         try {
             AppLogger.info(`Creating module: ${module}`, true);
-            // Prepare the Terraform apply command with necessary arguments
             let args = ['apply', '-no-color', '-auto-approve'];
             if (moduleName && module) {
               args.push(`-target=module.${module}`);
@@ -269,19 +268,16 @@ async runTerraformApply(projectPath: string, module?: string, moduleName?:string
             const terraformProcess = spawn('terraform', args, {
                 cwd: projectPath,
                 env: process.env,
-                stdio: ['inherit', 'pipe', 'pipe'] // Inherit stdin for proper signal handling
+                stdio: ['inherit', 'pipe', 'pipe'] 
             });
 
-            // Set up progress bar
-            const totalSteps = 100; // Adjust based on your estimation
+            const totalSteps = 100;
             const progressBar = ProgressBar.createProgressBar();
             progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
 
             terraformProcess.stdout.on('data', (data) => {
                 const output = data.toString();
                 AppLogger.info(`stdout: ${output}`);
-
-                // Regex to match "Creation complete" messages and update the progress bar
                 const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
                 let match;
                 while ((match = creationCompleteRegex.exec(output)) !== null) {
