@@ -1,6 +1,6 @@
 import { updateStatusFile,} from './statusUpdater-utils.js'; // Adjust the import path as necessary
 import { execSync } from 'child_process';
-import { getServices, modules } from "../../core/constants/constants.js";
+import { getServices, awsModules } from "../../core/constants/constants.js";
 import { AppLogger } from '../../logger/appLogger.js';
 import { readProjectConfig } from './magikubeConfigreader.js';
 import AWSProject from '../aws/aws-project.js';
@@ -12,7 +12,7 @@ export const handleEKS = async (projectName:string, responses:any,  terraform:an
     await terraform?.runTerraformInit(process.cwd() + "/" + projectName + "/infrastructure", `${responses["environment"]}-config.tfvars`, projectName);
     let allModulesAppliedSuccessfully = true;
 
-    for (const module of modules) {
+    for (const module of awsModules) {
         try {
             updateStatusFile(projectName, module, "fail");
             updateStatusFile(projectName, "terraform-apply", "fail");

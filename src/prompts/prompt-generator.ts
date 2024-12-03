@@ -1,4 +1,5 @@
 import SystemConfig from "../config/system.js";
+import { awsRegions, gcpRegions } from "../core/constants/constants.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
 
@@ -20,6 +21,22 @@ const nonProductionPrompts: any[] = [
   },
 ];
 
+const codeRepositoriesPrompts: any[] = [
+  {
+    message: "Source code repository: ",
+    name: "source_code_repository",
+    type: "list",
+    choices: [
+      VersionControl.GITHUB,
+      // VersionControl.CODECOMMIT,
+      VersionControl.BITBUCKET,
+    ],
+    default:
+      VersionControl.GITHUB ||
+      SystemConfig.getInstance().getConfig().source_code_repository,
+  },
+];
+
 const awsPrompts: any[] = [
   {
     message: "Select a Region: ",
@@ -30,11 +47,6 @@ const awsPrompts: any[] = [
     type: "input",
     // Validate the input
     validate: function(input: string) {
-      const awsRegions = ['us-east-1', 'us-east-2', 'us-west-1',
-                          'us-west-2', 'af-south-1', 'ap-east-1', 'ap-south-1', 'ap-northeast-3',
-                          'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
-                          'ca-central-1', 'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-south-1',
-                          'eu-west-3', 'eu-north-1', 'me-south-1', 'sa-east-1'];
       if (awsRegions.includes(input)) {
           return true;
       } else {
@@ -54,19 +66,45 @@ const awsPrompts: any[] = [
     type: "input",
     default: "sample",
   },
+
+];
+
+const gcpPrompts: any[] = [
   {
-    message: "Source code repository: ",
-    name: "source_code_repository",
-    type: "list",
-    choices: [
-      VersionControl.GITHUB,
-      // VersionControl.CODECOMMIT,
-      VersionControl.BITBUCKET,
-    ],
+    message: "Select a Region: ",
+    name: "gcp_region",
     default:
-      VersionControl.GITHUB ||
-      SystemConfig.getInstance().getConfig().source_code_repository,
+      process.env.GCP_REGION ||
+      SystemConfig.getInstance().getConfig().aws_region,
+    type: "input",
+    validate: function (input: string) {
+      if (gcpRegions.includes(input)) {
+        return true;
+      } else {
+        return `${Colours.boldText}${Colours.redColor}\n Invalid Region. Please enter existing region.${Colours.colorReset}`;
+      }
+    },
   },
+  {
+    choices: ["GKE", "k8s"],
+    message: "Select a Cluster Type:",
+    name: "cluster_type",
+    type: "list",
+  },
+  {
+    message: "Enter GCP Project ID: ",
+    name: "gcp_project_id",
+    type: "input",
+  },
+  {
+    message: "Enter a name for the Service Account: ",
+    name: "gcp_service_account",
+    type: "input", 
+  },
+];
+
+const azurePrompts: any[] = [
+
 ];
 
 const k8sPrompts: any[] = [
@@ -194,15 +232,24 @@ export default class PromptGenerator {
       : nonProductionPrompts;
   }
 
+  getRepositories(): any[] {
+    return codeRepositoriesPrompts;
+  }
+
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
     if (cloudProvider === CloudProvider.AWS) {
       return awsPrompts;
+    } 
+    if(cloudProvider === CloudProvider.GCP){
+      return gcpPrompts;
     }
-    else {
+    if(cloudProvider === CloudProvider.AZURE) {
+      return azurePrompts;
+    } else {
       // Handle unknown cloud providers or invalid input
-      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
+      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`,true);
       process.exit(1);
-  }
+    }
   }
 
 

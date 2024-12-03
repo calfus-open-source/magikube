@@ -12,7 +12,7 @@ import AWSAccount from "../../core/aws/aws-account.js";
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
-import { getServices, modules } from "../../core/constants/constants.js";
+import { getServices, awsModules, gcpModules, azureModules } from "../../core/constants/constants.js";
 import { handleEKS, handleK8s} from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 
@@ -67,8 +67,9 @@ function validateUserInput(input: string): void {
       const createApp = new CreateApplication(command as BaseCommand, projectConfig)
 
       const services = getServices(responses["frontend_app_type"]);
+      const modules = projectConfig.cloud_provider === "aws" ? awsModules : projectConfig.cloud_provider === "gcp" ? gcpModules : azureModules;
       initializeStatusFile(projectName, modules, services);
-      const status =  await readStatusFile(projectName)
+      const status = await readStatusFile(projectName);
       const {
         github_access_token: token,
         git_user_name: userName,
@@ -91,9 +92,11 @@ function validateUserInput(input: string): void {
         awsSecretKey,
         environment,
       };
+
+      if (responses['cloud_provider'] === 'aws') {
       const accountId = await AWSAccount.getAccountId(awsAccessKey, awsSecretKey, region);
       SystemConfig.getInstance().mergeConfigs({ accountId: accountId });
-      
+      }
       
       const setupGitopsServiceStatus = await createApp.setupGitops( projectConfig);
 
@@ -101,15 +104,16 @@ function validateUserInput(input: string): void {
         await terraform.createProject(projectName, process.cwd());
         if (responses['cloud_provider'] === 'aws') {
           await terraform.AWSProfileActivate(responses['aws_profile']);
+          if (responses["cluster_type"] === "eks-fargate" || responses["cluster_type"] === "eks-nodegroup") {
+              await handleEKS(projectName, responses, terraform, setupGitopsServiceStatus, configObject);
+          }
+          if (responses["cluster_type"] === "k8s") {
+              await handleK8s(projectName, responses, terraform, setupGitopsServiceStatus, configObject);
+          }
         }
-        if (responses["cluster_type"] === "eks-fargate" || responses["cluster_type"] === "eks-nodegroup") {
-        await handleEKS(projectName, responses, terraform, setupGitopsServiceStatus, configObject);
+        if (responses["cloud_provider"] === 'gcp'){
         }
-        if (responses["cluster_type"] === "k8s") {
-            await handleK8s(projectName, responses, terraform, setupGitopsServiceStatus, configObject);
-        }
-       
-         await setupAndPushServices(status, projectConfig, configObject)
+        await setupAndPushServices(status, projectConfig, configObject);
       }
 
       createApp.MoveFiles(projectName);

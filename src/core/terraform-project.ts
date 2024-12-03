@@ -4,6 +4,7 @@ import EKSFargateProject from './aws/aws-eks-fargate.js';
 import AWSK8SProject from './aws/aws-k8s.js';
 import AWSProject from './aws/aws-project.js';
 import EKSNodeGroupProject from './aws/aws-eks-nodegroup.js';
+import GKEProject from './gcp/gcp-gke.js';
 
 export default abstract class TerraformProject {    
     static async getProject(command: BaseCommand): Promise<AWSProject | null> {
@@ -20,9 +21,15 @@ export default abstract class TerraformProject {
                 return new EKSNodeGroupProject(command, config);
             
             command.error(`Cloud provider '${config.cloud_provider}' and cluster type '${config.cluster_type}' not supported`);
-        }   
-        
-        command.error(`Cloud provider '${config.cloud_provider}' not supported`);
+        }
+        if (config.cloud_provider === "gcp") {
+            if (config.cluster_type === "GKE")
+                return new GKEProject(command, config);
+
+            if (config.cluster_type === "k8s")
+                return new AWSK8SProject(command, config);
+        }  
+            command.error(`Cloud provider '${config.cloud_provider}' and cluster type '${config.cluster_type}' not supported`);
     }       
 
 }

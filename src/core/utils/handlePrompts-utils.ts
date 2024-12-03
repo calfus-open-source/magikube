@@ -24,6 +24,12 @@ export async function handlePrompts(args: any, flags: any): Promise<Answers> {
       responses = { ...responses, ...cloudResp };
     }
 
+    // repositories Prompts
+    for (const cloudPrompt of promptGenerator.getRepositories()) {
+      const codeRepository = await inquirer.prompt(cloudPrompt);
+      responses = { ...responses, ...codeRepository };
+    }
+
     // Credentials Prompt
     const credentialPrompts = credentialsPrompts.getCredentialsPrompts(resp["cloud_provider"], responses);
     if (credentialPrompts.length > 0) {

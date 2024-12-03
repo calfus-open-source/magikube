@@ -16,7 +16,7 @@ import { readStatusFile, updateStatusFile } from "../../core/utils/statusUpdater
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
-import { modules } from "../../core/constants/constants.js";
+import { awsModules } from "../../core/constants/constants.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 
 export default class RestartProject extends BaseCommand {
@@ -78,7 +78,7 @@ export default class RestartProject extends BaseCommand {
               await runTerraformUnlockCommands(projectPath, project_config);
               unlockCommandsExecuted = true;
           }
-          for (const module of modules) {
+          for (const module of awsModules) {
             if(status.modules[module] === "fail"){
               await executeCommandWithRetry(`export AWS_PROFILE=${responses.aws_profile}`, { cwd: infrastructurePath }, 1);
               await executeCommandWithRetry(`terraform destroy -target=${module} `, { cwd: infrastructurePath }, 1);
