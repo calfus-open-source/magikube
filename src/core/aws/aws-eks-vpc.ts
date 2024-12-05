@@ -12,10 +12,10 @@ export default class EKSVPCTemplateProject extends AWSProject {
   }
 
   async createMainFile(): Promise<void> { 
-    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/predefined/eks/main.tf.liquid` , `/infrastructure`, true);
-    this.createFile( "terraform.tfvars", `${process.cwd()}/dist/templates/aws/predefined/eks/terraform.tfvars.liquid` ,"/infrastructure", true);
-    this.createFile("variables.tf",`${process.cwd()}/dist/templates/aws/predefined/eks/variables.tf.liquid` , "/infrastructure", true);
-    this.createFile(`${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/eks/backend-config.tfvars.liquid` , "/infrastructure",true);
+    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/predefined/grouping-templates/eks-fargate-vpc/main.tf.liquid` , `/infrastructure`, true);
+    this.createFile( "terraform.tfvars", `${process.cwd()}/dist/templates/aws/predefined/grouping-templates/eks-fargate-vpc/terraform.tfvars.liquid` ,"/infrastructure", true);
+    this.createFile("variables.tf",`${process.cwd()}/dist/templates/aws/predefined/grouping-templates/eks-fargate-vpc/variables.tf.liquid` , "/infrastructure", true);
+    this.createFile(`${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/grouping-templates/eks-fargate-vpc/backend-config.tfvars.liquid` , "/infrastructure",true);
     this.createVpc();
     this.createEKS();
   }
