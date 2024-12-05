@@ -258,7 +258,7 @@ async runTerraformApply(projectPath: string,module?: string,varFile?: string,mod
       AppLogger.info(`Creating module: ${module || moduleName}`, true);
       // Prepare the Terraform apply command with necessary arguments
       const args = ['apply', '-no-color', '-auto-approve'];
-      if (module) {
+      if (module && projectConfig.command === "new") {
         console.log("************")
         args.push(`-target=${module}`);
       }
