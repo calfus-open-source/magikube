@@ -93,7 +93,7 @@ export default class NewModule extends BaseCommand {
         await new Promise((resolve) => setTimeout(resolve, 15000));
         await terraform?.runTerraformInit( process.cwd() + "/" + projectName + "/infrastructure",`${projectConfig["environment"]}-config.tfvars`,projectName);
           try {AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
-            await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType, moduleName, "terraform.tfvars");
+            await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType,"terraform.tfvars",moduleName);
             AppLogger.debug(`Successfully applied Terraform for module: ${moduleType}`,true);
           } catch (error) {
             AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`,true);

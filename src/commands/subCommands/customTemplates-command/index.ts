@@ -79,6 +79,7 @@ export default class CustomTemplatesProject extends BaseCommand {
         const templates:any= []
         const template = flags.template.trim();
         responses.template = template;
+        responses.command = this.id;
         SystemConfig.getInstance().mergeConfigs(responses);
         const projectConfig = SystemConfig.getInstance().getConfig();
         const terraform = await TemplateTerraformProject.getProject(this);
@@ -99,7 +100,7 @@ export default class CustomTemplatesProject extends BaseCommand {
           for (const module of eksVpcModules) {
             try {
               AppLogger.info(`Starting Terraform apply for module: ${module}`, true );
-              await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module, "terraform.tfvars" );
+              await terraform?.runTerraformApply( process.cwd() + "/" + projectName + "/infrastructure", module,  "terraform.tfvars" );
               AppLogger.debug(`Successfully applied Terraform for module: ${module}`,  true );
             } catch (error) {
               AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`,true );
