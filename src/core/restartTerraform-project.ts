@@ -5,7 +5,6 @@ import AWSK8SProject from "./aws/aws-k8s.js";
 import AWSProject from "./aws/aws-project.js";
 import EKSNodeGroupProject from "./aws/aws-eks-nodegroup.js";
 import { dotMagikubeConfig } from "./utils/projectConfigReader-utils.js";
-
 export default abstract class RestartTerraformProject {
   static async getProject(
     command: BaseCommand,
@@ -21,6 +20,8 @@ export default abstract class RestartTerraformProject {
 
       if (project_config.cluster_type === "eks-nodegroup")
         return new EKSNodeGroupProject(command, project_config);
+    
+   
 
       command.error(
         `Cloud provider '${project_config.cloud_provider}' and cluster type '${project_config.cluster_type}' not supported`

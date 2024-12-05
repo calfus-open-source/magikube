@@ -22,4 +22,6 @@ export const getServices = (frontendAppType: string) => [
     "gitops"
 ];
 
-   export const playbooks = [ 'create-k8s-cluster.yml','configure-k8s-cluster.yml','create-ingress-controller.yml','nginx.yml','ecr-helper.yml'];
+export const playbooks = [ 'create-k8s-cluster.yml','configure-k8s-cluster.yml','create-ingress-controller.yml','nginx.yml','ecr-helper.yml'];
+
+export const eksVpcModules = ["module.vpc", "module.eks"];

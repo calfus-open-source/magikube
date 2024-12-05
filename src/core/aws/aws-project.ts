@@ -60,7 +60,7 @@ export default class AWSProject extends BaseProject {
                 backend_app_name = this.config.node_app_name;
             }
             await createApplication.destroyApp(git_user_name, github_access_token, github_owner, frontend_app_name, backend_app_name, project_name);
-            
+
             if (awsStatus) {
                 await super.destroyProject(name, path);
             }
@@ -157,10 +157,9 @@ export default class AWSProject extends BaseProject {
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
         AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
-    
         const progressBar = ProgressBar.createProgressBar();
         progressBar.start(100, 0, { message: 'Terraform Init in progress...' });
-    
+        
         return new Promise<void>((resolve, reject) => {
             try {
                 const terraformProcess = spawn('terraform', ['init', `-backend-config=${backend}`], {
@@ -168,7 +167,6 @@ export default class AWSProject extends BaseProject {
                     env: process.env,
                     stdio: ['ignore', 'pipe', 'pipe']
                 });
-
                 terraformProcess.stdout.on('data', (data) => {
                     const output = data.toString();
                     AppLogger.debug(output);
@@ -213,9 +211,9 @@ export default class AWSProject extends BaseProject {
                     }
                 });
     
-            } catch (error) {
+            } catch (error:any) {
                 progressBar.stop(); // Close progress bar on error
-                AppLogger.error(`Failed to initialize terraform process: ${error}`, true);
+                AppLogger.error(`Failed to initialize terraform process: ${error.message}`, true);
                 reject(error); // Reject promise on error     
             }
         });
@@ -243,7 +241,6 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
         try {
             AppLogger.info(`Creating module: ${module}`, true);
 
-            // Prepare the Terraform apply command with necessary arguments
             let args = ['apply', '-no-color', '-auto-approve'];
             if (module) {
                 args.push(`-target=${module}`);
@@ -255,19 +252,16 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
             const terraformProcess = spawn('terraform', args, {
                 cwd: projectPath,
                 env: process.env,
-                stdio: ['inherit', 'pipe', 'pipe'] // Inherit stdin for proper signal handling
+                stdio: ['inherit', 'pipe', 'pipe'] 
             });
 
-            // Set up progress bar
-            const totalSteps = 100; // Adjust based on your estimation
+            const totalSteps = 100;
             const progressBar = ProgressBar.createProgressBar();
             progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
 
             terraformProcess.stdout.on('data', (data) => {
                 const output = data.toString();
                 AppLogger.info(`stdout: ${output}`);
-
-                // Regex to match "Creation complete" messages and update the progress bar
                 const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
                 let match;
                 while ((match = creationCompleteRegex.exec(output)) !== null) {

@@ -8,7 +8,6 @@ import EKSNodeGroupProject from './aws/aws-eks-nodegroup.js';
 export default abstract class TerraformProject {    
     static async getProject(command: BaseCommand): Promise<AWSProject | null> {
         const config = SystemConfig.getInstance().getConfig();
-
         if (config.cloud_provider === 'aws') {
             if (config.cluster_type === 'eks-fargate') 
                 return new EKSFargateProject(command, config);

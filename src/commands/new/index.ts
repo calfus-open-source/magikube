@@ -33,12 +33,6 @@ function validateUserInput(input: string): void {
       }),
   };
 
-  static flags = {
-    dryrun: Flags.boolean({
-      char: "d",
-      description:"Simulates execution of the command, showing what would happen without making any real changes to the system.",
-    }),
-  };
 
   static description = "Create new magikube project";
   static examples = [
