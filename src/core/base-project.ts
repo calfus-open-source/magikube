@@ -104,7 +104,6 @@ export default abstract class BaseProject {
 
         await this.createProviderFile();
     }
-
     async createFolder(): Promise<void> {
         //create a folder with the name in the path
 

@@ -2,7 +2,6 @@ import { updateStatusFile,} from './statusUpdater-utils.js'; // Adjust the impor
 import { execSync } from 'child_process';
 import { getServices, modules } from "../../core/constants/constants.js";
 import { AppLogger } from '../../logger/appLogger.js';
-import { readProjectConfig } from './magikubeConfigreader.js';
 import AWSProject from '../aws/aws-project.js';
 import { ManageRepository } from '../manage-repository.js';
 
