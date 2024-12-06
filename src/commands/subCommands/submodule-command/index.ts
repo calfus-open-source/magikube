@@ -1,5 +1,6 @@
 import { Args } from "@oclif/core";
 import BaseCommand from "../../base.js";
+import { Answers } from "inquirer";
 import SystemConfig from "../../../config/system.js";
 import { AppLogger } from "../../../logger/appLogger.js";
 import { initializeStatusFile, readStatusFile } from "../../../core/utils/statusUpdater-utils.js";
@@ -9,6 +10,7 @@ import fs from "fs"
 import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
 import { Colours } from "../../../prompts/constants.js";
 import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
+import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
 
 function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
@@ -45,7 +47,7 @@ export default class NewModule extends BaseCommand {
   ];
 
  async run(): Promise<void> {
-  const { args } = await this.parse(NewModule);
+  const { args,flags } = await this.parse(NewModule);
 
   // Validate module name
   validateModuleInput(args.moduleName);
@@ -54,6 +56,8 @@ export default class NewModule extends BaseCommand {
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
   try {
+    
+    let responses: Answers = await handlePrompts(args.projectName, flags, this.id, moduleType);
     // Check for .magikube file
     const projectDir = path.resolve(projectName);
     const dotmagikubeFilePath = path.join(projectDir, ".magikube");
@@ -75,11 +79,22 @@ export default class NewModule extends BaseCommand {
     if (!magikubeContent.moduleName.includes(moduleName)) {
       magikubeContent.moduleName.push(moduleName);
     }
+    const cidrBlock = responses.cidrBlock;
+    if (cidrBlock) {
+      if (!Array.isArray(magikubeContent.cidr_blocks)) {
+        magikubeContent.cidr_blocks = magikubeContent.cidr_blocks
+          ? [magikubeContent.cidr_blocks]
+          : [];
+      }
+      if (!magikubeContent.cidr_blocks.includes(cidrBlock)) {
+        magikubeContent.cidr_blocks.push(cidrBlock);
+      }
+    }  
     magikubeContent.command = this.id;
     fs.writeFileSync(dotmagikubeFilePath, JSON.stringify(magikubeContent, null, 2), "utf-8");
     SystemConfig.getInstance().mergeConfigs(magikubeContent);
     const terraform = await SubModuleTemplateProject.getProject(this, args.projectName);
-    const responses:any={}
+  
     const services = getServices(responses["frontend_app_type"]);
     initializeStatusFile(projectName, modules, services);
     const projectConfig = SystemConfig.getInstance().getConfig();

@@ -168,6 +168,37 @@ const codeCommitPrompts: any[] = [
   },
 ];
 
+const cidrPrompt: any[] = [
+  {
+    message: "Enter the CIDR Block (e.g., 10.0.0.0/16): ",
+    name: "cidrBlock",
+    type: "input",
+    validate: (input: string) => {
+      // Regex to validate the CIDR block format
+      const pattern = /^(([0-9]{1,3}\.){3}[0-9]{1,3})\/([0-9]|[1-2][0-9]|3[0-2])$/;
+
+      // Helper function to validate IP octets
+      const isValidIP = (ip: string) => {
+        return ip.split('.').every(octet => {
+          const num = parseInt(octet, 10);
+          return num >= 0 && num <= 255;
+        });
+      };
+
+      // Check if the input matches the pattern and IP octets are valid
+      if (pattern.test(input)) {
+        const [ip] = input.split('/');
+        if (isValidIP(ip)) {
+          return true; // Valid CIDR block
+        }
+      }
+
+      // Return error message for invalid input
+      return "Invalid CIDR block format. Please enter a valid CIDR (e.g., 10.0.0.0/16).";
+    }
+  }
+];
+
 const domainPrompt: any[] = [
   {
     message: "Enter the Domain Name: ",
@@ -260,6 +291,10 @@ export default class PromptGenerator {
       AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
       process.exit(1);
     }
+  }
+
+  getCIDRPrompt(): any[]{
+    return cidrPrompt;
   }
 
   getDomainPrompt(): any[] {

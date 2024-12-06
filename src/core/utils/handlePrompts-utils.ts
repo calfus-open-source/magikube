@@ -3,7 +3,7 @@ import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
 
-export async function handlePrompts(args: any, flags: any, commandName?: any): Promise<Answers> {
+export async function handlePrompts(args: any, flags: any, commandName?: any, moduleType?: any): Promise<Answers> {
   let responses: Answers = {
     project_name: args.name,
     project_id: uuidv4(),
@@ -42,24 +42,20 @@ export async function handlePrompts(args: any, flags: any, commandName?: any): P
     
   }
   else if(commandName === "new_module"){ // it is for the individual module scenario
-    for (const prompt of promptGenerator.getCloudProvider()) {
-      const resp = await inquirer.prompt(prompt);
-      responses = { ...responses, ...resp };
+    if(moduleType === "vpc"){
+      for (const cidrPrompt of promptGenerator.getCIDRPrompt()) {
+        const cidrResp = await inquirer.prompt(cidrPrompt);
+        responses = { ...responses, ...cidrResp };
+      }
     }
+    else if(moduleType === "rds"){
 
-    for (const regionPrompt of promptGenerator.getRegion()) {
-      const regionResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...regionResp };
     }
+    else if(moduleType === "acm"){
 
-    for (const regionPrompt of promptGenerator.getAwsProfile()) {
-      const regionResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...regionResp };
     }
+    else{
 
-    for (const envPrompt of promptGenerator.getEnvironment()) {
-      const envResp = await inquirer.prompt(envPrompt);
-      responses = { ...responses, ...envResp };
     }
   } 
   else {
