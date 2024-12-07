@@ -49,6 +49,7 @@ function validateUserInput(input: string): void {
 
     try {
        let responses: Answers = await handlePrompts(args, flags);
+       responses.command = this.id;
        await cloneAndCopyTemplates();
        AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
        SystemConfig.getInstance().mergeConfigs(responses);

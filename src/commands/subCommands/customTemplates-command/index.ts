@@ -100,6 +100,7 @@ export default class CustomTemplatesProject extends BaseCommand {
         const templates: any = [];
         const template = flags.template.trim();
         responses.template = template;
+        responses.command = this.id;
         SystemConfig.getInstance().mergeConfigs(responses);
         const projectConfig = SystemConfig.getInstance().getConfig();
         const terraform = await TemplateTerraformProject.getProject(this);

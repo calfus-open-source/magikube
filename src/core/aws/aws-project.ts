@@ -3,7 +3,6 @@ import AWSTerraformBackend from "./aws-tf-backend.js";
 import AWSPolicies from "./aws-iam.js";
 import { spawn, execSync } from 'child_process';
 import fs from 'fs';
-import * as path from 'path';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
 import { AppLogger } from '../../logger/appLogger.js';
@@ -12,32 +11,33 @@ import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
 import { executeCommandWithRetry } from '../common-functions/execCommands.js';
 import { updateStatusFile } from '../utils/statusUpdater-utils.js';
+import { join } from 'path';
+import SystemConfig from '../../config/system.js';
 
 let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
-    async createProject(name: string, path: string): Promise<void> {
-        await super.createProject(name, path);
-    
-        if (!this.config.dryrun) {
-            await AWSPolicies.create(
-                this,
-                this.config.aws_region,
-                this.config.aws_access_key_id,
-                this.config.aws_secret_access_key,
-                this.config.project_name
-                );
-        
-            await AWSTerraformBackend.create(
-                this,
-                this.config.project_id,
-                this.config.aws_region,
-                this.config.aws_access_key_id,
-                this.config.aws_secret_access_key
-            );
-        }
+    async createProject(name: string, path: string, commandName?: string): Promise<void> {  
+     await super.createProject(name, path);      
+      if (!this.config.dryrun) {
+        await AWSPolicies.create(
+          this,
+          this.config.aws_region,
+          this.config.aws_access_key_id,
+          this.config.aws_secret_access_key,
+          this.config.project_name
+        );
+  
+        await AWSTerraformBackend.create(
+          this,
+          this.config.project_id,
+          this.config.aws_region,
+          this.config.aws_access_key_id,
+          this.config.aws_secret_access_key
+        );
+      }
     }
-
+  
     async destroyProject(name: string, path: string): Promise<void> {
         let awsStatus = false;
         if (this.config.cloud_provider === 'aws') {
@@ -99,6 +99,22 @@ export default class AWSProject extends BaseProject {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/vpc/main.tf.liquid`, '/infrastructure/modules/vpc',true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/vpc/variables.tf.liquid`, '/infrastructure/modules/vpc',true);
     }
+
+    async createEKS(): Promise<void> {
+        this.createFile(
+          "main.tf",
+          `${process.cwd()}/dist/templates/aws/modules/eks-fargate/main.tf.liquid`,
+          "/infrastructure/modules/eks-fargate",
+          true
+        );
+        this.createFile(
+          "variables.tf",
+          `${process.cwd()}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
+          "/infrastructure/modules/eks-fargate",
+          true
+        );
+      }
+
     async createRds() : Promise<void> {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/rds/main.tf.liquid`, '/infrastructure/modules/rds',true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/rds/variables.tf.liquid` , '/infrastructure/modules/rds', true);
@@ -234,75 +250,80 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-async runTerraformApply(projectPath: string, module?: string, varFile?: string): Promise<void> {
-    AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
+    async runTerraformApply(projectPath: string, module?: string, varFile?: string, moduleName?:string): Promise<void> {
+        AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
+        const projectConfig = SystemConfig.getInstance().getConfig();
+        return new Promise((resolve, reject) => {
+            try {
+                AppLogger.info(`Creating module: ${module}`, true);
 
-    return new Promise((resolve, reject) => {
-        try {
-            AppLogger.info(`Creating module: ${module}`, true);
-
-            let args = ['apply', '-no-color', '-auto-approve'];
-            if (module) {
-                args.push(`-target=${module}`);
-            }
-            if (varFile) {
-                args.push(`-var-file=${varFile}`);
-            }
-
-            const terraformProcess = spawn('terraform', args, {
-                cwd: projectPath,
-                env: process.env,
-                stdio: ['inherit', 'pipe', 'pipe'] 
-            });
-
-            const totalSteps = 100;
-            const progressBar = ProgressBar.createProgressBar();
-            progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
-
-            terraformProcess.stdout.on('data', (data) => {
-                const output = data.toString();
-                AppLogger.info(`stdout: ${output}`);
-                const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
-                let match;
-                while ((match = creationCompleteRegex.exec(output)) !== null) {
-                    progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
+                let args = ['apply', '-no-color', '-auto-approve'];
+                if ((module && projectConfig.command === "new_sub") || (module && projectConfig.command === "new")) {
+                    args.push(`-target=${module}`);
                 }
-            });
-
-            terraformProcess.stderr.on('data', (data) => {
-                const errorOutput = data.toString();
-                progressBar.stop();
-                AppLogger.error(`stderr: ${errorOutput}`);
-                // Reject the promise on stderr output
-                reject(new Error(`Terraform apply error: ${errorOutput}`));
-            });
-
-            terraformProcess.on('close', (code) => {
-                if (code === 0) {
-                    progressBar.update(100, { message: 'Terraform apply completed.' });
-                    progressBar.stop();
-                    AppLogger.debug('Terraform apply completed successfully.', true);
-                    resolve();
-                } else {
-                    progressBar.stop();
-                    AppLogger.error(`Terraform apply process exited with code ${code}`, true);
-                    reject(new Error(`Terraform apply process exited with code ${code}`));
-                    setImmediate(() => process.exit(1));
+                if (projectConfig.command === "new_module") {
+                    args.push(`-target=module.${module}`);
                 }
-            });
 
-            terraformProcess.on('error', (err) => {
-                progressBar.stop();
-                AppLogger.error(`Failed to run Terraform process: ${err}`, true);
-                reject(err);
-            });
+                if (varFile) {
+                    args.push(`-var-file=${varFile}`);
+                }
 
-        } catch (error) {
-            AppLogger.error(`Failed to apply Terraform process: ${error}`, true);
-            reject(error);
-        }
-    });
-}
+                const terraformProcess = spawn('terraform', args, {
+                    cwd: projectPath,
+                    env: process.env,
+                    stdio: ['inherit', 'pipe', 'pipe'] 
+                });
+
+                const totalSteps = 100;
+                const progressBar = ProgressBar.createProgressBar();
+                progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
+
+                terraformProcess.stdout.on('data', (data) => {
+                    const output = data.toString();
+                    AppLogger.info(`stdout: ${output}`);
+                    const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
+                    let match;
+                    while ((match = creationCompleteRegex.exec(output)) !== null) {
+                        progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
+                    }
+                });
+
+                terraformProcess.stderr.on('data', (data) => {
+                    const errorOutput = data.toString();
+                    progressBar.stop();
+                    AppLogger.error(`stderr: ${errorOutput}`);
+                    // Reject the promise on stderr output
+                    reject(new Error(`Terraform apply error: ${errorOutput}`));
+                });
+
+                terraformProcess.on('close', (code) => {
+                    if (code === 0) {
+                        progressBar.update(100, { message: 'Terraform apply completed.' });
+                        progressBar.stop();
+                        AppLogger.debug('Terraform apply completed successfully.', true);
+                        resolve();
+                    } else {
+                        progressBar.stop();
+                        AppLogger.error(`Terraform apply process exited with code ${code}`, true);
+                        reject(new Error(`Terraform apply process exited with code ${code}`));
+                        setImmediate(() => process.exit(1));
+                    }
+                });
+
+                terraformProcess.on('error', (err) => {
+                    progressBar.stop();
+                    AppLogger.error(`Failed to run Terraform process: ${err}`, true);
+                    reject(err);
+                });
+
+            } catch (error) {
+                AppLogger.error(`Failed to apply Terraform process: ${error}`, true);
+                reject(error);
+            }
+        });
+    }
+
 
     async runTerraformDestroy(projectPath: string, module?: string, varFile?: string): Promise<void> {
     AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
@@ -330,8 +351,8 @@ async runTerraformApply(projectPath: string, module?: string, varFile?: string):
 
     async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {
         // Path to the existing kubeconfig file
-        const kubeconfigDir = path.join(os.homedir(), '.kube');
-        const kubeconfigFilePath = path.join(kubeconfigDir, 'config');
+        const kubeconfigDir = join(os.homedir(), '.kube');
+        const kubeconfigFilePath = join(kubeconfigDir, 'config');
 
         // Ensure the .kube directory exists
         if (!fs.existsSync(kubeconfigDir)) {

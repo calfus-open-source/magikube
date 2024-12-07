@@ -7,7 +7,7 @@ export async function cloneAndCopyTemplates(): Promise<void> {
   const dir_infra = `${process.cwd()}/infrastructure-templates`;
   const path_infra = process.cwd();
   if (!fs.existsSync(dir_infra)) {
-    await executeCommandWithRetry("git clone https://github.com/calfus-open-source/infrastructure-templates.git",{ cwd: path_infra },1);
+    await executeCommandWithRetry("git clone -b sp https://github.com/calfus-open-source/infrastructure-templates.git",{ cwd: path_infra },1);
   }
 
   await executeCommandWithRetry("mkdir -p dist/templates/aws/ && rsync -av infrastructure-templates/aws/* dist/templates/aws/ --prune-empty-dirs > /dev/null 2>&1", { cwd: path_infra },1);
