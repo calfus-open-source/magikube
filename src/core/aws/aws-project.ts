@@ -436,141 +436,55 @@ export default class AWSProject extends BaseProject {
         AppLogger.debug('New cluster added to the kubeconfig file.');
     }
 
-    async runAnsiblePlaybook1(projectPath: string) {
-    //    executeCommandWithRetry('ansible-playbook ../playbooks/create-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-        const maxRetries = 6;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/create-k8s-cluster.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Creation of cluster completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
+
+    async runAnsiblePlaybook(playbook: string, projectPath: string) {
+    const maxRetries = 6;
+    const timeoutDuration = 10 * 60 * 1000; // 10 minutes
+    let attempt = 0;
+    let success = false;
+
+    while (attempt < maxRetries && !success) {
+        attempt++;
+        try {
+        AppLogger.error(`Running ansible playbook ${playbook}... Attempt ${attempt}`, true);
+        
+        let lastLogTimestamp = Date.now();
+        const interval = setInterval(() => {
+            if (Date.now() - lastLogTimestamp > timeoutDuration) {
+            AppLogger.error(`No logs detected for ${timeoutDuration / 60000} minutes. Retrying playbook...`, true);
+            clearInterval(interval);
+            throw new Error("Inactivity timeout reached");
             }
+        }, 10000); 
+
+        const output = execSync(`ansible-playbook -v ../playbooks/${playbook}`, {
+            cwd: `${projectPath}/templates/aws/ansible/environments`,
+            env: process.env,
+            stdio: "inherit",
+        });
+
+        // Monitor logs
+        output.toString().split("\n").forEach((line) => {
+            if (line.trim()) {
+            lastLogTimestamp = Date.now();
+            process.stdout.write(line + "\n");
+            }
+        });
+
+        clearInterval(interval); 
+        AppLogger.info(`Playbook ${playbook} completed successfully.`, true);
+        success = true;
+        } catch (error: any) {
+        AppLogger.error(`An error occurred while running ${playbook}: ${error.message}`, true);
+        if (attempt >= maxRetries) {
+            AppLogger.error("Max retries reached. Exiting...", true);
+            process.exit(1); 
         }
-    }   
-     
-    async runAnsiblePlaybook2(projectPath: string) {
-        // executeCommandWithRetry('ansible-playbook ../playbooks/configure-k8s-cluster.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/configure-k8s-cluster.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Setting up cluster completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
+        AppLogger.info(`Retrying playbook ${playbook}... (${attempt}/${maxRetries})`,);
         }
     }
-    async runAnsiblePlaybook3(projectPath: string) {
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/create-ingress-controller.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Ingress and argocd configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
     }
 
-    async runAnsiblePlaybook4(projectPath: string) {
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/nginx.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('Nginx configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-    }
-
-    async runAnsiblePlaybook5(projectPath: string) {
-        // executeCommandWithRetry('ansible-playbook ../playbooks/ecr-helper.yml', {cwd:`${projectPath}/templates/aws/ansible/environments`},3);
-        const maxRetries = 3;
-        let attempt = 0;
-        let success = false;
-        while (attempt < maxRetries && !success) {
-            try {
-                attempt++;
-                AppLogger.debug(`Running ansible playbook ... Attempt ${attempt}, ${projectPath}`);
-                execSync('ansible-playbook -v ../playbooks/ecr-helper.yml', {
-                    cwd: `${projectPath}/templates/aws/ansible/environments`,
-                    stdio: 'inherit',
-                    env: process.env
-                });
-                AppLogger.info('ECR and argocd configuration completed successfully.', true);
-                success = true;
-            } catch (error) {
-                AppLogger.error(`An error occurred while running the Ansible playbook , ${error}`, true);
-                if (attempt >= maxRetries) {
-                    AppLogger.error('Max retries reached. Exiting...', true);
-                    throw error;
-                } else {
-                    AppLogger.debug(`Retrying... (${attempt}/${maxRetries})`);
-                }
-            }
-        }
-     }
 }
+
 

@@ -2,8 +2,8 @@ import { updateStatusFile,} from './statusUpdater-utils.js'; // Adjust the impor
 import { execSync } from 'child_process';
 import { getServices, modules } from "../../core/constants/constants.js";
 import { AppLogger } from '../../logger/appLogger.js';
-import AWSProject from '../aws/aws-project.js';
 import { ManageRepository } from '../manage-repository.js';
+import { playbooks } from '../../core/constants/constants.js';
 
 
 export const handleEKS = async (projectName:string, responses:any,  terraform:any, setupGitopsServiceStatus:any, configObject:any ) => {
@@ -62,13 +62,12 @@ export const handleK8s = async (projectName:string, responses:any, terraform:any
         await ManageRepository.pushCode(configObject);
     }
 
-
     terraform?.startSSHProcess();
-    await terraform?.runAnsiblePlaybook1(process.cwd() + "/" + projectName);
-    await terraform?.runAnsiblePlaybook2(process.cwd() + "/" + projectName);
-    await terraform?.runAnsiblePlaybook3(process.cwd() + "/" + projectName);
-    await terraform?.runAnsiblePlaybook4(process.cwd() + "/" + projectName);
-    await terraform?.runAnsiblePlaybook5(process.cwd() + "/" + projectName);
+    const projectPath = `${process.cwd()}/${projectName}`;
+    for (const playbook of playbooks) {
+        await terraform?.runAnsiblePlaybook(playbook, projectPath);
+    }
+
     const masterIP = await terraform?.getMasterIp(process.cwd() + "/" + projectName + "/infrastructure");
     await terraform?.editKubeConfigFile(process.cwd() + "/" + projectName + "/templates/aws/ansible/config/" + masterIP + "/etc/kubernetes/admin.conf");
     terraform?.stopSSHProcess();
