@@ -89,6 +89,17 @@ export default class NewModule extends BaseCommand {
       if (!magikubeContent.cidr_blocks.includes(cidrBlock)) {
         magikubeContent.cidr_blocks.push(cidrBlock);
       }
+    }
+    const domainName = responses.domain;
+    if(domainName){
+      if (!Array.isArray(magikubeContent.domains)) {
+        magikubeContent.domains = magikubeContent.domains
+          ? [magikubeContent.domains]
+          : [];
+      }
+      if (!magikubeContent.domains.includes(domainName)) {
+        magikubeContent.domains.push(domainName);
+      }
     }  
     magikubeContent.command = this.id;
     fs.writeFileSync(dotmagikubeFilePath, JSON.stringify(magikubeContent, null, 2), "utf-8");

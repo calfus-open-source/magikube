@@ -52,7 +52,10 @@ export async function handlePrompts(args: any, flags: any, commandName?: any, mo
 
     }
     else if(moduleType === "acm"){
-
+      for (const domainPrompt of promptGenerator.getDomainPrompt()) {
+        const domainResp = await inquirer.prompt(domainPrompt);
+        responses = { ...responses, ...domainResp };
+      }
     }
     else{
 
