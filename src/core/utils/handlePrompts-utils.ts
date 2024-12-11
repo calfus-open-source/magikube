@@ -2,12 +2,22 @@ import inquirer, { Answers } from "inquirer";
 import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
+import SystemConfig from "../../config/system.js";
+import { dotMagikubeConfig } from "./projectConfigReader-utils.js";
+import fs from "fs"
 
 export async function handlePrompts(args: any, flags: any, commandName?: any, moduleType?: any): Promise<Answers> {
   let responses: Answers = {
     project_name: args.name,
     project_id: uuidv4(),
   };
+  
+  console.log(args.name,"<<<<<<<<<<<<<args.name,")
+  console.log(fs.existsSync(process.cwd()))
+  const projectConfig = dotMagikubeConfig(args.name, process.cwd())
+  console.log(projectConfig,"<<<<<<<<<<<<<<<<projectConfig");
+  const vpcArray = projectConfig.moduleName;
+  console.log(vpcArray,"<<<<<<<<<<<<<<<<vpcArray");
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
   if (commandName === "new_sub") { // it is for the templating or -t command scenario
@@ -49,6 +59,15 @@ export async function handlePrompts(args: any, flags: any, commandName?: any, mo
       }
     }
     else if(moduleType === "rds"){
+      console.log(vpcArray,"<<<<<<<<vpcArray");
+      if (!vpcArray || vpcArray.length === 0 || vpcArray.every((vpc:any) => vpc === null)) {
+        console.error("Error: No valid VPCs found. Please configure VPCs before proceeding with the RDS module.");
+        process.exit(1); // Exit the process with a non-zero exit code indicating failure
+      }
+      for (const vpcPrompt of promptGenerator.getVPCPrompt()) {
+        const vpcResp = await inquirer.prompt(vpcPrompt);
+        responses = { ...responses, ...vpcResp };
+      }
 
     }
     else if(moduleType === "acm"){

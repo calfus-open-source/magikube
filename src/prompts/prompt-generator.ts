@@ -2,6 +2,9 @@ import SystemConfig from "../config/system.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
 
+const projectConfig = SystemConfig.getInstance().getConfig();
+const vpcChoices = Array.isArray(projectConfig.moduleName) ? projectConfig.moduleName : [];
+
 const productionPrompts: any[] = [
   {
     choices: ["production", "sandbox"],
@@ -168,6 +171,15 @@ const codeCommitPrompts: any[] = [
   },
 ];
 
+const vpcPrompt: any[] = [
+  {
+    choices: vpcChoices,
+    message: "Select which Vpc:",
+    name: "VPC",
+    type: "list",
+  }
+];
+
 const cidrPrompt: any[] = [
   {
     message: "Enter the CIDR Block (e.g., 10.0.0.0/16): ",
@@ -295,6 +307,10 @@ export default class PromptGenerator {
 
   getCIDRPrompt(): any[]{
     return cidrPrompt;
+  }
+
+  getVPCPrompt():any[]{
+    return vpcPrompt;
   }
 
   getDomainPrompt(): any[] {
