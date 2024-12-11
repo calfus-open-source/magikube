@@ -10,7 +10,7 @@ export async function handlePrompts(args: any, flags: any, commandName?: any): P
   };
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
-  if (commandName === "new_sub") { // it is for the templating or -t command scenario
+  if (commandName === "new_template") { 
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);
       responses = { ...responses, ...resp };
