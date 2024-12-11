@@ -60,6 +60,7 @@ export default class CustomTemplatesProject extends BaseCommand {
       // Check if template flag is provided but empty
        if (flags.template === undefined) {
           const responses: Answers = await handlePrompts(args, flags, this.id);
+          SystemConfig.getInstance().mergeConfigs(responses);
           await createEmptyMagikubeProject(args.name, responses);
           AppLogger.info(`Created an empty project named '${args.name}' with .magikube folder populated with configurations.`);
           process.exit(0);

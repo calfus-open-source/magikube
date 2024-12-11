@@ -1,7 +1,16 @@
+import path from "path";
 import SystemConfig from "../config/system.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
-
+import fs from "fs"
+// const projectConfig = SystemConfig.getInstance().getConfig();
+// console.log(projectConfig, "*********projectConfig");
+// const vpcChoices = Array.isArray(projectConfig.moduleName) ? projectConfig.moduleName : [];
+// console.log(vpcChoices, "<<<<<<<vpcChoices");
+// const project_config = JSON.parse(
+//   fs.readFileSync(path.join(path.resolve(), ".magikube"), "utf-8")
+// );
+// const vpcArray = project_config.moduleName;
 const productionPrompts: any[] = [
   {
     choices: ["production", "sandbox"],
@@ -168,6 +177,46 @@ const codeCommitPrompts: any[] = [
   },
 ];
 
+const vpcPrompt: any[] = [
+  {
+    choices: [],
+    message: "Select the Vpc:",
+    name: "VPC",
+    type: "list",
+  }
+];
+
+const cidrPrompt: any[] = [
+  {
+    message: "Enter the CIDR Block (e.g., 10.0.0.0/16): ",
+    name: "cidrBlock",
+    type: "input",
+    validate: (input: string) => {
+      // Regex to validate the CIDR block format
+      const pattern = /^(([0-9]{1,3}\.){3}[0-9]{1,3})\/([0-9]|[1-2][0-9]|3[0-2])$/;
+
+      // Helper function to validate IP octets
+      const isValidIP = (ip: string) => {
+        return ip.split('.').every(octet => {
+          const num = parseInt(octet, 10);
+          return num >= 0 && num <= 255;
+        });
+      };
+
+      // Check if the input matches the pattern and IP octets are valid
+      if (pattern.test(input)) {
+        const [ip] = input.split('/');
+        if (isValidIP(ip)) {
+          return true; // Valid CIDR block
+        }
+      }
+
+      // Return error message for invalid input
+      return "Invalid CIDR block format. Please enter a valid CIDR (e.g., 10.0.0.0/16).";
+    }
+  }
+];
+
 const domainPrompt: any[] = [
   {
     message: "Enter the Domain Name: ",
@@ -223,26 +272,31 @@ export default class PromptGenerator {
       ? productionPrompts
       : nonProductionPrompts;
   }
-  
-  getRegion(): any[]{
+
+  getRegion(): any[] {
     return awsRegion;
   }
-  
-  getAwsProfile():any[]{
+
+  getAwsProfile(): any[] {
     return awsProfile;
   }
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
     if (cloudProvider === CloudProvider.AWS) {
       return awsPrompts;
-    }
-    else {
+    } else {
       // Handle unknown cloud providers or invalid input
-      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${cloudProvider.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
+      AppLogger.error(
+        `\n ${Colours.greenColor}${
+          Colours.boldText
+        } ${cloudProvider.toUpperCase()} ${Colours.colorReset}${
+          Colours.boldText
+        }support is coming soon... \n`,
+        true
+      );
       process.exit(1);
+    }
   }
-  }
-
 
   getClusterPrompts(clusterType: string): any[] {
     return clusterType === "k8s" ? k8sPrompts : [];
@@ -251,15 +305,44 @@ export default class PromptGenerator {
   getVersionControlPrompts(versionControl: string): any[] {
     if (versionControl === VersionControl.GITHUB) {
       return githubPrompts;
-    }
-    else if (versionControl === VersionControl.CODECOMMIT) {
+    } else if (versionControl === VersionControl.CODECOMMIT) {
       return [];
-    }
-    else {
+    } else {
       // Handle unknown cloud providers or invalid input
-      AppLogger.error(`\n ${Colours.greenColor}${Colours.boldText} ${versionControl.toUpperCase()} ${Colours.colorReset}${Colours.boldText}support is coming soon... \n`, true);
+      AppLogger.error(
+        `\n ${Colours.greenColor}${
+          Colours.boldText
+        } ${versionControl.toUpperCase()} ${Colours.colorReset}${
+          Colours.boldText
+        }support is coming soon... \n`,
+        true
+      );
       process.exit(1);
     }
+  }
+
+  getCIDRPrompt(): any[] {
+    return cidrPrompt;
+  }
+
+  // getVPCPrompt(): any[] {
+  //   return vpcPrompt;
+  // }
+  getVPCPrompt(vpcChoices: string[]): any[] {
+    return [
+      {
+        type: "list",
+        name: "VPC",
+        message: "Select a VPC:",
+        choices: vpcChoices,
+        validate: (input: string) => {
+          if (!input || input.trim() === "") {
+            return "A valid VPC must be selected.";
+          }
+          return true;
+        },
+      },
+    ];
   }
 
   getDomainPrompt(): any[] {
@@ -269,10 +352,7 @@ export default class PromptGenerator {
   getFrontendApplicationType(): any[] {
     return [
       {
-        choices: [
-          ApplicationType.REACT,
-          ApplicationType.NEXT,
-        ],
+        choices: [ApplicationType.REACT, ApplicationType.NEXT],
         message: "Select a frontend application type:",
         name: "frontend_app_type",
         type: "list",

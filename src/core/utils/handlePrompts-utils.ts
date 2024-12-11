@@ -2,12 +2,23 @@ import inquirer, { Answers } from "inquirer";
 import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
+import SystemConfig from "../../config/system.js";
+import { dotMagikubeConfig } from "./projectConfigReader-utils.js";
+import fs from "fs"
+import path from "path";
 
-export async function handlePrompts(args: any, flags: any, commandName?: any): Promise<Answers> {
+export async function handlePrompts(args: any, flags: any, commandName?: any, moduleType?: any): Promise<Answers> {
   let responses: Answers = {
     project_name: args.name,
     project_id: uuidv4(),
   };
+  
+  // console.log(args.name,"<<<<<<<<<<<<<args.name,")
+  // console.log(fs.existsSync(process.cwd()))
+  // const projectConfig = dotMagikubeConfig(args.name, process.cwd())
+  // console.log(projectConfig,"<<<<<<<<<<<<<<<<projectConfig");
+  // const vpcArray = projectConfig.moduleName;
+  // console.log(vpcArray,"<<<<<<<<<<<<<<<<vpcArray");
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
   if (commandName === "new_sub") { // it is for the templating or -t command scenario
@@ -42,24 +53,33 @@ export async function handlePrompts(args: any, flags: any, commandName?: any): P
     
   }
   else if(commandName === "new_module"){ // it is for the individual module scenario
-    for (const prompt of promptGenerator.getCloudProvider()) {
-      const resp = await inquirer.prompt(prompt);
-      responses = { ...responses, ...resp };
+    if(moduleType === "vpc"){
+      for (const cidrPrompt of promptGenerator.getCIDRPrompt()) {
+        const cidrResp = await inquirer.prompt(cidrPrompt);
+        responses = { ...responses, ...cidrResp };
+      }
     }
+    else if(moduleType === "rds"){
+      const project_config = JSON.parse(fs.readFileSync(path.join(path.resolve(args), ".magikube"), "utf-8"));
+      const vpcArray = project_config.moduleName;
+      if (!vpcArray || vpcArray.length === 0 || vpcArray.every((vpc:any) => vpc === null)) {
+        console.error("Error: No valid VPCs found. Please configure VPCs before proceeding with the RDS module.");
+        process.exit(1); 
+      }
+      for (const vpcPrompt of promptGenerator.getVPCPrompt(vpcArray)) {
+        const vpcResp = await inquirer.prompt(vpcPrompt);
+        responses = { ...responses, ...vpcResp };
+      }
 
-    for (const regionPrompt of promptGenerator.getRegion()) {
-      const regionResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...regionResp };
     }
-
-    for (const regionPrompt of promptGenerator.getAwsProfile()) {
-      const regionResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...regionResp };
+    else if(moduleType === "acm"){
+      for (const domainPrompt of promptGenerator.getDomainPrompt()) {
+        const domainResp = await inquirer.prompt(domainPrompt);
+        responses = { ...responses, ...domainResp };
+      }
     }
+    else{
 
-    for (const envPrompt of promptGenerator.getEnvironment()) {
-      const envResp = await inquirer.prompt(envPrompt);
-      responses = { ...responses, ...envResp };
     }
   } 
   else {
