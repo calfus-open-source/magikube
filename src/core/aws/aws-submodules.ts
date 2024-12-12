@@ -12,10 +12,10 @@ export default class CommonSubModuleProject extends AWSProject {
     this.path = path;
     this.name = name;
     super.createProject(name, path);
-    this.createMainFile(projectConfig.moduleType);  // Pass moduleType to createMainFile
+    this.createMainFile(projectConfig.moduleType, projectConfig);  // Pass moduleType to createMainFile
   }
 
-  async createMainFile(moduleType: string | string[]): Promise<void> {
+  async createMainFile(moduleType: string | string[], projectConfig:any): Promise<void> {
     const lastModule = moduleType[moduleType.length - 1];
     console.log()
     // Create common files
@@ -24,14 +24,12 @@ export default class CommonSubModuleProject extends AWSProject {
     this.createFile("variables.tf",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/variables.tf.liquid`,"/infrastructure",true);
 
         if (lastModule === "vpc") {
-          console.log("**************")
           this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
           this.createVpc();
         }else if (lastModule === "eks") {
           this.createEKS();
         } else if (lastModule === "rds") {
-          console.log("----------------");
-          this.createRds();
+          this.createRds(projectConfig);
         } else if (lastModule === "acm") {
           this.createACM();
         }
