@@ -54,7 +54,8 @@ export default class NewModule extends BaseCommand {
   if(args.moduleName){
   validateModuleInput(args.moduleName);
   }
-  const { projectName, moduleType, moduleName } = args;
+  const { projectName, moduleName } = args;
+  let { moduleType } = args;
   AppLogger.configureLogger();
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
@@ -121,10 +122,24 @@ export default class NewModule extends BaseCommand {
         }
         await new Promise((resolve) => setTimeout(resolve, 15000));
         await terraform?.runTerraformInit( process.cwd() + "/" + projectName + "/infrastructure",`${projectConfig["environment"]}-config.tfvars`,projectName);
-          try {AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
-              await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType, moduleName, "terraform.tfvars");
-            // await executeCommandWithRetry(`terraform apply`, { cwd: `${process.cwd()}/${projectName}/infrastructure` }, 1);
-            AppLogger.debug(`Successfully applied Terraform for module: ${moduleType}`,true);
+          try {
+              // Check and adjust moduleType conditionally  
+              if (moduleType === "eks-nodegroup" || moduleType === "eks-fargate") {  
+                 moduleType = "eks";  
+              }  
+
+             AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);  
+
+             // Call runTerraformApply with the updated moduleType  
+              await terraform?.runTerraformApply(  
+              `${process.cwd()}/${projectName}/infrastructure`,  
+              moduleType,  
+              moduleName,  
+              "terraform.tfvars"  
+            );  
+
+            // Log success message  
+            AppLogger.debug(`Successfully applied Terraform for module: ${moduleType}`, true);
           } catch (error) {
             AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`,true);
           }

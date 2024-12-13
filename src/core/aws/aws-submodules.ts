@@ -17,22 +17,39 @@ export default class CommonSubModuleProject extends AWSProject {
 
   async createMainFile(moduleType: string | string[], projectConfig:any): Promise<void> {
     const lastModule = moduleType[moduleType.length - 1];
-    console.log()
     // Create common files
    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/main.tf.liquid`, "/infrastructure", true);
     this.createFile("terraform.tfvars",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/terraform.tfvars.liquid`,"/infrastructure",true);
     this.createFile("variables.tf",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/variables.tf.liquid`,"/infrastructure",true);
-
+        
         if (lastModule === "vpc") {
           this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
           this.createVpc();
-        }else if (lastModule === "eks") {
+        }else if (lastModule === "eks-fargate") {
           this.createEKS();
+        }
+        else if (lastModule === "eks-nodegroup") {
+          this.createEKSng();
         } else if (lastModule === "rds") {
           this.createRds(projectConfig);
         } else if (lastModule === "acm") {
           this.createACM();
         }
+  }
+
+  async createEKSng(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/main.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/variables.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
+    );
   }
 };
 
