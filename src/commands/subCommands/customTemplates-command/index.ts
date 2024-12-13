@@ -7,7 +7,7 @@ import { Colours } from "../../../prompts/constants.js";
 import {initializeStatusFile,} from "../../../core/utils/statusUpdater-utils.js";
 import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
-import {ec2VpcModules, eksFargateVpcModules,eksNodegroupVpcModules,getServices,modules,rdsVpcModules,} from "../../../core/constants/constants.js";
+import {ec2VpcModules, eksFargateVpcModules,eksNodegroupVpcModules,getServices,modules,rdsVpcModules, vpceksNodegroupIngressModules,} from "../../../core/constants/constants.js";
 import AWSAccount from "../../../core/aws/aws-account.js";
 import TemplateTerraformProject from "../../../core/templatesTerraform-projects.js";
 import { createEmptyMagikubeProject } from "../../../core/utils/createEmptyProject-utils.js";
@@ -47,7 +47,7 @@ export default class CustomTemplatesProject extends BaseCommand {
     Creating a new magikube project named 'sample' using 'templateName' template in the current directory`,
   ];
 
-  private predefinedTemplates = ["eks-fargate-vpc", "eks-nodegroup-vpc", "rds-vpc", "ec2-vpc"];
+  private predefinedTemplates = ["eks-fargate-vpc", "eks-nodegroup-vpc", "rds-vpc", "ec2-vpc", "vpc-rds-nodegroup-ecr-ingress" ];
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CustomTemplatesProject);
@@ -79,16 +79,18 @@ export default class CustomTemplatesProject extends BaseCommand {
       }
 
       const responses =  dotMagikubeConfig(args.name, process.cwd());
+      console.log(args, flags, this.id, flags.template.trim());
+      const domain =  await handlePrompts(args, flags, this.id, flags.template.trim());
       await cloneAndCopyTemplates();
       AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`, true);
       const projectName = args.name;
 
       // if a valid predefined template is specified
       if (flags.template) {
-        const templates: any = [];
         const template = flags.template.trim();
         responses.template = template;
         responses.command = this.id;
+        responses.domain_name = domain.domain;
         SystemConfig.getInstance().mergeConfigs(responses);
         const projectConfig = SystemConfig.getInstance().getConfig();
         const terraform = await TemplateTerraformProject.getProject(this);
@@ -128,6 +130,8 @@ export default class CustomTemplatesProject extends BaseCommand {
               ? rdsVpcModules
               : projectConfig.template === "ec2-vpc"
               ? ec2VpcModules
+              : projectConfig.template === "vpc-rds-nodegroup-ecr-ingress"
+              ? vpceksNodegroupIngressModules
               : undefined;
           for (const module of modules) {
             try {

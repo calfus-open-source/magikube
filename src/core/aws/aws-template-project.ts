@@ -25,7 +25,7 @@ export default class AWSTemplateProject extends AWSProject {
     this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/backend-config.tfvars.liquid`,"/infrastructure", true);
 
     
-    if (config.template === "eks-fargate-vpc" || config.template === "eks-nodegroup-vpc" || config.template === "rds-vpc" || config.template === "ec2-vpc") {
+    if (config.template === "eks-fargate-vpc" || config.template === "eks-nodegroup-vpc" || config.template === "rds-vpc" || config.template === "ec2-vpc" || config.template === "vpc-rds-nodegroup-ecr-ingress") {
       this.createVpc();
     }
     if (config.template === "eks-fargate-vpc" ){
@@ -36,6 +36,12 @@ export default class AWSTemplateProject extends AWSProject {
     }
     if (config.template === "rds-vpc") {
       this.createRds();
+    }
+    if (config.template === "vpc-rds-nodegroup-ecr-ingress") {
+       this.createRds();
+       this.createEKSng();
+       this.createACM();
+       this.createIngressController();
     }
     if(config.template === "ec2-vpc") {
       this.createSSHKeyPair(config);
