@@ -114,27 +114,23 @@ export default class AWSProject extends BaseProject {
           true
         );
       }
+ 
+    async createRds(projectConfig?: any): Promise<void> {
+        console.log(projectConfig);
+        const moduleFolder = projectConfig.command === "new" 
+            ? "modules" 
+            : projectConfig.command === "new_module" 
+            ? "modules-single" 
+            : null;
 
-    async createEKSng(): Promise<void> {
-    this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/main.tf.liquid`,
-      "/infrastructure/modules/eks-nodegroup",
-      true
-    );
-    this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/variables.tf.liquid`,
-      "/infrastructure/modules/eks-nodegroup",
-      true
-    );
-  }  
-
-    async createRds() : Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/rds/main.tf.liquid`, '/infrastructure/modules/rds',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/rds/variables.tf.liquid` , '/infrastructure/modules/rds', true);
-
+        if (moduleFolder) {
+            this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/main.tf.liquid`, '/infrastructure/modules/rds', true);
+            this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/variables.tf.liquid`, '/infrastructure/modules/rds', true);
+        } else {
+            throw new Error("Invalid commandName in projectConfig.");
+        }
     }
+
     
     async createRoute53(): Promise<void> {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/route53/main.tf.liquid`, '/infrastructure/modules/route53',true);

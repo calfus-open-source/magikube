@@ -1,5 +1,6 @@
 import { Args } from "@oclif/core";
 import BaseCommand from "../../base.js";
+import { Answers } from "inquirer";
 import SystemConfig from "../../../config/system.js";
 import { AppLogger } from "../../../logger/appLogger.js";
 import { initializeStatusFile, readStatusFile } from "../../../core/utils/statusUpdater-utils.js";
@@ -9,6 +10,8 @@ import fs from "fs"
 import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
 import { Colours } from "../../../prompts/constants.js";
 import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
+import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
+import { executeCommandWithRetry } from "../../../core/common-functions/execCommands.js";
 
 function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
@@ -45,15 +48,19 @@ export default class NewModule extends BaseCommand {
   ];
 
  async run(): Promise<void> {
-  const { args } = await this.parse(NewModule);
+  const { args,flags } = await this.parse(NewModule);
 
   // Validate module name
+  if(args.moduleName){
   validateModuleInput(args.moduleName);
+  }
   const { projectName, moduleType, moduleName } = args;
-  AppLogger.configureLogger(args.projectName);
+  AppLogger.configureLogger();
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
   try {
+    console.log(projectName)
+    let responses: Answers = await handlePrompts(projectName, flags, this.id, moduleType);
     // Check for .magikube file
     const projectDir = path.resolve(projectName);
     const dotmagikubeFilePath = path.join(projectDir, ".magikube");
@@ -75,11 +82,33 @@ export default class NewModule extends BaseCommand {
     if (!magikubeContent.moduleName.includes(moduleName)) {
       magikubeContent.moduleName.push(moduleName);
     }
+    const cidrBlock = responses.cidrBlock;
+    if (cidrBlock) {
+      if (!Array.isArray(magikubeContent.cidr_blocks)) {
+        magikubeContent.cidr_blocks = magikubeContent.cidr_blocks
+          ? [magikubeContent.cidr_blocks]
+          : [];
+      }
+      if (!magikubeContent.cidr_blocks.includes(cidrBlock)) {
+        magikubeContent.cidr_blocks.push(cidrBlock);
+      }
+    }
+    const domainName = responses.domain;
+    if(domainName){
+      if (!Array.isArray(magikubeContent.domains)) {
+        magikubeContent.domains = magikubeContent.domains
+          ? [magikubeContent.domains]
+          : [];
+      }
+      if (!magikubeContent.domains.includes(domainName)) {
+        magikubeContent.domains.push(domainName);
+      }
+    }  
     magikubeContent.command = this.id;
     fs.writeFileSync(dotmagikubeFilePath, JSON.stringify(magikubeContent, null, 2), "utf-8");
     SystemConfig.getInstance().mergeConfigs(magikubeContent);
     const terraform = await SubModuleTemplateProject.getProject(this, args.projectName);
-    const responses:any={}
+  
     const services = getServices(responses["frontend_app_type"]);
     initializeStatusFile(projectName, modules, services);
     const projectConfig = SystemConfig.getInstance().getConfig();
@@ -93,7 +122,8 @@ export default class NewModule extends BaseCommand {
         await new Promise((resolve) => setTimeout(resolve, 15000));
         await terraform?.runTerraformInit( process.cwd() + "/" + projectName + "/infrastructure",`${projectConfig["environment"]}-config.tfvars`,projectName);
           try {AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
-            await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType,"terraform.tfvars",moduleName);
+              await terraform?.runTerraformApply(process.cwd() + "/" + projectName + "/infrastructure",moduleType, moduleName, "terraform.tfvars");
+            // await executeCommandWithRetry(`terraform apply`, { cwd: `${process.cwd()}/${projectName}/infrastructure` }, 1);
             AppLogger.debug(`Successfully applied Terraform for module: ${moduleType}`,true);
           } catch (error) {
             AppLogger.error( `Error applying Terraform for module: ${module}, ${error}`,true);

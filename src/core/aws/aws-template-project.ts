@@ -68,5 +68,19 @@ export default class AWSTemplateProject extends AWSProject {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/${config.cloud_provider}/modules/security-groups/main.tf.liquid`, '/infrastructure/modules/security-groups', true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/${config.cloud_provider}/modules/security-groups/variables.tf.liquid`, '/infrastructure/modules/security-groups', true);
     }
+     async createEKSng(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/main.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/variables.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
+    );
+  }
 
 }

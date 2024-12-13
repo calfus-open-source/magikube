@@ -57,25 +57,16 @@ export default class CustomTemplatesProject extends BaseCommand {
 
     try {
       // Check if template flag is provided but empty
-      if (flags.template === undefined) {
-        const responses: Answers = await handlePrompts(args, flags, this.id);
-        await createEmptyMagikubeProject(args.name, responses);
-        AppLogger.info(
-          `Created an empty project named '${args.name}' with .magikube folder populated with configurations.`
-        );
-        process.exit(0);
-      }
-      if (flags.template && !this.predefinedTemplates.includes(flags.template.trim())) {
-        console.error(
-          `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${
-            Colours.colorReset
-          } Template "${
-            flags.template
-          }" is not available. Please select from: ${this.predefinedTemplates.join(
-            ", "
-          )}.\n \n`
-        );
-        process.exit(1);
+       if (flags.template === undefined) {
+          const responses: Answers = await handlePrompts(args, flags, this.id);
+          SystemConfig.getInstance().mergeConfigs(responses);
+          await createEmptyMagikubeProject(args.name, responses);
+          AppLogger.info(`Created an empty project named '${args.name}' with .magikube folder populated with configurations.`);
+          process.exit(0);
+        }
+        if ( flags.template && !this.predefinedTemplates.includes(flags.template.trim()) ) {
+          console.error(`\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Template "${flags.template}" is not available. Please select from: ${this.predefinedTemplates.join( ", ")}.\n \n` );
+          process.exit(1);
       }
 
       const responses =  dotMagikubeConfig(args.name, process.cwd());

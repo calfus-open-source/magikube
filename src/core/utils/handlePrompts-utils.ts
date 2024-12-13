@@ -9,13 +9,13 @@ export async function handlePrompts(
   commandName?: any,
   template?: string
 ): Promise<Answers> {
- let responses:any  =
-   template === undefined
-     ? {
-         project_name: args.name,
-         project_id: uuidv4(),
-       }
-     : undefined;
+  let responses: any =
+    template === undefined
+      ? {
+          project_name: args.name,
+          project_id: uuidv4(),
+        }
+      : undefined;
   const promptGenerator = new PromptGenerator();
   const credentialsPrompts = new CredentialsPrompts();
   if (commandName === "new_template") {
