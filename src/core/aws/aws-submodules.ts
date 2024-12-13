@@ -8,7 +8,6 @@ export default class CommonSubModuleProject extends AWSProject {
 
   async createProject(name: string, path: string): Promise<void> {
     const projectConfig = SystemConfig.getInstance().getConfig();
-    console.log(projectConfig, "_______projectConfig");
     this.path = path;
     this.name = name;
     super.createProject(name, path);
@@ -31,6 +30,7 @@ export default class CommonSubModuleProject extends AWSProject {
         } else if (lastModule === "rds") {
           this.createRds(projectConfig);
         } else if (lastModule === "acm") {
+          this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
           this.createACM();
         }
   }
