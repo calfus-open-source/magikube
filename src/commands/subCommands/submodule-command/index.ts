@@ -56,7 +56,7 @@ export default class NewModule extends BaseCommand {
   }
   const { projectName,moduleName } = args;
   let {moduleType} = args;
-  AppLogger.configureLogger();
+  AppLogger.configureLogger(args.projectName);
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
   try {
