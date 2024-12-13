@@ -12,6 +12,7 @@ import AWSAccount from "../../../core/aws/aws-account.js";
 import TemplateTerraformProject from "../../../core/templatesTerraform-projects.js";
 import { createEmptyMagikubeProject } from "../../../core/utils/createEmptyProject-utils.js";
 import { dotMagikubeConfig } from "../../../core/utils/projectConfigReader-utils.js";
+import { executeCommandWithRetry } from "../../../core/common-functions/execCommands.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -58,7 +59,7 @@ export default class CustomTemplatesProject extends BaseCommand {
     try {
       // Check if template flag is provided but empty
        if (flags.template === undefined) {
-          const responses: Answers = await handlePrompts(args, flags, this.id);
+          const responses: Answers = await handlePrompts(args,this.id);
           SystemConfig.getInstance().mergeConfigs(responses);
           await createEmptyMagikubeProject(args.name, responses);
           AppLogger.info(`Created an empty project named '${args.name}' with .magikube folder populated with configurations.`);
@@ -71,7 +72,9 @@ export default class CustomTemplatesProject extends BaseCommand {
 
       const responses =  dotMagikubeConfig(args.name, process.cwd());
       console.log(args, flags, this.id, flags.template.trim());
-      const domain =  await handlePrompts(args, flags, this.id, flags.template.trim());
+      const moduleType = ""
+      const domain = flags.template === "vpc-rds-nodegroup-acm-ingress"? await handlePrompts(args, this.id, flags.template.trim(), moduleType) : null;
+      
       await cloneAndCopyTemplates();
       AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`, true);
       const projectName = args.name;
@@ -80,8 +83,10 @@ export default class CustomTemplatesProject extends BaseCommand {
       if (flags.template) {
         const template = flags.template.trim();
         responses.template = template;
-        responses.command = this.id;
-        responses.domain_name = domain.domain;
+        responses.command = this.id;    
+        if (domain) {
+            responses.domain_name = domain.domain;
+        }
         SystemConfig.getInstance().mergeConfigs(responses);
         const projectConfig = SystemConfig.getInstance().getConfig();
         const terraform = await TemplateTerraformProject.getProject(this);
@@ -125,13 +130,19 @@ export default class CustomTemplatesProject extends BaseCommand {
               ? vpceksNodegroupIngressModules
               : undefined;
           for (const module of modules) {
+            const moduleName= "";
             try {
               AppLogger.info(`Starting Terraform apply for module: ${module}`,true);
-              await terraform?.runTerraformApply(
-                process.cwd() + "/" + projectName + "/infrastructure",
-                module,
-                "terraform.tfvars"
-              );
+              if (projectConfig.template == "ec2-vpc" || projectConfig.template === "rds-vpc"){
+                await executeCommandWithRetry('terraform apply', {cwd:`${process.cwd()}/${projectName}/infrastructure`}, 1);
+              }else{
+                await terraform?.runTerraformApply(
+                  process.cwd() + "/" + projectName + "/infrastructure",
+                  module,
+                  moduleName,
+                  "terraform.tfvars"
+                );
+              }
               AppLogger.debug(`Successfully applied Terraform for module: ${module}`,true);
             } catch (error) {
               AppLogger.error(`Error applying Terraform for module: ${module}, ${error}`,true);

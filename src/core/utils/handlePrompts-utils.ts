@@ -2,12 +2,14 @@ import inquirer, { Answers } from "inquirer";
 import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
+import path from "path";
+import fs from "fs";
 
 export async function handlePrompts(
   args: any,
-  flags: any,
   commandName?: any,
-  template?: string
+  template?: string,
+  moduleType?: string
 ): Promise<Answers> {
   let responses: any =
     template === undefined
@@ -63,27 +65,34 @@ export async function handlePrompts(
       }
     }
   } else if (commandName === "new_module") {
-    // it is for the individual module scenario
-    for (const prompt of promptGenerator.getCloudProvider()) {
-      const resp = await inquirer.prompt(prompt);
-      responses = { ...responses, ...resp };
+    if (moduleType === "vpc") {
+      for (const cidrPrompt of promptGenerator.getCIDRPrompt()) {
+        const cidrResp = await inquirer.prompt(cidrPrompt);
+        responses = { ...responses, ...cidrResp };
+      }
+    }
+    if (moduleType === "rds") {
+      const project_config = JSON.parse(
+        fs.readFileSync(path.join(path.resolve(args), ".magikube"), "utf-8")
+      );
+      const vpcArray = project_config.moduleName;
+      if (
+        !vpcArray ||
+        vpcArray.length === 0 ||
+        vpcArray.every((vpc: any) => vpc === null)
+      ) {
+        console.error(
+          "Error: No valid VPCs found. Please configure VPCs before proceeding with the RDS module."
+        );
+        process.exit(1);
+      }
+      for (const vpcPrompt of promptGenerator.getVPCPrompt(vpcArray)) {
+        const vpcResp = await inquirer.prompt(vpcPrompt);
+        responses = { ...responses, ...vpcResp };
+      }
     }
 
-    for (const regionPrompt of promptGenerator.getRegion()) {
-      const regionResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...regionResp };
-    }
-
-    for (const regionPrompt of promptGenerator.getAwsProfile()) {
-      const regionResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...regionResp };
-    }
-
-    for (const envPrompt of promptGenerator.getEnvironment()) {
-      const envResp = await inquirer.prompt(envPrompt);
-      responses = { ...responses, ...envResp };
-    }
-  } else {
+  } else if (commandName === "new") {
     // Continue with the full set of prompts as in the original code
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);

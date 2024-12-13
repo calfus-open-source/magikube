@@ -38,7 +38,7 @@ export const eksNodegroupVpcModules = ["module.vpc", "module.eks"];
 
 export const rdsVpcModules = ["module.vpc"];
 
-export const ec2VpcModules = ["module.vpc", "module.EC2"];
+export const ec2VpcModules = ["module.vpc", "module.ec2"];
 
 export const vpceksNodegroupIngressModules = [
   "module.vpc",

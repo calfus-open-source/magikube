@@ -59,8 +59,8 @@ export default class NewModule extends BaseCommand {
   AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in project ${projectName}`, true);
 
   try {
-    console.log(projectName)
-    let responses: Answers = await handlePrompts(projectName, flags, this.id, moduleType);
+    const template = "";
+    let responses: Answers = await handlePrompts(projectName, this.id,template, moduleType);
     // Check for .magikube file
     const projectDir = path.resolve(projectName);
     const dotmagikubeFilePath = path.join(projectDir, ".magikube");
