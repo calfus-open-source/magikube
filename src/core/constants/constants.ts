@@ -29,7 +29,7 @@ export const supportedTemplates = [
     "eks-nodegroup-vpc",
     "rds-vpc",
     "ec2-vpc",
-    "vpc-rds-nodegroup-ecr-ingress",
+    "vpc-rds-nodegroup-acm-ingress",
 ];
 
 export const eksFargateVpcModules = ["module.vpc", "module.eks"];

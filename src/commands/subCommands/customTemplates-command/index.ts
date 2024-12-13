@@ -47,7 +47,7 @@ export default class CustomTemplatesProject extends BaseCommand {
     Creating a new magikube project named 'sample' using 'templateName' template in the current directory`,
   ];
 
-  private predefinedTemplates = ["eks-fargate-vpc", "eks-nodegroup-vpc", "rds-vpc", "ec2-vpc", "vpc-rds-nodegroup-ecr-ingress" ];
+  private predefinedTemplates = ["eks-fargate-vpc", "eks-nodegroup-vpc", "rds-vpc", "ec2-vpc", "vpc-rds-nodegroup-acm-ingress" ];
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CustomTemplatesProject);
