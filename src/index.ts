@@ -8,6 +8,6 @@ export const COMMANDS = {
   new: CreateProject,
   destroy: DestroyProject,
   restart: RestartProject,
-  new_sub: CustomTemplatesProject,
+  new_template: CustomTemplatesProject,
   new_module: NewModule,
 };

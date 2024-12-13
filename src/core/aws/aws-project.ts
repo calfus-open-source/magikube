@@ -115,6 +115,21 @@ export default class AWSProject extends BaseProject {
         );
       }
 
+    async createEKSng(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/main.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-nodegroup/variables.tf.liquid`,
+      "/infrastructure/modules/eks-nodegroup",
+      true
+    );
+  }  
+
     async createRds() : Promise<void> {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/rds/main.tf.liquid`, '/infrastructure/modules/rds',true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/rds/variables.tf.liquid` , '/infrastructure/modules/rds', true);
@@ -258,7 +273,7 @@ export default class AWSProject extends BaseProject {
                 AppLogger.info(`Creating module: ${module}`, true);
 
                 let args = ['apply', '-no-color', '-auto-approve'];
-                if ((module && projectConfig.command === "new_sub") || (module && projectConfig.command === "new")) {
+                if ((module && projectConfig.command === "new_template") || (module && projectConfig.command === "new")) {
                     args.push(`-target=${module}`);
                 }
                 if (projectConfig.command === "new_module") {
