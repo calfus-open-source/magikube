@@ -61,7 +61,7 @@ Destroying magikube project named 'sample' in the current directory`,
         await executeCommandWithRetry(`terraform init -backend-config=${project_config.environment}-config.tfvars`, { cwd: infrastructurePath }, 1);
         await terraform?.runTerraformDestroyTemplate(infrastructurePath,"terraform.tfvars");
         AppLogger.debug(`Removing folder '${process.cwd()}/${project_config.profileName}'`, true);
-        fs.rmSync(`${process.cwd()}/${project_config.projectName}'`, { recursive: true });
+        fs.rmSync(`${process.cwd()}/${project_config.project_name}'`, { recursive: true });
       } else{
         await terraform.destroyProject(args.name, process.cwd());
       } 

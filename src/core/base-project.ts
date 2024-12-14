@@ -241,9 +241,7 @@ export default abstract class BaseProject {
     command: string = ""
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
-console.log(command, "<<<<<<<<command");
-const project_config = SystemConfig.getInstance().getConfig();
-console.log(project_config, "<<<<<project_config");
+    const project_config = SystemConfig.getInstance().getConfig();
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
@@ -268,7 +266,7 @@ console.log(project_config, "<<<<<project_config");
     // Define the full path to the file
     const filePath = join(folderPath, filename);
 
-    if (project_config.command === "new" || project_config.command === "restart") {
+    if (project_config.command === "new" || project_config.command === "restart" || project_config.command === "new_template") {
       // Logic for the "restart" command
       AppLogger.debug(`Creating ${filename} file for restart command.`);
       fs.writeFileSync(filePath, output);
