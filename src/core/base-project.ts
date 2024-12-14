@@ -241,14 +241,18 @@ export default abstract class BaseProject {
     command: string = ""
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
+console.log(command, "<<<<<<<<command");
+const project_config = SystemConfig.getInstance().getConfig();
+console.log(project_config, "<<<<<project_config");
+    // Determine the template file path based on the command and CreateProjectFile flag
+    const templateFilePath = CreateProjectFile
+      ? templateFilename
+      : project_config.command === "restart"
+      ? join(new URL(".", import.meta.url).pathname, templateFilename)
+      : templateFilename;
 
     // Read the template file
-    const templateFile = fs.readFileSync(
-      CreateProjectFile
-        ? templateFilename
-        : join(new URL(".", import.meta.url).pathname, templateFilename),
-      "utf8"
-    );
+    const templateFile = fs.readFileSync(templateFilePath, "utf8");
 
     // Render the template using Liquid.js
     const output = await this.engine.parseAndRender(templateFile, {
@@ -261,22 +265,25 @@ export default abstract class BaseProject {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // Path to the file
+    // Define the full path to the file
     const filePath = join(folderPath, filename);
 
-    // Handle file creation or appending logic
-    if (fs.existsSync(filePath)) {
-      if (command !== "restart") {
+    if (project_config.command === "new" || project_config.command === "restart") {
+      // Logic for the "restart" command
+      AppLogger.debug(`Creating ${filename} file for restart command.`);
+      fs.writeFileSync(filePath, output);
+    } else if (project_config.command === "new_module") {
+      // Logic for the "new_module" command
+      AppLogger.debug(
+        `Creating or appending to ${filename} file for new_module command.`
+      );
+      if (fs.existsSync(filePath)) {
         AppLogger.debug(`${filename} already exists. Appending content.`);
         fs.appendFileSync(filePath, `\n${output}`);
       } else {
-        AppLogger.debug(
-          `${filename} already exists, but skipping append logic as command is "restart".`
-        );
+        AppLogger.debug(`${filename} does not exist. Creating new file.`);
+        fs.writeFileSync(filePath, output);
       }
-    } else {
-      AppLogger.debug(`${filename} does not exist. Creating new file.`);
-      fs.writeFileSync(filePath, output);
     }
   }
 
