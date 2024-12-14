@@ -7,6 +7,7 @@ import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { executeCommandWithRetry } from "./common-functions/execCommands.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
+import { modules } from "./constants/constants.js";
 
 export default abstract class BaseProject {
   protected config: any = {};
@@ -32,18 +33,6 @@ export default abstract class BaseProject {
     // Run terraform destroy
     AppLogger.info(`Running terraform destroy in the path`, true);
     const terraform = await TerraformProject.getProject(this.command);
-    const modules = [
-      "module.vpc",
-      "module.eks",
-      "module.acm",
-      "module.ecr-repo",
-      "module.gitops",
-      "module.repository",
-      "module.ingress-controller",
-      "module.argo",
-      "module.environment",
-    ];
-
     if (
       this.config.cluster_type === "eks-fargate" ||
       this.config.cluster_type === "eks-nodegroup"

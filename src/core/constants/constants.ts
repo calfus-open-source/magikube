@@ -11,14 +11,14 @@ export const modules = [
 ];
 
 
-export const getServices = (frontendAppType: string) => [
+export const services =[
     "policy",
     "terraform-init",
     "terraform-apply",
     "auth-service",
     "keycloak",
     "my-node-app",
-    frontendAppType, 
+    "react", 
     "gitops"
 ];
 

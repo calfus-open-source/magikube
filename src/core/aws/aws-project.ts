@@ -47,7 +47,8 @@ export default class AWSProject extends BaseProject {
         const createApplication = new CreateApplication(command as BaseCommand, this.config)
         if (!this.config.dryrun) {
             // Once the prompts are accepted at the start, these parameters will be accessible
-            const  {git_user_name, github_access_token, github_owner, project_name} = this.config;
+            if (this.config.command === "new" || this.config.command === "restart"){       
+              const {git_user_name,github_access_token, github_owner,project_name,} = this.config;
             let frontend_app_name;
             let backend_app_name;
             if(this.config.frontend_app_type == "react") {
@@ -64,6 +65,7 @@ export default class AWSProject extends BaseProject {
             if (awsStatus) {
                 await super.destroyProject(name, path);
             }
+        }
 
             const status = await AWSPolicies.delete(
                 this,
@@ -82,7 +84,8 @@ export default class AWSProject extends BaseProject {
                     this.config.aws_secret_access_key
                 );
             }
-        }
+        
+    }
     }
 
     async createCommon(): Promise<void> {
@@ -115,23 +118,32 @@ export default class AWSProject extends BaseProject {
         );
       }
  
-    async createRds(projectConfig?: any): Promise<void> {
-        console.log(projectConfig);
-        const moduleFolder = projectConfig.command === "new" || "new_template" 
-            ? "modules" 
-            : projectConfig.command === "new_module" 
-            ? "modules-single" 
-            : null;
-
+    async createRds(projectConfig?: any): Promise<void> { 
+        let moduleFolder;
+        if (projectConfig.command === "new_module") {
+            moduleFolder = "modules-single"; // Corrected assignment
+        }
+        if (projectConfig.command === "new_template" || projectConfig.command === "new") {
+            moduleFolder = "modules"; // Corrected assignment
+        }
         if (moduleFolder) {
-            this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/main.tf.liquid`, '/infrastructure/modules/rds', true);
-            this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/variables.tf.liquid`, '/infrastructure/modules/rds', true);
+            this.createFile(
+                'main.tf',
+                `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/main.tf.liquid`,
+                '/infrastructure/modules/rds',
+                true
+            );
+            this.createFile(
+                'variables.tf',
+                `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/variables.tf.liquid`,
+                '/infrastructure/modules/rds',
+                true
+            );
         } else {
             throw new Error("Invalid commandName in projectConfig.");
         }
     }
 
-    
     async createRoute53(): Promise<void> {
         this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/route53/main.tf.liquid`, '/infrastructure/modules/route53',true);
         this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/route53/variables.tf.liquid`, '/infrastructure/modules/route53',true);
@@ -261,79 +273,6 @@ export default class AWSProject extends BaseProject {
         }
     }
 
-    // async runTerraformApply(projectPath: string, module?: string, varFile?: string, moduleName?:string): Promise<void> {
-    //     AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
-    //     const projectConfig = SystemConfig.getInstance().getConfig();
-    //     return new Promise((resolve, reject) => {
-    //         try {
-    //             AppLogger.info(`Creating module: ${module}`, true);
-
-    //             let args = ['apply', '-no-color', '-auto-approve'];
-    //             if ((module && projectConfig.command === "new_template") || (module && projectConfig.command === "new")) {
-    //                 args.push(`-target=${module}`);
-    //             }
-    //             if (projectConfig.command === "new_module") {
-    //                 args.push(`-target=module.${module}`);
-    //             }
-
-    //             if (varFile) {
-    //                 args.push(`-var-file=${varFile}`);
-    //             }
-
-    //             const terraformProcess = spawn('terraform', args, {
-    //                 cwd: projectPath,
-    //                 env: process.env,
-    //                 stdio: ['inherit', 'pipe', 'pipe'] 
-    //             });
-
-    //             const totalSteps = 100;
-    //             const progressBar = ProgressBar.createProgressBar();
-    //             progressBar.start(totalSteps, 0, { message: 'Terraform apply in progress...' });
-
-    //             terraformProcess.stdout.on('data', (data) => {
-    //                 const output = data.toString();
-    //                 AppLogger.info(`stdout: ${output}`);
-    //                 const creationCompleteRegex = /Creation complete after \d+s \[id=.*\]/g;
-    //                 let match;
-    //                 while ((match = creationCompleteRegex.exec(output)) !== null) {
-    //                     progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
-    //                 }
-    //             });
-
-    //             terraformProcess.stderr.on('data', (data) => {
-    //                 const errorOutput = data.toString();
-    //                 progressBar.stop();
-    //                 AppLogger.error(`stderr: ${errorOutput}`);
-    //                 // Reject the promise on stderr output
-    //                 reject(new Error(`Terraform apply error: ${errorOutput}`));
-    //             });
-
-    //             terraformProcess.on('close', (code) => {
-    //                 if (code === 0) {
-    //                     progressBar.update(100, { message: 'Terraform apply completed.' });
-    //                     progressBar.stop();
-    //                     AppLogger.debug('Terraform apply completed successfully.', true);
-    //                     resolve();
-    //                 } else {
-    //                     progressBar.stop();
-    //                     AppLogger.error(`Terraform apply process exited with code ${code}`, true);
-    //                     reject(new Error(`Terraform apply process exited with code ${code}`));
-    //                     setImmediate(() => process.exit(1));
-    //                 }
-    //             });
-
-    //             terraformProcess.on('error', (err) => {
-    //                 progressBar.stop();
-    //                 AppLogger.error(`Failed to run Terraform process: ${err}`, true);
-    //                 reject(err);
-    //             });
-
-    //         } catch (error) {
-    //             AppLogger.error(`Failed to apply Terraform process: ${error}`, true);
-    //             reject(error);
-    //         }
-    //     });
-    // }
     async runTerraformApply(projectPath: string, module: string, moduleName:string, varFile?: string): Promise<void> {
     AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
 
@@ -428,6 +367,43 @@ export default class AWSProject extends BaseProject {
         process.exit(1);
     }
     }
+
+    async runTerraformDestroyTemplate(projectPath: string,  varFile?: string): Promise<void> {
+    AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
+     let awsStatus = false;
+     if (this.config.cloud_provider === "aws") {
+       awsStatus = true;
+     }
+    try {
+        let command =`terraform destroy  -auto-approve` 
+        if (varFile) {
+        command += ` -var-file=${varFile}`;
+        }
+        await executeCommandWithRetry(command, { cwd: projectPath, stdio: 'inherit' }, 3);
+        AppLogger.info('Terraform destroy completed successfully.', true);
+    } catch (error) {
+        AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
+        process.exit(1);
+    }
+       const status = await AWSPolicies.delete(
+         this,
+         this.config.aws_region,
+         this.config.aws_access_key_id,
+         this.config.aws_secret_access_key
+       );
+
+       if (status) {
+         awsStatus = await AWSTerraformBackend.delete(
+           this,
+           this.config.project_id,
+           this.config.aws_region,
+           this.config.aws_access_key_id,
+           this.config.aws_secret_access_key
+         );
+       }
+    }
+
+
 
     async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {
         // Path to the existing kubeconfig file

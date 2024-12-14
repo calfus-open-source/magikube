@@ -9,6 +9,9 @@ import { runTerraformUnlockCommands } from '../../core/utils/unlockTerraformStat
 import path from 'path';
 import { executeCommandWithRetry } from '../../core/common-functions/execCommands.js';
 import * as fs from 'fs';
+import TemplateTerraformProject from '../../core/templatesTerraform-projects.js';
+import SubModuleTemplateProject from '../../core/submoduleTerraform.js';
+
  
 export default class DestroyProject extends BaseCommand {  
   static args = {
@@ -37,16 +40,32 @@ Destroying magikube project named 'sample' in the current directory`,
     AppLogger.debug(`Destroying magikube project named '${args.name}' in the current directory`);
     SystemConfig.getInstance().mergeConfigs(responses);
     AppLogger.debug(`Config: ${JSON.stringify(SystemConfig.getInstance().getConfig(), null, 4)}`);
- 
-    const terraform = await TerraformProject.getProject(this);
+    const project_config = SystemConfig.getInstance().getConfig()
+    let terraform; // Use `let` to allow reassignment
+    if (project_config.command === "new") {
+      terraform = await TerraformProject.getProject(this);
+    } else if (project_config.command === "new_template") {
+      terraform = await TemplateTerraformProject.getProject(this);
+    } else if (project_config.command === "new_module"){
+      terraform = await SubModuleTemplateProject.getProject(this, args.name);
+    }
     if (terraform && responses.cloud_provider === 'aws') {  
       await terraform.AWSProfileActivate(responses['aws_profile'])
       if (readFile.services["terraform-apply"] === "fail") {
         await runTerraformUnlockCommands(projectPath, responses);
-      }
-      // Destroy the project
-      
-      await terraform.destroyProject(args.name, process.cwd());
+      }  
+      if (
+        project_config.command === "new_template" ||
+        project_config.command === "new_module"
+      ) {
+        await executeCommandWithRetry(`terraform init -backend-config=${project_config.environment}-config.tfvars`, { cwd: infrastructurePath }, 1);
+        await terraform?.runTerraformDestroyTemplate(infrastructurePath,"terraform.tfvars");
+        AppLogger.debug(`Removing folder '${process.cwd()}/${project_config.profileName}'`, true);
+        fs.rmSync(`${process.cwd()}/${project_config.profileName}'`, { recursive: true });
+      } else{
+        await terraform.destroyProject(args.name, process.cwd());
+      } 
+
     } else {
       AppLogger.error('Terraform project initialization failed or unsupported cloud provider.', true);
     }

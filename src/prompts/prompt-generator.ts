@@ -3,14 +3,7 @@ import SystemConfig from "../config/system.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
 import fs from "fs"
-// const projectConfig = SystemConfig.getInstance().getConfig();
-// console.log(projectConfig, "*********projectConfig");
-// const vpcChoices = Array.isArray(projectConfig.moduleName) ? projectConfig.moduleName : [];
-// console.log(vpcChoices, "<<<<<<<vpcChoices");
-// const project_config = JSON.parse(
-//   fs.readFileSync(path.join(path.resolve(), ".magikube"), "utf-8")
-// );
-// const vpcArray = project_config.moduleName;
+
 const productionPrompts: any[] = [
   {
     choices: ["production", "sandbox"],

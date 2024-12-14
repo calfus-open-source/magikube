@@ -38,7 +38,7 @@ export default class AWSTemplateProject extends AWSProject {
       this.createRds(config);
     }
     if (config.template === "vpc-rds-nodegroup-acm-ingress") {
-       this.createRds();
+       this.createRds(config);
        this.createEKSng();
        this.createACM();
        this.createIngressController();

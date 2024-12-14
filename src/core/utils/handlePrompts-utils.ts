@@ -57,7 +57,7 @@ export async function handlePrompts(
 
     if (
       commandName === "new_template" &&
-      template == "vpc-rds-nodegroup-ecr-ingress"
+      template == "vpc-rds-nodegroup-acm-ingress"
     ) {
       for (const domainPrompt of promptGenerator.getDomainPrompt()) {
         const domainResp = await inquirer.prompt(domainPrompt);

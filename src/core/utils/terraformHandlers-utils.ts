@@ -1,6 +1,6 @@
 import { updateStatusFile,} from './statusUpdater-utils.js'; // Adjust the import path as necessary
 import { execSync } from 'child_process';
-import { getServices, modules } from "../../core/constants/constants.js";
+import { services, modules } from "../../core/constants/constants.js";
 import { AppLogger } from '../../logger/appLogger.js';
 import { ManageRepository } from '../manage-repository.js';
 import { playbooks } from '../../core/constants/constants.js';
