@@ -18,6 +18,7 @@ import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformStat
 import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
 import { modules } from "../../core/constants/constants.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
+import SystemConfig from "../../config/system.js";
 
 export default class RestartProject extends BaseCommand {
   static args = {
@@ -35,11 +36,13 @@ export default class RestartProject extends BaseCommand {
      Restarting magikube project named 'sample' from where it left off`,
   ];
   async run(): Promise<void> {
-    AppLogger.configureLogger();
-    AppLogger.info("Logger Started ...");
     const { args } = await this.parse(RestartProject);
-    const project_config = dotMagikubeConfig(args.name, process.cwd());
-
+    AppLogger.configureLogger(args.name);
+    AppLogger.info("Logger Started ...");
+    const responses = dotMagikubeConfig(args.name, process.cwd());
+    responses.command = this.id;
+    SystemConfig.getInstance().mergeConfigs(responses);
+    const project_config = SystemConfig.getInstance().getConfig();
     try {
       let responses: Answers = {
         project_name: args.name,

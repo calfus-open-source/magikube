@@ -48,7 +48,8 @@ function validateUserInput(input: string): void {
     AppLogger.info("Logger Started ...");
 
     try {
-       let responses: Answers = await handlePrompts(args, flags);
+       let responses: Answers = await handlePrompts(args, this.id);
+
        responses.command = this.id;
        await cloneAndCopyTemplates();
        AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)

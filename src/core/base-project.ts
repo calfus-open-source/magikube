@@ -139,15 +139,15 @@ export default abstract class BaseProject {
     }
   }
 
-//   async createProviderFile(): Promise<void> {
-//     //create a providers.tf file in the path
-//     await this.createFile(
-//       "providers.tf",
-//       `${process.cwd()}/dist/templates/common/providers.tf.liquid`,
-//       "/infrastructure",
-//       true
-//     );
-//   }
+  //   async createProviderFile(): Promise<void> {
+  //     //create a providers.tf file in the path
+  //     await this.createFile(
+  //       "providers.tf",
+  //       `${process.cwd()}/dist/templates/common/providers.tf.liquid`,
+  //       "/infrastructure",
+  //       true
+  //     );
+  //   }
 
   async createProviderFile(): Promise<void> {
     const providerFilePath = join(
@@ -194,11 +194,51 @@ export default abstract class BaseProject {
   //         fs.writeFileSync(join(folderPath, filename), output);
   //     }
   // }
+  // async createFile(
+  //   filename: string,
+  //   templateFilename: string,
+  //   folderName: string = ".",
+  //   CreateProjectFile: boolean = false
+  // ): Promise<void> {
+  //   AppLogger.debug(`Creating or appending to ${filename} file`);
+
+  //   // Read the template file
+  //   const templateFile = fs.readFileSync(
+  //     CreateProjectFile
+  //       ? templateFilename
+  //       : join(new URL(".", import.meta.url).pathname, templateFilename),
+  //     "utf8"
+  //   );
+
+  //   // Render the template using Liquid.js
+  //   const output = await this.engine.parseAndRender(templateFile, {
+  //     ...this.config,
+  //   });
+
+  //   // Ensure the folder exists
+  //   const folderPath = join(this.projectPath, folderName);
+  //   if (!fs.existsSync(folderPath)) {
+  //     fs.mkdirSync(folderPath, { recursive: true });
+  //   }
+
+  //   // Path to the file
+  //   const filePath = join(folderPath, filename);
+
+  //   // Append to the file if it exists, otherwise create it
+  //   if (fs.existsSync(filePath)) {
+  //     AppLogger.debug(`${filename} already exists. Appending content.`);
+  //     fs.appendFileSync(filePath, `\n${output}`);
+  //   } else {
+  //     AppLogger.debug(`${filename} does not exist. Creating new file.`);
+  //     fs.writeFileSync(filePath, output);
+  //   }
+  // }
   async createFile(
     filename: string,
     templateFilename: string,
     folderName: string = ".",
-    CreateProjectFile: boolean = false
+    CreateProjectFile: boolean = false,
+    command: string = ""
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
 
@@ -224,10 +264,16 @@ export default abstract class BaseProject {
     // Path to the file
     const filePath = join(folderPath, filename);
 
-    // Append to the file if it exists, otherwise create it
+    // Handle file creation or appending logic
     if (fs.existsSync(filePath)) {
-      AppLogger.debug(`${filename} already exists. Appending content.`);
-      fs.appendFileSync(filePath, `\n${output}`);
+      if (command !== "restart") {
+        AppLogger.debug(`${filename} already exists. Appending content.`);
+        fs.appendFileSync(filePath, `\n${output}`);
+      } else {
+        AppLogger.debug(
+          `${filename} already exists, but skipping append logic as command is "restart".`
+        );
+      }
     } else {
       AppLogger.debug(`${filename} does not exist. Creating new file.`);
       fs.writeFileSync(filePath, output);

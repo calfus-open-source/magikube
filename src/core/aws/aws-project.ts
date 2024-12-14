@@ -118,30 +118,9 @@ export default class AWSProject extends BaseProject {
         );
       }
  
-    async createRds(projectConfig?: any): Promise<void> { 
-        let moduleFolder;
-        if (projectConfig.command === "new_module") {
-            moduleFolder = "modules-single"; // Corrected assignment
-        }
-        if (projectConfig.command === "new_template" || projectConfig.command === "new") {
-            moduleFolder = "modules"; // Corrected assignment
-        }
-        if (moduleFolder) {
-            this.createFile(
-                'main.tf',
-                `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/main.tf.liquid`,
-                '/infrastructure/modules/rds',
-                true
-            );
-            this.createFile(
-                'variables.tf',
-                `${process.cwd()}/dist/templates/aws/${moduleFolder}/rds/variables.tf.liquid`,
-                '/infrastructure/modules/rds',
-                true
-            );
-        } else {
-            throw new Error("Invalid commandName in projectConfig.");
-        }
+    async createRds(): Promise<void> { 
+        this.createFile( "main.tf", `${process.cwd()}/dist/templates/aws/modules/rds/main.tf.liquid`,"/infrastructure/modules/rds",true);
+        this.createFile( "variables.tf", `${process.cwd()}/dist/templates/aws/modules/rds/variables.tf.liquid`, "/infrastructure/modules/rds",true);    
     }
 
     async createRoute53(): Promise<void> {
@@ -281,7 +260,7 @@ export default class AWSProject extends BaseProject {
             AppLogger.info(`Creating module: ${module}`, true);
             let args = ['apply', '-no-color', '-auto-approve'];
             if (moduleName && module) {
-              args.push(`-target=module.${module}`);
+              args.push(`-target=${module}`);
             } else if (module) {
               args.push(`-target=${module}`);
             }

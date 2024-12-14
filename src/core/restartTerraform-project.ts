@@ -5,7 +5,7 @@ import AWSK8SProject from "./aws/aws-k8s.js";
 import AWSProject from "./aws/aws-project.js";
 import EKSNodeGroupProject from "./aws/aws-eks-nodegroup.js";
 import { dotMagikubeConfig } from "./utils/projectConfigReader-utils.js";
-export default abstract class RestartTerraformProject {
+export default abstract class  RestartTerraformProject {
   static async getProject(
     command: BaseCommand,
     projectName: string
