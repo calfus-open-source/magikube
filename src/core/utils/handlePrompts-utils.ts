@@ -71,7 +71,7 @@ export async function handlePrompts(
         responses = { ...responses, ...cidrResp };
       }
     }
-    if (moduleType === "rds") {
+    else if (moduleType === "rds") {
       const project_config = JSON.parse(
         fs.readFileSync(path.join(path.resolve(args), ".magikube"), "utf-8")
       );
@@ -90,6 +90,13 @@ export async function handlePrompts(
         const vpcResp = await inquirer.prompt(vpcPrompt);
         responses = { ...responses, ...vpcResp };
       }
+    }else if(moduleType === "acm"){
+      
+        for (const domainPrompt of promptGenerator.getDomainPrompt()) {
+          const domainResp = await inquirer.prompt(domainPrompt);
+          responses = { ...responses, ...domainResp };
+        }
+      
     }
 
   } else if (commandName === "new") {
