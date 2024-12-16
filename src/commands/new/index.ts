@@ -12,7 +12,7 @@ import AWSAccount from "../../core/aws/aws-account.js";
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
-import { getServices, modules } from "../../core/constants/constants.js";
+import { services, modules } from "../../core/constants/constants.js";
 import { handleEKS, handleK8s} from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 
@@ -48,7 +48,9 @@ function validateUserInput(input: string): void {
     AppLogger.info("Logger Started ...");
 
     try {
-       let responses: Answers = await handlePrompts(args, flags);
+       let responses: Answers = await handlePrompts(args, this.id);
+
+       responses.command = this.id;
        await cloneAndCopyTemplates();
        AppLogger.debug(`Creating new magikube project named '${args.name}' in the current directory`)
        SystemConfig.getInstance().mergeConfigs(responses);
@@ -60,7 +62,7 @@ function validateUserInput(input: string): void {
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(command as BaseCommand, projectConfig)
 
-      const services = getServices(responses["frontend_app_type"]);
+      // const services = getServices(responses["frontend_app_type"]);
       initializeStatusFile(projectName, modules, services);
       const status =  await readStatusFile(projectName)
       const {

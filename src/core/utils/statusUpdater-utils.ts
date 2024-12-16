@@ -5,7 +5,7 @@ import { AppLogger } from "../../logger/appLogger.js";
 export function initializeStatusFile(
   projectName: string,
   modules: string[],
-  services: string[]
+  services?: string[]
 ) {
   const projectPath = path.join(process.cwd(), projectName);
   const statusFilePath = path.join(projectPath, "status.json");
@@ -31,11 +31,13 @@ export function initializeStatusFile(
   });
 
   // Initialize services with "pending" status if not already present
-  services.forEach((service) => {
-    if (!statusData.services[service]) {
-      statusData.services[service] = "pending";
-    }
-  });
+ if(services){
+   services.forEach((service) => {
+     if (!statusData.services[service]) {
+       statusData.services[service] = "pending";
+     }
+   });
+ }
 
   fs.writeFileSync(statusFilePath, JSON.stringify(statusData, null, 2), "utf8");
 }
