@@ -33,6 +33,19 @@ export default abstract class BaseProject {
     // Run terraform destroy
     AppLogger.info(`Running terraform destroy in the path`, true);
     const terraform = await TerraformProject.getProject(this.command);
+    const modules = [
+      "module.rds",
+      "module.environment",
+      "module.argo",
+      "module.ingress-controller",
+      "module.repository",
+      "module.gitops",
+      "module.ecr-repo",
+      "module.acm",
+      "module.eks",
+      "module.vpc",
+    ];
+
     if (
       this.config.cluster_type === "eks-fargate" ||
       this.config.cluster_type === "eks-nodegroup"
@@ -266,7 +279,11 @@ export default abstract class BaseProject {
     // Define the full path to the file
     const filePath = join(folderPath, filename);
 
-    if (project_config.command === "new" || project_config.command === "restart" || project_config.command === "new_template") {
+    if (
+      project_config.command === "new" ||
+      project_config.command === "restart" ||
+      project_config.command === "new_template"
+    ) {
       // Logic for the "restart" command
       AppLogger.debug(`Creating ${filename} file for restart command.`);
       fs.writeFileSync(filePath, output);

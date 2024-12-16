@@ -28,7 +28,7 @@ export default class CommonSubModuleProject extends AWSProject {
         else if (lastModule === "eks-nodegroup") {
           this.createEKSng();
         } else if (lastModule === "rds") {
-          this.createRds();
+          this.createRdsmodule();
         } else if (lastModule === "acm") {
           this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
           this.createACM();
