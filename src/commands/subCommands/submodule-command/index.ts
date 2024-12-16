@@ -18,14 +18,12 @@ import { executeCommandWithRetry } from "../../../core/common-functions/execComm
 
 function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
-  if (pattern.test(input)) {
-    console.log("Module name is valid.");
-  } else {
+  if (!pattern.test(input)) {
     console.error(
       `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Module Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must contain only alphanumeric characters, dashes (-), or underscores (_).\n \n`
     );
     process.exit(1);
-  }
+  } 
 }
 
 export default class NewModule extends BaseCommand {
