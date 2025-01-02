@@ -131,11 +131,11 @@ export default class RestartProject extends BaseCommand {
         } = project_config;
  
         const configObject: ConfigObject = {token,userName,orgName, sourceCodeRepo, region, projectName, awsAccessKey, awsSecretKey, environment,};
-        await setupAndPushServices(status, project_config, configObject )
+        await setupAndPushServices( project_config, configObject )
 
       }
 
-      createApp.MoveFiles(projectName);
+
       await serviceHealthCheck(args, responses, project_config);
     } catch (error) {
       AppLogger.error(

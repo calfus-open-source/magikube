@@ -9,9 +9,6 @@ import { executeCommandWithRetry } from "./common-functions/execCommands.js";
 import { updateStatusFile } from "./utils/statusUpdater-utils.js";
 
 export default class CreateApplication extends BaseProject {
-  MoveFiles(projectName: string) {
-    throw new Error("Method not implemented.");
-  }
     private appTypeMap: AppTypeMap;
     constructor(command: BaseCommand, projectConfig: any) {
         super(command, projectConfig);
@@ -175,13 +172,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             await executeCommandWithRetry('npm install', { cwd: `${path}/${projectName}/${nextAppName}` },3);
-            updateStatusFile(projectName, projectConfig.appType, "success");
+            updateStatusFile(projectName, nextAppName, "success");
             AppLogger.info("Next.js application created successfully.", true);
             return true;
 
         } catch (error) {
             AppLogger.error(`Failed to create Next.js app: ${error}`, true);
-            updateStatusFile(projectName, projectConfig.appType, "fail");
+            updateStatusFile(projectName, nextAppName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${nextAppName}`, { recursive: true });
             process.exit(1);
         }
@@ -217,68 +214,63 @@ export default class CreateApplication extends BaseProject {
 
             await executeCommandWithRetry('npm install', {cwd:`${path}/${projectName}/${reactAppName}`}, 3);
             AppLogger.info('React app created successfully.', true);
-            updateStatusFile(projectName, projectConfig.appType, "success");
+            updateStatusFile(projectName, reactAppName, "success");
             return true;
 
     } catch (error) {
             AppLogger.error(`Failed to create React app:${error}`, true);
             AppLogger.info(`Error occured, cleaning up the ${reactAppName} directory...`, true);
-            updateStatusFile(projectName, projectConfig.appType, "fail");
+            updateStatusFile(projectName, reactAppName, "fail");
             fs.rmdirSync(`${path}/${projectName}/${reactAppName}`, { recursive: true });
             process.exit(1);
     }
 }
-
-    async setupGitops(projectConfig: any) {
-        const path = process.cwd();
-        const appName = 'gitops';
-        const { project_name: projectName, frontend_app_type, environment } = projectConfig;
-    
-        try {
-            const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml'];
-            const gitopsKeycloakFiles = ['deployment.yml', 'ingress.yml', 'service.yml', 'deployment-postgres.yml'];
-            const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml'];
+   
+    //Setup Gitops 
+    async setupGitops(projectConfig:any){
+         const path = process.cwd();
+         const appName = 'gitops';
+         const { project_name: projectName, frontend_app_type, environment } = projectConfig;   
+         try{ 
+             const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml']
+             const gitopsKeycloakFiles = ['deployment.yml', 'ingress.yml', 'service.yml', 'deployment-postgres.yml']
+             const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml' ]
+             for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
+             }
             
-            // Adjusted paths
-            for (const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/auth-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
+              for(const file of gitopsKeycloakFiles) {
+                await this.createFile(file, `${path}/dist/gitops/keycloak-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/keycloak`, true);
+             }
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/express-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/express`, true);
+             }
+             if(frontend_app_type == 'react'){
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/react-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/react`, true);
+             }
+             await this.createFile('react.yml', `${path}/dist/gitops/common-gitops-files/react.yml.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true )
             }
+            if(frontend_app_type == 'next'){
+              for(const file of gitopsFiles) {
+                await this.createFile(file, `${path}/dist/gitops/next-gitops/${file}.liquid`,`${path}/${projectName}/gitops/${projectName}-${environment}/next/`, true);
+             }
+             await this.createFile('next.yml', `${path}/dist/gitops/common-gitops-files/next.yml.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true )
+            }
+              for(const file of commonGitopsFiles){
+                await this.createFile(`${file}`, `${path}/dist/gitops/common-gitops-files/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true)
+            }
+
+              AppLogger.info('Gitops setup is done.', true);
+              updateStatusFile(projectName, "gitops", "success");
+              return true;
         
-            for (const file of gitopsKeycloakFiles) {
-                await this.createFile(file, `${path}/dist/gitops/keycloak-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/keycloak`, true);
-            }
-    
-            for (const file of gitopsFiles) {
-                await this.createFile(file, `${path}/dist/gitops/express-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/express`, true);
-            }
-    
-            if (frontend_app_type === 'react') {
-                for (const file of gitopsFiles) {
-                    await this.createFile(file, `${path}/dist/gitops/react-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/react`, true);
-                }
-                await this.createFile('react.yml', `${path}/dist/gitops/common-gitops-files/react.yml.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true);
-            }
-    
-            if (frontend_app_type === 'next') {
-                for (const file of gitopsFiles) {
-                    await this.createFile(file, `${path}/dist/gitops/next-gitops/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}/next/`, true);
-                }
-                await this.createFile('next.yml', `${path}/dist/gitops/common-gitops-files/next.yml.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true);
-            }
-    
-            for (const file of commonGitopsFiles) {
-                await this.createFile(`${file}`, `${path}/dist/gitops/common-gitops-files/${file}.liquid`, `${path}/${projectName}/gitops/${projectName}-${environment}`, true);
-            }
-            AppLogger.info('Gitops setup is done.', true);
-            updateStatusFile(projectName, appName, "success");
-            return true;
-    
-        } catch (error) {
+         }catch (error) {
             AppLogger.error(`Failed to setup Gitops service, ${error}`, true);
-            updateStatusFile(projectName, appName, "fail");
+            updateStatusFile(projectName, "gitops", "success");
             fs.rmdirSync(`${path}/${projectName}/${appName}`, { recursive: true });
             process.exit(1);
-        }
+      }
     }
 
     // Wrapper for app creation and repo setup
