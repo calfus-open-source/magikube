@@ -10,6 +10,19 @@ export const modules = [
     "module.environment"
 ];
 
+export const destroyModules = [
+  "module.rds",
+  "module.environment",
+  "module.argo",
+  "module.ingress-controller",
+  "module.repository",
+  "module.gitops",
+  "module.ecr-repo",
+  "module.acm",
+  "module.eks",
+  "module.vpc",
+];
+
 
 
 export const services =[

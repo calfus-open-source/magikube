@@ -47,14 +47,10 @@ Destroying magikube project named 'sample' in the current directory`,
       `Destroying magikube project named '${args.name}' in the current directory`
     );
     SystemConfig.getInstance().mergeConfigs(responses);
-    AppLogger.debug(
-      `Config: ${JSON.stringify(
-        SystemConfig.getInstance().getConfig(),
-        null,
-        4
-      )}`
-    );
+    // const modules = ["acm",, "rds", "vpc"];
     const project_config = SystemConfig.getInstance().getConfig();
+    // console.log(project_config, ",<<<<<project_config");
+    const destroyModules = project_config.appliedModules
     let terraform; // Use `let` to allow reassignment
     if (project_config.command === "new") {
       terraform = await TerraformProject.getProject(this);
@@ -79,6 +75,7 @@ Destroying magikube project named 'sample' in the current directory`,
         );
         await terraform?.runTerraformDestroyTemplate(
           infrastructurePath,
+          // destroyModules,
           "terraform.tfvars"
         );
         if (fs.existsSync(`${process.cwd()}/${args.name}`)) {

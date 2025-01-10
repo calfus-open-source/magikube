@@ -1,6 +1,8 @@
 import path, { join } from "path";
 import AWSProject from "./aws-project.js";
 import SystemConfig from "../../config/system.js";
+import { dotMagikubeConfig } from "../utils/projectConfigReader-utils.js";
+import { readStatusFile } from "../utils/statusUpdater-utils.js";
  
 export default class CommonSubModuleProject extends AWSProject {
   private path: string | undefined;
@@ -12,15 +14,17 @@ export default class CommonSubModuleProject extends AWSProject {
     super.createProject(name, path);
     this.createMainFile(projectConfig.moduleType, projectConfig);  // Pass moduleType to createMainFile
   }
-
+ 
   async createMainFile(moduleType: string | string[], projectConfig:any): Promise<void> {
-    const lastModule = moduleType[moduleType.length - 1];
+   const status = await readStatusFile(projectConfig.project_name);
+   const lastModule = moduleType[moduleType.length - 1];
     // Create common files
+    if(status.modules[lastModule] === "pending"){
    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/main.tf.liquid`, "/infrastructure", true);
-    this.createFile("terraform.tfvars",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/terraform.tfvars.liquid`,"/infrastructure",true);
+    // this.createFile("terraform.tfvars",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/terraform.tfvars.liquid`,"/infrastructure",true);
     this.createFile("variables.tf",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/variables.tf.liquid`,"/infrastructure",true);     
         if (lastModule === "vpc") {
-          this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
+           this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
           this.createVpc();
         }else if (lastModule === "eks-fargate") {
           this.createEKS();
@@ -33,6 +37,8 @@ export default class CommonSubModuleProject extends AWSProject {
           this.createFile( `${this.config.environment}-config.tfvars`,`${process.cwd()}/dist/templates/aws/predefined/submodule/backend-config.tfvars.liquid`,"/infrastructure",true);
           this.createACM();
         }
+      }
+      this.createFile("terraform.tfvars",`${process.cwd()}/dist/templates/aws/predefined/submodule/${lastModule}-module/terraform.tfvars.liquid`,"/infrastructure",true);
   }
   async createRdsmodule(): Promise<void> {
     this.createFile(

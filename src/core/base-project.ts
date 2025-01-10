@@ -7,7 +7,7 @@ import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { executeCommandWithRetry } from "./common-functions/execCommands.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
-import { modules } from "./constants/constants.js";
+import { destroyModules } from "./constants/constants.js";
 
 export default abstract class BaseProject {
   protected config: any = {};
@@ -33,19 +33,6 @@ export default abstract class BaseProject {
     // Run terraform destroy
     AppLogger.info(`Running terraform destroy in the path`, true);
     const terraform = await TerraformProject.getProject(this.command);
-    const modules = [
-      "module.rds",
-      "module.environment",
-      "module.argo",
-      "module.ingress-controller",
-      "module.repository",
-      "module.gitops",
-      "module.ecr-repo",
-      "module.acm",
-      "module.eks",
-      "module.vpc",
-    ];
-
     if (
       this.config.cluster_type === "eks-fargate" ||
       this.config.cluster_type === "eks-nodegroup"
@@ -58,7 +45,7 @@ export default abstract class BaseProject {
       );
       const readFile = readStatusFile(projectName);
       // Destroy modules one by one
-      for (const module of modules) {
+      for (const module of destroyModules) {
         if (readFile.modules[module] == "success") {
           try {
             AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
@@ -88,7 +75,7 @@ export default abstract class BaseProject {
         `${this.config.environment}-config.tfvars`,
         projectName
       );
-      for (const module of modules) {
+      for (const module of destroyModules) {
         try {
           terraform?.startSSHProcess();
           // Destroy the ingress and other helm modules
@@ -246,13 +233,7 @@ export default abstract class BaseProject {
   //     fs.writeFileSync(filePath, output);
   //   }
   // }
-  async createFile(
-    filename: string,
-    templateFilename: string,
-    folderName: string = ".",
-    CreateProjectFile: boolean = false,
-    command: string = ""
-  ): Promise<void> {
+  async createFile(filename: string,templateFilename: string,folderName: string = ".",CreateProjectFile: boolean = false, command: string = ""): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
     const project_config = SystemConfig.getInstance().getConfig();
     // Determine the template file path based on the command and CreateProjectFile flag
