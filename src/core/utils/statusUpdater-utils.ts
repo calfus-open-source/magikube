@@ -80,8 +80,8 @@ export function updateStatusFile(
 
 
 // To reade the status.json file
-export function readStatusFile(projectName:string){
-  const statusFilePath = path.join( process.cwd(),projectName, "status.json");
+export function readStatusFile(projectConfig:any){
+  const statusFilePath = path.join(process.cwd(), projectConfig.command === "module" ? "" : projectConfig.project_name, "status.json");
   if (!fs.existsSync(statusFilePath)) {
   return null;
   }

@@ -4,6 +4,7 @@ import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
+import { AppLogger } from "../../logger/appLogger.js";
 
 export async function handlePrompts(
   args: any,
@@ -64,7 +65,7 @@ export async function handlePrompts(
         responses = { ...responses, ...domainResp };
       }
     }
-  } else if (commandName === "new_module") {
+  } else if (commandName === "module") {
     if (moduleType === "vpc") {
       for (const cidrPrompt of promptGenerator.getCIDRPrompt()) {
         const cidrResp = await inquirer.prompt(cidrPrompt);
@@ -81,9 +82,7 @@ export async function handlePrompts(
         vpcArray.length === 0 ||
         vpcArray.every((vpc: any) => vpc === null)
       ) {
-        console.error(
-          "Error: No valid VPCs found. Please configure VPCs before proceeding with the RDS module."
-        );
+        AppLogger.error("Error: No valid VPCs found. Please configure VPCs before proceeding with the RDS module.", true);
         process.exit(1);
       }
       for (const vpcPrompt of promptGenerator.getVPCPrompt(vpcArray)) {

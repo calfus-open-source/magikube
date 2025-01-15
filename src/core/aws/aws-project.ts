@@ -86,74 +86,150 @@ export default class AWSProject extends BaseProject {
             }
         
     }
-    }
+  }
 
-    async createCommon(): Promise<void> {
-        this.createVpc();
-        this.createACM();
-        this.createRoute53();
-        this.createECR();
-        this.createIngressController();
-        this.createRds();
-        this.createEnvironment();
-    }
+  async createCommon(path?: string): Promise<void> {
+    this.createVpc(path);
+    this.createACM(path);
+    this.createRoute53();
+    this.createECR();
+    this.createIngressController();
+    this.createRds(path);
+    this.createEnvironment();
+  }
 
-    async createVpc(): Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/vpc/main.tf.liquid`, '/infrastructure/modules/vpc',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/vpc/variables.tf.liquid`, '/infrastructure/modules/vpc',true);
-    }
+  async createVpc(path?: string): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${path}/dist/templates/aws/modules/vpc/main.tf.liquid`,
+      "/infrastructure/modules/vpc",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${path}/dist/templates/aws/modules/vpc/variables.tf.liquid`,
+      "/infrastructure/modules/vpc",
+      true
+    );
+  }
 
-    async createEKS(): Promise<void> {
-        this.createFile(
-          "main.tf",
-          `${process.cwd()}/dist/templates/aws/modules/eks-fargate/main.tf.liquid`,
-          "/infrastructure/modules/eks-fargate",
-          true
-        );
-        this.createFile(
-          "variables.tf",
-          `${process.cwd()}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
-          "/infrastructure/modules/eks-fargate",
-          true
-        );
-      }
- 
-    async createRds(): Promise<void> { 
-        this.createFile( "main.tf", `${process.cwd()}/dist/templates/aws/modules/rds/main.tf.liquid`,"/infrastructure/modules/rds",true);
-        this.createFile( "variables.tf", `${process.cwd()}/dist/templates/aws/modules/rds/variables.tf.liquid`, "/infrastructure/modules/rds",true);    
-    }
+  async createEKS(path?:string): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${path}/dist/templates/aws/modules/eks-fargate/main.tf.liquid`,
+      "/infrastructure/modules/eks-fargate",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
+      "/infrastructure/modules/eks-fargate",
+      true
+    );
+  }
 
-    async createRoute53(): Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/route53/main.tf.liquid`, '/infrastructure/modules/route53',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/route53/variables.tf.liquid`, '/infrastructure/modules/route53',true);
-    }
+  async createRds(path?:string): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${path}/dist/templates/aws/modules/rds/main.tf.liquid`,
+      "/infrastructure/modules/rds",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${path}/dist/templates/aws/modules/rds/variables.tf.liquid`,
+      "/infrastructure/modules/rds",
+      true
+    );
+  }
 
-    async createIngressController(): Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/ingress-controller/main.tf.liquid`, '/infrastructure/modules/ingress-controller',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/ingress-controller/variables.tf.liquid`, '/infrastructure/modules/ingress-controller', true);
-    }
+  async createRoute53(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/route53/main.tf.liquid`,
+      "/infrastructure/modules/route53",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/route53/variables.tf.liquid`,
+      "/infrastructure/modules/route53",
+      true
+    );
+  }
 
-    async createACM(): Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/acm/main.tf.liquid`, '/infrastructure/modules/acm',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/acm/variables.tf.liquid`, '/infrastructure/modules/acm',true);
-    }
+  async createIngressController(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/ingress-controller/main.tf.liquid`,
+      "/infrastructure/modules/ingress-controller",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/ingress-controller/variables.tf.liquid`,
+      "/infrastructure/modules/ingress-controller",
+      true
+    );
+  }
 
-    async createEnvironment(): Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/environment/main.tf.liquid`, '/infrastructure/modules/environment',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/environment/variables.tf.liquid`, '/infrastructure/modules/environment',true);
-        this.createFile('argocd-app.yaml', `${process.cwd()}/dist/templates/aws/modules/environment/argocd-app.yaml.liquid`, '/infrastructure',true);
-    }
-    async createECR(): Promise<void> {
-        this.createFile('main.tf', `${process.cwd()}/dist/templates/aws/modules/ecr/main.tf.liquid`, '/infrastructure/modules/ecr',true);
-        this.createFile('variables.tf', `${process.cwd()}/dist/templates/aws/modules/ecr/variables.tf.liquid`, '/infrastructure/modules/ecr',true);
-    }
-    // Function to start the SSH process in the background
-    async startSSHProcess() {
-        const proxyName = this.config.project_name + '-' + this.config.environment + '-proxy';
-        sshProcess = spawn('ssh', ['-D', '8002', '-N', `${proxyName}`], {
-            detached: true,
-            stdio: 'ignore'
-        });
+  async createACM(path?:string): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${path}/dist/templates/aws/modules/acm/main.tf.liquid`,
+      "/infrastructure/modules/acm",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${path}/dist/templates/aws/modules/acm/variables.tf.liquid`,
+      "/infrastructure/modules/acm",
+      true
+    );
+  }
+
+  async createEnvironment(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/environment/main.tf.liquid`,
+      "/infrastructure/modules/environment",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/environment/variables.tf.liquid`,
+      "/infrastructure/modules/environment",
+      true
+    );
+    this.createFile(
+      "argocd-app.yaml",
+      `${process.cwd()}/dist/templates/aws/modules/environment/argocd-app.yaml.liquid`,
+      "/infrastructure",
+      true
+    );
+  }
+  async createECR(): Promise<void> {
+    this.createFile(
+      "main.tf",
+      `${process.cwd()}/dist/templates/aws/modules/ecr/main.tf.liquid`,
+      "/infrastructure/modules/ecr",
+      true
+    );
+    this.createFile(
+      "variables.tf",
+      `${process.cwd()}/dist/templates/aws/modules/ecr/variables.tf.liquid`,
+      "/infrastructure/modules/ecr",
+      true
+    );
+  }
+  // Function to start the SSH process in the background
+  async startSSHProcess() {
+    const proxyName =
+      this.config.project_name + "-" + this.config.environment + "-proxy";
+    sshProcess = spawn("ssh", ["-D", "8002", "-N", `${proxyName}`], {
+      detached: true,
+      stdio: "ignore",
+    });
 
         sshProcess.unref();
         AppLogger.debug('SSH process started in the background.');

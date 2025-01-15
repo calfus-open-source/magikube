@@ -40,6 +40,7 @@ export default class AWSK8SProject extends AWSProject {
             this.createBastionHost(),
             this.createMasterNode(),
             this.createWorkerNode(),
+            this.createProviderFile(),
             this.copyFolderAndRender(`${process.cwd()}/dist/templates/aws/ansible`, '/templates/aws/ansible'),
             this.createFile('ssh-config.tftpl', `${process.cwd()}/dist/templates/aws/k8s/ssh-config.tftpl`, "/infrastructure", true),
             gitOpsInstance.createGitOps(this.path, this.projectName),

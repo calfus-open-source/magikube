@@ -21,13 +21,14 @@ export default class EKSFargateProject extends AWSProject {
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
-    this.createFile("main.tf", `${process.cwd()}/dist/templates/aws/eks-fargate/main.tf.liquid` , `/infrastructure`, true);
-    this.createFile( "terraform.tfvars",`${process.cwd()}/dist/templates/aws/eks-fargate/terraform.tfvars.liquid` ,`/infrastructure`, true);
-    this.createFile( "variables.tf",`${process.cwd()}/dist/templates/aws/eks-fargate/variables.tf.liquid`, "/infrastructure", true);
-    this.createFile( `${this.config.environment}-config.tfvars`, `${process.cwd()}/dist/templates/aws/eks-fargate/backend-config.tfvars.liquid` , "/infrastructure", true);
-
-    this.createCommon();
-    this.createEKS();
+    const path = process.cwd();
+    this.createFile("main.tf", `${path}/dist/templates/aws/eks-fargate/main.tf.liquid` , `/infrastructure`, true);
+    this.createFile( "terraform.tfvars",`${path}/dist/templates/aws/eks-fargate/terraform.tfvars.liquid` ,`/infrastructure`, true);
+    this.createFile( "variables.tf",`${path}/dist/templates/aws/eks-fargate/variables.tf.liquid`, "/infrastructure", true);
+    this.createFile( `${this.config.environment}-config.tfvars`, `${path}/dist/templates/aws/eks-fargate/backend-config.tfvars.liquid` , "/infrastructure", true);
+    this.createProviderFile(path)
+    this.createCommon(path);
+    this.createEKS(); 
     gitOpsInstance.createGitOps(this.path, this.name);
     repositoryInstance.createrepository(this.path, this.name);
     argocdInstance.argoCdProject(this.path, this.name);

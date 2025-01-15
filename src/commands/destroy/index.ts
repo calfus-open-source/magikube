@@ -40,37 +40,26 @@ Destroying magikube project named 'sample' in the current directory`,
     const projectPath = path.join(process.cwd(), args.name);
     AppLogger.configureLogger(args.name, false);
     const responses = dotMagikubeConfig(args.name, process.cwd());
-    const readFile = readStatusFile(args.name);
+    const readFile = readStatusFile(responses);
     const infrastructurePath = path.join(projectPath, "infrastructure");
     responses.dryrun = flags.dryrun || false;
-    AppLogger.debug(
-      `Destroying magikube project named '${args.name}' in the current directory`
-    );
+    AppLogger.debug( `Destroying magikube project named '${args.name}' in the current directory`, true);
     SystemConfig.getInstance().mergeConfigs(responses);
-    AppLogger.debug(
-      `Config: ${JSON.stringify(
-        SystemConfig.getInstance().getConfig(),
-        null,
-        4
-      )}`
-    );
     const project_config = SystemConfig.getInstance().getConfig();
-    let terraform; // Use `let` to allow reassignment
+    let terraform; 
     if (project_config.command === "new") {
       terraform = await TerraformProject.getProject(this);
     } else if (project_config.command === "new_template") {
       terraform = await TemplateTerraformProject.getProject(this);
-    } else if (project_config.command === "new_module") {
+    } else if (project_config.command === "module") {
       terraform = await SubModuleTemplateProject.getProject(this, args.name);
     }
     if (terraform && responses.cloud_provider === "aws") {
       await terraform.AWSProfileActivate(responses["aws_profile"]);
-      if (readFile.services["terraform-apply"] === "fail" || readFile.services["terraform-apply"] === "pending") {
-        await runTerraformUnlockCommands(projectPath, responses);
-      }
+      await runTerraformUnlockCommands(projectPath, responses);
       if (
         project_config.command === "new_template" ||
-        project_config.command === "new_module"
+        project_config.command === "module"
       ) {
         await executeCommandWithRetry(
           `terraform init -backend-config=${project_config.environment}-config.tfvars`,

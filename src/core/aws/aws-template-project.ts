@@ -18,44 +18,13 @@ export default class AWSTemplateProject extends AWSProject {
   }
 
   async createMainFile(config: any): Promise<void> {
+    const path = process.cwd();
     let command: BaseCommand | undefined;
-    this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/${
-        config.cloud_provider
-      }/predefined/grouping-templates/${config.template}/main.tf.liquid`,
-      "/infrastructure",
-      true
-    );
-    this.createFile(
-      "terraform.tfvars",
-      `${process.cwd()}/dist/templates/${
-        config.cloud_provider
-      }/predefined/grouping-templates/${
-        config.template
-      }/terraform.tfvars.liquid`,
-      "/infrastructure",
-      true
-    );
-    this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/${
-        config.cloud_provider
-      }/predefined/grouping-templates/${config.template}/variables.tf.liquid`,
-      "/infrastructure",
-      true
-    );
-    this.createFile(
-      `${this.config.environment}-config.tfvars`,
-      `${process.cwd()}/dist/templates/${
-        config.cloud_provider
-      }/predefined/grouping-templates/${
-        config.template
-      }/backend-config.tfvars.liquid`,
-      "/infrastructure",
-      true
-    );
-
+    this.createFile("main.tf",`${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/main.tf.liquid`,"/infrastructure",true);
+    this.createFile("terraform.tfvars",`${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/terraform.tfvars.liquid`,"/infrastructure",true);
+    this.createFile("variables.tf",`${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/variables.tf.liquid`,"/infrastructure",true);
+    this.createFile(`${this.config.environment}-config.tfvars`, `${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/backend-config.tfvars.liquid`,"/infrastructure", true);
+    this.createProviderFile()
     if (
       config.template === "eks-fargate-vpc" ||
       config.template === "eks-nodegroup-vpc" ||
