@@ -15,7 +15,6 @@ import {
   eksFargateVpcModules,
   eksNodegroupVpcModules,
   modules,
-  supportedTemplates,
   rdsVpcModules,
   services,
   vpceksNodegroupIngressModules,
@@ -61,7 +60,11 @@ export default class CustomTemplatesProject extends BaseCommand {
   ];
 
   private predefinedTemplates = [
-    ...supportedTemplates
+    "eks-fargate-vpc",
+    "eks-nodegroup-vpc",
+    "rds-vpc",
+    "ec2-vpc",
+    "vpc-rds-nodegroup-acm-ingress",
   ];
 
   async run(): Promise<void> {
