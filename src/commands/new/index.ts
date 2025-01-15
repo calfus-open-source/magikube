@@ -12,7 +12,7 @@ import AWSAccount from "../../core/aws/aws-account.js";
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
-import { services, modules } from "../../core/constants/constants.js";
+import { services, modules, RestrictedCommands } from "../../core/constants/constants.js";
 import { handleEKS, handleK8s} from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 
@@ -22,6 +22,16 @@ function validateUserInput(input: string): void {
     console.error(`\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must start with an alphabet, must include only lowercase alphabets, numbers, or underscores, length of string must be [3-8] and must not end with an underscore. \n \n`);
     process.exit(1);
   } 
+}
+
+function validateRestrictedInputs(input: string): void {
+  const restrictedCommands = [...RestrictedCommands];
+  if (restrictedCommands.includes(input)) {
+    console.error(
+      `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Command "${Colours.boldText}${input}${Colours.colorReset}" is restricted and cannot be executed using "magikube new". \n \n`
+    );
+    process.exit(1);
+  }
 }
 
   export default class CreateProject extends BaseCommand {
@@ -43,6 +53,7 @@ function validateUserInput(input: string): void {
     const { args, flags } = await this.parse(CreateProject);
     // Check the project name condition
     validateUserInput(args.name);
+    validateRestrictedInputs(args.name);
     AppLogger.configureLogger(args.name);
     AppLogger.info("Logger Started ...");
 

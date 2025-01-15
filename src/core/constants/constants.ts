@@ -10,7 +10,7 @@ export const modules = [
     "module.environment"
 ];
 
-
+export const RestrictedCommands = ["vpc", "rds", "eks", "acm", "ecr"]
 
 export const services =[
     "policy",
