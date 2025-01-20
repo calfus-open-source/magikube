@@ -9,5 +9,5 @@ export const COMMANDS = {
   destroy: DestroyProject,
   restart: RestartProject,
   new_template: CustomTemplatesProject,
-  new_module: NewModule,
+  module: NewModule,
 };

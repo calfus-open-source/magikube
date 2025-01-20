@@ -34,6 +34,7 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
       `${this.config.environment}-config.tfvars`,
       `${process.cwd()}/dist/templates/aws/eks-nodegroup/backend-config.tfvars.liquid` , "/infrastructure", true
     );
+    this.createProviderFile()
     this.createCommon();
     this.createEKSng();
     gitOpsInstance.createGitOps(this.path, this.name);

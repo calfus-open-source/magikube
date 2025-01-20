@@ -23,7 +23,7 @@ import SystemConfig from "../../config/system.js";
 import AWSAccount from "./aws-account.js";
 import { AppLogger } from "../../logger/appLogger.js";
 import { readStatusFile, updateStatusFile } from "../utils/statusUpdater-utils.js";
-import { join } from "path";
+import path, { join } from "path";
 
 
 export default class AWSPolicies {
@@ -105,21 +105,29 @@ export default class AWSPolicies {
         };
 
         // const status = await readStatusFile(projectName)
-        const readFile = readStatusFile(projectName);
+        const projectConfig = SystemConfig.getInstance().getConfig();
+        const readFile = readStatusFile(projectConfig);
         if (readFile.services["policy"] === "pending" || readFile.services["policy"] === "fail") {
-            const files = fs.readdirSync(join(process.cwd(), 'dist/templates/aws/policies'));
+            let folderpath;
+            let policyPath;
+            if (projectConfig.command === "module") {
+              folderpath = path.resolve(process.cwd(), "..");
+              policyPath =  `${folderpath}/dist/templates/aws/policies`;    
+            } else {
+              folderpath = process.cwd();
+              policyPath = `${process.cwd()}/dist/templates/aws/policies`;  
+            }
+            const files = fs.readdirSync(join(folderpath, 'dist/templates/aws/policies'));
             try {
                 for (const file of files) {
                     const policyName = `${projectName}-${file.split('.')[0]}`;
-                    AppLogger.info(`Creating policy, user, group, and adding the user to the group: ${policyName}`, true);
-                    
-                    const policyDocument = await project.generateContent(`dist/templates/aws/policies/${file}`);
+                    AppLogger.info(`Creating policy, user, group, and adding the user to the group: ${policyName}`, true);                   
+                    const policyDocument = await project.generateContent(`${policyPath}/${file}`);
                     await createPolicy(policyName, policyDocument);
                     await createGroup(policyName);
                     await attachGroupPolicy(policyName, `arn:aws:iam::${account}:policy/${policyName}`);
                     await createUser(policyName);
-                    await addUserToGroup(policyName, policyName);
-                    
+                    await addUserToGroup(policyName, policyName);                  
                     AppLogger.info(`Policy ${policyName} created successfully`, true);
                     updateStatusFile(projectName, "policy", "success");
                 }

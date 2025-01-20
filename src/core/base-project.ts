@@ -56,7 +56,7 @@ export default abstract class BaseProject {
         `${this.config.environment}-config.tfvars`,
         projectName
       );
-      const readFile = readStatusFile(projectName);
+      const readFile = readStatusFile(this.config);
       // Destroy modules one by one
       for (const module of modules) {
         if (readFile.modules[module] == "success") {
@@ -134,7 +134,7 @@ export default abstract class BaseProject {
     AppLogger.debug(`Creating project '${name}' in the path`, true);
     fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
 
-    await this.createProviderFile();
+    // await this.createProviderFile();
   }
   async createFolder(): Promise<void> {
     //create a folder with the name in the path
@@ -152,39 +152,14 @@ export default abstract class BaseProject {
     }
   }
 
-  //   async createProviderFile(): Promise<void> {
-  //     //create a providers.tf file in the path
-  //     await this.createFile(
-  //       "providers.tf",
-  //       `${process.cwd()}/dist/templates/common/providers.tf.liquid`,
-  //       "/infrastructure",
-  //       true
-  //     );
-  //   }
-
-  async createProviderFile(): Promise<void> {
-    const providerFilePath = join(
-      this.projectPath,
-      "infrastructure",
-      "providers.tf"
-    );
-
-    // Check if the file already exists
-    if (fs.existsSync(providerFilePath)) {
-      AppLogger.debug(
-        `'providers.tf' already exists at ${providerFilePath}. Skipping creation.`
-      );
-      return; // Exit the function early
+  async createProviderFile(path?:string): Promise<void> {
+    const providerFilePath = join(this.projectPath, "infrastructure", "providers.tf" );
+    if (!fs.existsSync(providerFilePath)) {
+      // Proceed to create the file if it doesn't exist
+      AppLogger.debug(`Creating 'providers.tf' at ${providerFilePath}`);
+      await this.createFile( "providers.tf", `${path}/dist/templates/common/providers.tf.liquid`, "/infrastructure", true );
+      AppLogger.debug(`providers.tf create at : ${providerFilePath}`);
     }
-
-    // Proceed to create the file if it doesn't exist
-    AppLogger.debug(`Creating 'providers.tf' at ${providerFilePath}`);
-    await this.createFile(
-      "providers.tf",
-      `${process.cwd()}/dist/templates/common/providers.tf.liquid`,
-      "/infrastructure",
-      true
-    );
   }
 
   // async createFile(filename: string, templateFilename: string, folderName: string = '.', CreateProjectFile : boolean= false): Promise<void> {
@@ -287,11 +262,9 @@ export default abstract class BaseProject {
       // Logic for the "restart" command
       AppLogger.debug(`Creating ${filename} file for restart command.`);
       fs.writeFileSync(filePath, output);
-    } else if (project_config.command === "new_module") {
-      // Logic for the "new_module" command
-      AppLogger.debug(
-        `Creating or appending to ${filename} file for new_module command.`
-      );
+    } else if (project_config.command === "module") {
+      // Logic for the "module" command
+      AppLogger.debug(`Creating or appending to ${filename} file for module command.`);
       if (fs.existsSync(filePath)) {
         AppLogger.debug(`${filename} already exists. Appending content.`);
         fs.appendFileSync(filePath, `\n${output}`);
@@ -305,7 +278,7 @@ export default abstract class BaseProject {
   async generateContent(templateFilename: string): Promise<any> {
     AppLogger.debug(`Creating content from ${templateFilename}`);
     const templateFile = fs.readFileSync(
-      join(process.cwd(), templateFilename),
+      join(templateFilename),
       "utf8"
     );
     return await this.engine.parseAndRender(templateFile, { ...this.config });
