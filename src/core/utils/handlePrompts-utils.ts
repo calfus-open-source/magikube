@@ -2,27 +2,38 @@ import inquirer, { Answers } from "inquirer";
 import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";
-import path from "path";
+import path, { join } from "path";
 import fs from "fs";
 import { AppLogger } from "../../logger/appLogger.js";
+import { dotMagikubeConfig } from "./projectConfigReader-utils.js";
 
 export async function handlePrompts(
   args: any,
   commandName?: any,
-  template?: string,
+  template?: any,
   moduleType?: string
 ): Promise<Answers> {
   let responses: any =
-    template === undefined
-      ? {
+    commandName === "module"
+      ? ""
+      : {
           project_name: args.name,
           project_id: uuidv4(),
-        }
-      : undefined;
+          template:template
+        };
   const promptGenerator = new PromptGenerator();
+   const projectConfigFile = path.join(
+     process.cwd(),
+     commandName === "module" ? "" : responses.project_name,
+     "status.json"
+   );
+  let project_config;
+  if (fs.existsSync(projectConfigFile)) {
+    project_config = JSON.parse(fs.readFileSync(projectConfigFile).toString());
+  }
   const credentialsPrompts = new CredentialsPrompts();
-  if (commandName === "new_template") {
-    if (commandName === "new_template" && template == undefined) {
+  if (commandName === "new") {
+    if (commandName === "new" && template === "empty") {
       for (const prompt of promptGenerator.getCloudProvider()) {
         const resp = await inquirer.prompt(prompt);
         responses = { ...responses, ...resp };
@@ -55,27 +66,21 @@ export async function handlePrompts(
         responses = { ...responses, ...envResp };
       }
     }
-
-    if (
-      commandName === "new_template" &&
-      template == "vpc-rds-nodegroup-acm-ingress"
-    ) {
+    if (commandName === "new" && template === "vpc-rds-nodegroup-acm-ingress") {
       for (const domainPrompt of promptGenerator.getDomainPrompt()) {
         const domainResp = await inquirer.prompt(domainPrompt);
         responses = { ...responses, ...domainResp };
       }
     }
-  } else if (commandName === "module") {
+  }
+  if (commandName === "module") {
     if (moduleType === "vpc") {
+      
       for (const cidrPrompt of promptGenerator.getCIDRPrompt()) {
         const cidrResp = await inquirer.prompt(cidrPrompt);
         responses = { ...responses, ...cidrResp };
       }
-    }
-    else if (moduleType === "rds") {
-      const project_config = JSON.parse(
-        fs.readFileSync(path.join(path.resolve(args), ".magikube"), "utf-8")
-      );
+    } else if (moduleType === "rds") {
       const vpcArray = project_config.moduleName;
       if (
         !vpcArray ||
@@ -89,16 +94,14 @@ export async function handlePrompts(
         const vpcResp = await inquirer.prompt(vpcPrompt);
         responses = { ...responses, ...vpcResp };
       }
-    }else if(moduleType === "acm"){
-      
-        for (const domainPrompt of promptGenerator.getDomainPrompt()) {
-          const domainResp = await inquirer.prompt(domainPrompt);
-          responses = { ...responses, ...domainResp };
-        }
-      
+    } else if (moduleType === "acm") {
+      for (const domainPrompt of promptGenerator.getDomainPrompt()) {
+        const domainResp = await inquirer.prompt(domainPrompt);
+        responses = { ...responses, ...domainResp };
+      }
     }
-
-  } else if (commandName === "new") {
+  } 
+  if (commandName === "new" && responses.template === undefined) {
     // Continue with the full set of prompts as in the original code
     for (const prompt of promptGenerator.getCloudProvider()) {
       const resp = await inquirer.prompt(prompt);

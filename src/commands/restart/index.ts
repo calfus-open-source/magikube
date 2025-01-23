@@ -37,7 +37,7 @@ export default class RestartProject extends BaseCommand {
   ];
   async run(): Promise<void> {
     const { args } = await this.parse(RestartProject);
-    AppLogger.configureLogger(args.name);
+    AppLogger.configureLogger();
     AppLogger.info("Logger Started ...");
     const responses = dotMagikubeConfig(args.name, process.cwd());
     responses.command = this.id;
@@ -51,7 +51,7 @@ export default class RestartProject extends BaseCommand {
       };
        
       const projectName = args.name;
-      const status =  await readStatusFile(projectName)
+      const status = await readStatusFile(project_config);
       const terraform = await RestartTerraformProject.getProject(this, projectName);
       let command: BaseCommand | undefined;
       const createApp = new CreateApplication(

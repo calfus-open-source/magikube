@@ -47,18 +47,23 @@ Destroying magikube project named 'sample' in the current directory`,
     SystemConfig.getInstance().mergeConfigs(responses);
     const project_config = SystemConfig.getInstance().getConfig();
     let terraform; 
-    if (project_config.command === "new") {
+    if (project_config.command === "new" && !("template" in project_config)) {
       terraform = await TerraformProject.getProject(this);
-    } else if (project_config.command === "new_template") {
+    } else if (project_config.command === "new" && project_config.template) {
       terraform = await TemplateTerraformProject.getProject(this);
     } else if (project_config.command === "module") {
       terraform = await SubModuleTemplateProject.getProject(this, args.name);
     }
     if (terraform && responses.cloud_provider === "aws") {
       await terraform.AWSProfileActivate(responses["aws_profile"]);
-      await runTerraformUnlockCommands(projectPath, responses);
       if (
-        project_config.command === "new_template" ||
+        readFile.services["terraform-apply"] === "fail" ||
+        readFile.services["terraform-apply"] === "pending"
+      ) {
+        await runTerraformUnlockCommands(projectPath, responses);
+      }
+      if (
+        (project_config.command === "new" && project_config.template) ||
         project_config.command === "module"
       ) {
         await executeCommandWithRetry(
@@ -75,7 +80,11 @@ Destroying magikube project named 'sample' in the current directory`,
             `Removing folder ${process.cwd()}/${args.name}`,
             true
           );
-          await executeCommandWithRetry(`rm -rf ${process.cwd()}/${args.name}`, { cwd: `${process.cwd()}/${args.name}` }, 1);
+          await executeCommandWithRetry(
+            `rm -rf ${process.cwd()}/${args.name}`,
+            { cwd: `${process.cwd()}/${args.name}` },
+            1
+          );
         } else {
           AppLogger.debug(
             `Folder ${process.cwd()}/${args.name} does not exist in the path`,

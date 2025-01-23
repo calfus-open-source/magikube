@@ -9,7 +9,7 @@ import { AppLogger } from "../../logger/appLogger.js";
 export async function setupAndPushServices(projectConfig: any,configObject: any) {
   let command: BaseCommand | undefined;
   const createApp = new CreateApplication(command as BaseCommand, projectConfig);
-  const status = await readStatusFile(projectConfig.project_name);
+  const status = await readStatusFile(projectConfig);
   try {
     // Setup Authentication Service if failed or pending
     if (status.services["auth-service"] !== "success") {
