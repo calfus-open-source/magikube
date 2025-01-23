@@ -69,42 +69,24 @@ export default class NewModule extends BaseCommand {
 
     // Read the .magikube file
     const dotMagikubeContent = JSON.parse(fs.readFileSync(dotmagikubeFilePath, "utf-8"));
-
     AppLogger.configureLogger(dotMagikubeContent.project_name);
     AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,true);
 
     try {
       const template = "";
-      let responses: Answers = await handlePrompts(
-        "",
-        this.id,
-        template,
-        moduleType
-      );
-
-      // Read the .magikube file
-      // const magikubeContent = JSON.parse(
-      //   fs.readFileSync(dotmagikubeFilePath, "utf-8")
-      // );
+      let responses: Answers = await handlePrompts("", this.id, template, moduleType);
       await cloneAndCopyTemplates();
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleType", moduleType);
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleName", moduleName);
       // Handle CIDR block and domain responses if provided
       if (responses?.cidrBlock) {
-        updateMagikubeArrayProperty(
-          dotMagikubeContent,
-          "cidr_blocks",
-          responses.cidrBlock
-        );
+        updateMagikubeArrayProperty(dotMagikubeContent, "cidr_blocks", responses.cidrBlock);
       }
 
       if (responses?.domain) {
-        updateMagikubeArrayProperty(
-          dotMagikubeContent,
-          "domains",
-          responses.domain
-        );
+        updateMagikubeArrayProperty(dotMagikubeContent, "domains", responses.domain);
       }
+      
       dotMagikubeContent.command = this.id;
 
       // Write the updated content back to .magikube file

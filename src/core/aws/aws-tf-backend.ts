@@ -23,13 +23,13 @@ export default class AWSTerraformBackend {
 
   static async create(
     project: BaseProject,
-    projectName: string,
+    projectId: string,
     region: string,
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<boolean> {
 
-    const bucketName = `${projectName}-tfstate`;
+    const bucketName = `${projectId}-tfstate`;
     await AWSTerraformBackend.createBucket(
       project,
       bucketName,
@@ -38,7 +38,7 @@ export default class AWSTerraformBackend {
       secretAccessKey
     );
 
-    const tableName = `${projectName}-tfstate-lock`;
+    const tableName = `${projectId}-tfstate-lock`;
     await AWSTerraformBackend.createDynamoDBTable(
       project,
       tableName,
@@ -52,13 +52,13 @@ export default class AWSTerraformBackend {
   
   static async delete(
     project: BaseProject,
-    projectName: string,
+    projectId: string,
     region: string,
     accessKeyId: string,
     secretAccessKey: string
   ): Promise<boolean> {
       
-      const bucketName = `${projectName}-tfstate`;
+      const bucketName = `${projectId}-tfstate`;
       await AWSTerraformBackend.deleteBucket(
         project,
         bucketName,
@@ -67,7 +67,7 @@ export default class AWSTerraformBackend {
         secretAccessKey
       );
   
-      const tableName = `${projectName}-tfstate-lock`;
+      const tableName = `${projectId}-tfstate-lock`;
       await AWSTerraformBackend.deleteDynamoDBTable(
         project,
         tableName,

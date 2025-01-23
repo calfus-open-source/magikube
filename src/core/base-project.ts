@@ -162,65 +162,7 @@ export default abstract class BaseProject {
     }
   }
 
-  // async createFile(filename: string, templateFilename: string, folderName: string = '.', CreateProjectFile : boolean= false): Promise<void> {
-  //     if(!CreateProjectFile){
-  //     AppLogger.debug(`Creating ${filename} file`);
-  //     const templateFile = fs.readFileSync(join(new URL('.', import.meta.url).pathname, templateFilename), 'utf8');
-  //     const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
-  //     const folderPath = join(this.projectPath, folderName);
-  //     if (!fs.existsSync(folderPath)) {
-  //         fs.mkdirSync(folderPath, { recursive: true });
-  //     }
-  //     fs.writeFileSync(join(folderPath, filename), output);
-  //     }else{
-  //           const templateFile = fs.readFileSync(templateFilename, 'utf8');
-  //           const output = await this.engine.parseAndRender(templateFile, { ...this.config } );
-  //           const folderPath = join(this.projectPath, folderName);
-  //           if (!fs.existsSync(folderPath)) {
-  //             fs.mkdirSync(folderPath, { recursive: true });
-  //         }
-  //         fs.writeFileSync(join(folderPath, filename), output);
-  //     }
-  // }
-  // async createFile(
-  //   filename: string,
-  //   templateFilename: string,
-  //   folderName: string = ".",
-  //   CreateProjectFile: boolean = false
-  // ): Promise<void> {
-  //   AppLogger.debug(`Creating or appending to ${filename} file`);
 
-  //   // Read the template file
-  //   const templateFile = fs.readFileSync(
-  //     CreateProjectFile
-  //       ? templateFilename
-  //       : join(new URL(".", import.meta.url).pathname, templateFilename),
-  //     "utf8"
-  //   );
-
-  //   // Render the template using Liquid.js
-  //   const output = await this.engine.parseAndRender(templateFile, {
-  //     ...this.config,
-  //   });
-
-  //   // Ensure the folder exists
-  //   const folderPath = join(this.projectPath, folderName);
-  //   if (!fs.existsSync(folderPath)) {
-  //     fs.mkdirSync(folderPath, { recursive: true });
-  //   }
-
-  //   // Path to the file
-  //   const filePath = join(folderPath, filename);
-
-  //   // Append to the file if it exists, otherwise create it
-  //   if (fs.existsSync(filePath)) {
-  //     AppLogger.debug(`${filename} already exists. Appending content.`);
-  //     fs.appendFileSync(filePath, `\n${output}`);
-  //   } else {
-  //     AppLogger.debug(`${filename} does not exist. Creating new file.`);
-  //     fs.writeFileSync(filePath, output);
-  //   }
-  // }
   async createFile(
     filename: string,
     templateFilename: string,
@@ -233,7 +175,7 @@ export default abstract class BaseProject {
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
-      : project_config.command === "restart"
+      : project_config.command === "resume"
       ? join(new URL(".", import.meta.url).pathname, templateFilename)
       : templateFilename;
 
@@ -256,11 +198,11 @@ export default abstract class BaseProject {
 
     if (
       project_config.command === "new" ||
-      project_config.command === "restart" ||
-      project_config.command === "new_template"
+      project_config.command === "resume" 
+    
     ) {
-      // Logic for the "restart" command
-      AppLogger.debug(`Creating ${filename} file for restart command.`);
+      // Logic for the "resume" command
+      AppLogger.debug(`Creating ${filename} file for resume command.`);
       fs.writeFileSync(filePath, output);
     } else if (project_config.command === "module") {
       // Logic for the "module" command

@@ -47,7 +47,7 @@ export default class AWSProject extends BaseProject {
         const createApplication = new CreateApplication(command as BaseCommand, this.config)
         if (!this.config.dryrun) {
             // Once the prompts are accepted at the start, these parameters will be accessible
-            if (this.config.command === "new" || this.config.command === "restart"){       
+            if (this.config.command === "new" || this.config.command === "resume"){       
               const {git_user_name,github_access_token, github_owner,project_name,} = this.config;
             let frontend_app_name;
             let backend_app_name;
@@ -122,7 +122,7 @@ export default class AWSProject extends BaseProject {
     );
     this.createFile(
       "variables.tf",
-      `${process.cwd()}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
+      `${path}/dist/templates/aws/modules/eks-fargate/variables.tf.liquid`,
       "/infrastructure/modules/eks-fargate",
       true
     );
@@ -336,10 +336,10 @@ export default class AWSProject extends BaseProject {
                 AppLogger.info(`Creating module: ${module}`, true);
  
                 let args = ['apply', '-no-color', '-auto-approve'];
-                if ((module && projectConfig.command === "new_sub") || (module && projectConfig.command === "new")|| (module && projectConfig.command === "restart")) {
+                if ((module && projectConfig.command === "new_sub") || (module && projectConfig.command === "new")|| (module && projectConfig.command === "resume")) {
                     args.push(`-target=${module}`);
                 }
-                if (projectConfig.command === "new_module") {
+                if (projectConfig.command === "module") {
                     args.push(`-target=module.${module}`);
                 }
  

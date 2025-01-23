@@ -24,32 +24,29 @@ export default class AWSTemplateProject extends AWSProject {
     this.createFile("terraform.tfvars",`${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/terraform.tfvars.liquid`,"/infrastructure",true);
     this.createFile("variables.tf",`${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/variables.tf.liquid`,"/infrastructure",true);
     this.createFile(`${this.config.environment}-config.tfvars`, `${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/backend-config.tfvars.liquid`,"/infrastructure", true);
-    this.createProviderFile()
-    if (
-      config.template === "eks-fargate-vpc" ||
-      config.template === "eks-nodegroup-vpc" ||
-      config.template === "rds-vpc" ||
-      config.template === "ec2-vpc" ||
-      config.template === "vpc-rds-nodegroup-acm-ingress"
-    ) {
-      this.createVpc();
-    }
+    this.createProviderFile(path)
+   
     if (config.template === "eks-fargate-vpc") {
-      this.createEKS();
+      this.createVpc(path);
+      this.createEKS(path);
     }
     if (config.template === "eks-nodegroup-vpc") {
+      this.createVpc(path);
       this.createEKSng();
     }
     if (config.template === "rds-vpc") {
-      this.createRds();
+      this.createVpc(path);
+      this.createRds(path);
     }
     if (config.template === "vpc-rds-nodegroup-acm-ingress") {
-      this.createRds();
+      this.createVpc(path);
+      this.createRds(path);
       this.createEKSng();
-      this.createACM();
+      this.createACM(path);
       this.createIngressController();
     }
     if (config.template === "ec2-vpc") {
+      this.createVpc(path);
       this.createSSHKeyPair(config);
       this.createBastionHost(config);
       this.createMasterNode(config);
