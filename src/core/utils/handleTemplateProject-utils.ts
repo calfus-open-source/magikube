@@ -1,7 +1,7 @@
 import SystemConfig from "../../config/system.js";
 import { AppLogger } from "../../logger/appLogger.js";
 import AWSAccount from "../aws/aws-account.js";
-import { executeCommandWithRetry } from "../common-functions/execCommands.js";
+import { executeCommandWithRetry } from "./executeCommandWithRetry-utils.js";
 import {
   ec2VpcModules,
   eksFargateVpcModules,

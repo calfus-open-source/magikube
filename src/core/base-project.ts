@@ -5,7 +5,7 @@ import SystemConfig from "../config/system.js";
 import BaseCommand from "../commands/base.js";
 import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
-import { executeCommandWithRetry } from "./common-functions/execCommands.js";
+import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
 import { modules } from "./constants/constants.js";
 

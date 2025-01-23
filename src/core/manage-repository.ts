@@ -5,7 +5,7 @@ import axios from 'axios';
 import SystemConfig from "../config/system.js";
 import fs from 'fs-extra';
 import sodium from 'libsodium-wrappers';
-import { executeCommandWithRetry } from "./common-functions/execCommands.js";
+import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
 
 let encryptedAwsAccessKeyId: string;
 let encryptedAwsSecretAccessKey: string;

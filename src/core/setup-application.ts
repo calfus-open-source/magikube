@@ -5,7 +5,7 @@ import SystemConfig from "../config/system.js";
 import { AppTypeMap, ConfigObject } from "./interface.js";
 import { ManageRepository } from "./manage-repository.js";
 import BaseCommand from "../commands/base.js";
-import { executeCommandWithRetry } from "./common-functions/execCommands.js";
+import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
 import { updateStatusFile } from "./utils/statusUpdater-utils.js";
 
 export default class CreateApplication extends BaseProject {
