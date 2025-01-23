@@ -94,7 +94,7 @@ function validateRestrictedInputs(input: string): void {
       try {
         let responses: Answers = await handlePrompts(args, this.id);
         responses.command = this.id;
-        await cloneAndCopyTemplates();
+        await cloneAndCopyTemplates(this.id);
         AppLogger.debug(
           `Creating new magikube project named '${args.name}' in the current directory`
         );

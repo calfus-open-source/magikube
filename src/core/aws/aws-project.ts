@@ -336,7 +336,7 @@ export default class AWSProject extends BaseProject {
                 AppLogger.info(`Creating module: ${module}`, true);
  
                 let args = ['apply', '-no-color', '-auto-approve'];
-                if ((module && projectConfig.command === "new_sub") || (module && projectConfig.command === "new")|| (module && projectConfig.command === "resume")) {
+                if (module && (module && projectConfig.command === "new")|| (module && projectConfig.command === "resume")) {
                     args.push(`-target=${module}`);
                 }
                 if (projectConfig.command === "module") {

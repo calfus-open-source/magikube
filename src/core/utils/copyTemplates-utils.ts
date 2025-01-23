@@ -3,10 +3,9 @@ import fs from "fs";
 import * as path from "path"; // Correct import
 import { AppLogger } from "../../logger/appLogger.js";
 
-export async function cloneAndCopyTemplates(): Promise<void> {
+export async function cloneAndCopyTemplates(commandName: string | undefined): Promise<void> {
   try {
-    const parentPath = path.resolve(process.cwd(), ".."); // Get the parent directory
-    // Paths for the infrastructure and application repositories
+    const parentPath = commandName === "module" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const dir_infra = `${parentPath}/infrastructure-templates`;
     const dir_templates = `${parentPath}/magikube-templates`;
     const distFolder = `${parentPath}/dist`; // Dist folder path

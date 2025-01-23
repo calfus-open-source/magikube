@@ -75,7 +75,7 @@ export default class NewModule extends BaseCommand {
     try {
       const template = "";
       let responses: Answers = await handlePrompts("", this.id, template, moduleType);
-      await cloneAndCopyTemplates();
+      await cloneAndCopyTemplates(this.id);
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleType", moduleType);
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleName", moduleName);
       // Handle CIDR block and domain responses if provided
