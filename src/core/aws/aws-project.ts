@@ -9,7 +9,7 @@ import { AppLogger } from '../../logger/appLogger.js';
 import { ProgressBar } from '../../logger/progressLogger.js';
 import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
-import { executeCommandWithRetry } from '../common-functions/execCommands.js';
+import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
 import { updateStatusFile } from '../utils/statusUpdater-utils.js';
 import { join } from 'path';
 import SystemConfig from '../../config/system.js';

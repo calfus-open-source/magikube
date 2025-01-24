@@ -14,7 +14,6 @@ import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
 import { Colours } from "../../../prompts/constants.js";
 import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
 import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
-import { executeCommandWithRetry } from "../../../core/common-functions/execCommands.js";
 import { updateMagikubeArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
 
 // Helper function to validate module input
@@ -22,7 +21,7 @@ function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
   if (!pattern.test(input)) {
     console.error(
-      `\n \n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Module Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must contain only alphanumeric characters, dashes (-), or underscores (_).\n \n`
+      `\n\n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Module Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must contain only alphanumeric characters, dashes (-), or underscores (_).\n\n`
     );
     process.exit(1);
   }
@@ -41,6 +40,7 @@ export default class NewModule extends BaseCommand {
   };
 
   static description = "Create a new module in the current Magikube project";
+
   static examples = [
     `<%= config.bin %> <%= command.id %> eks-fargate myNewModule
     Creates a new module named 'myNewModule' of type 'eks-fargate' in the current project`,
@@ -53,6 +53,7 @@ export default class NewModule extends BaseCommand {
     if (args.moduleName) {
       validateModuleInput(args.moduleName);
     }
+
     const { moduleName } = args;
     let { moduleType } = args;
 
@@ -68,25 +69,44 @@ export default class NewModule extends BaseCommand {
     }
 
     // Read the .magikube file
-    const dotMagikubeContent = JSON.parse(fs.readFileSync(dotmagikubeFilePath, "utf-8"));
+    const dotMagikubeContent = JSON.parse(
+      fs.readFileSync(dotmagikubeFilePath, "utf-8")
+    );
     AppLogger.configureLogger(dotMagikubeContent.project_name);
-    AppLogger.info(`Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,true);
+    AppLogger.info(
+      `Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,
+      true
+    );
 
     try {
       const template = "";
-      let responses: Answers = await handlePrompts("", this.id, template, moduleType);
+      const responses: Answers = await handlePrompts(
+        "",
+        this.id,
+        template,
+        moduleType
+      );
       await cloneAndCopyTemplates(this.id);
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleType", moduleType);
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleName", moduleName);
+
       // Handle CIDR block and domain responses if provided
       if (responses?.cidrBlock) {
-        updateMagikubeArrayProperty(dotMagikubeContent, "cidr_blocks", responses.cidrBlock);
+        updateMagikubeArrayProperty(
+          dotMagikubeContent,
+          "cidr_blocks",
+          responses.cidrBlock
+        );
       }
 
       if (responses?.domain) {
-        updateMagikubeArrayProperty(dotMagikubeContent, "domains", responses.domain);
+        updateMagikubeArrayProperty(
+          dotMagikubeContent,
+          "domains",
+          responses.domain
+        );
       }
-      
+
       dotMagikubeContent.command = this.id;
 
       // Write the updated content back to .magikube file
@@ -103,13 +123,14 @@ export default class NewModule extends BaseCommand {
       initializeStatusFile("", modules, services);
       const projectConfig = SystemConfig.getInstance().getConfig();
       await readStatusFile(projectConfig);
-      
+
       if (terraform) {
         // Run Terraform initialization and apply
         await terraform.createProject("", process.cwd());
         if (projectConfig["cloud_provider"] === "aws") {
           await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
         }
+
         await new Promise((resolve) => setTimeout(resolve, 15000));
         await terraform?.runTerraformInit(
           `${currentDir}/infrastructure`,

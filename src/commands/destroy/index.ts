@@ -7,7 +7,7 @@ import { readStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { dotMagikubeConfig } from "../../core/utils/projectConfigReader-utils.js";
 import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
 import path from "path";
-import { executeCommandWithRetry } from "../../core/common-functions/execCommands.js";
+import { executeCommandWithRetry } from "../../core/utils/executeCommandWithRetry-utils.js";
 import * as fs from "fs";
 import TemplateTerraformProject from "../../core/templatesTerraform-projects.js";
 import SubModuleTemplateProject from "../../core/submoduleTerraform.js";
@@ -39,14 +39,21 @@ Destroying magikube project named 'sample' in the current directory`,
     const { args, flags } = await this.parse(DestroyProject);
     const projectPath = path.join(process.cwd(), args.name);
     AppLogger.configureLogger(args.name, false);
+
     const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(responses);
     const infrastructurePath = path.join(projectPath, "infrastructure");
+
     responses.dryrun = flags.dryrun || false;
-    AppLogger.debug( `Destroying magikube project named '${args.name}' in the current directory`, true);
+    AppLogger.debug(
+      `Destroying magikube project named '${args.name}' in the current directory`,
+      true
+    );
+
     SystemConfig.getInstance().mergeConfigs(responses);
     const project_config = SystemConfig.getInstance().getConfig();
-    let terraform; 
+
+    let terraform;
     if (project_config.command === "new" && !("template" in project_config)) {
       terraform = await TerraformProject.getProject(this);
     } else if (project_config.command === "new" && project_config.template) {
@@ -54,14 +61,17 @@ Destroying magikube project named 'sample' in the current directory`,
     } else if (project_config.command === "module") {
       terraform = await SubModuleTemplateProject.getProject(this, args.name);
     }
+
     if (terraform && responses.cloud_provider === "aws") {
       await terraform.AWSProfileActivate(responses["aws_profile"]);
+
       if (
         readFile.services["terraform-apply"] === "fail" ||
         readFile.services["terraform-apply"] === "pending"
       ) {
         await runTerraformUnlockCommands(projectPath, responses);
       }
+
       if (
         (project_config.command === "new" && project_config.template) ||
         project_config.command === "module"
@@ -71,10 +81,12 @@ Destroying magikube project named 'sample' in the current directory`,
           { cwd: infrastructurePath },
           1
         );
+
         await terraform?.runTerraformDestroyTemplate(
           infrastructurePath,
           "terraform.tfvars"
         );
+
         if (fs.existsSync(`${process.cwd()}/${args.name}`)) {
           AppLogger.debug(
             `Removing folder ${process.cwd()}/${args.name}`,

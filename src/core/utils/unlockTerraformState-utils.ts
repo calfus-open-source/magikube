@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import path from 'path';
-import { executeCommandWithRetry } from '../common-functions/execCommands.js';
+import { executeCommandWithRetry } from './executeCommandWithRetry-utils.js';
 import { execSync } from 'child_process';
  
 export async function runTerraformUnlockCommands(projectPath:string, project_config:any ) {
