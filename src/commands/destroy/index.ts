@@ -41,7 +41,7 @@ Destroying magikube project named 'sample' in the current directory`,
     AppLogger.configureLogger(args.name, false);
 
     const responses = dotMagikubeConfig(args.name, process.cwd());
-    const readFile = readStatusFile(responses);
+    const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, "infrastructure");
 
     responses.dryrun = flags.dryrun || false;

@@ -19,7 +19,11 @@ let sshProcess: any;
 export default class AWSProject extends BaseProject {
     async createProject(name: string, path: string, commandName?: string): Promise<void> {  
      await super.createProject(name, path);      
-      if (!this.config.dryrun) {
+     
+      if (
+        !this.config.moduleType || 
+        (this.config.moduleType && this.config.moduleType.length > 1) 
+      ) {
         await AWSPolicies.create(
           this,
           this.config.aws_region,
@@ -27,6 +31,7 @@ export default class AWSProject extends BaseProject {
           this.config.aws_secret_access_key,
           this.config.project_name
         );
+      }
   
         await AWSTerraformBackend.create(
           this,
@@ -36,7 +41,7 @@ export default class AWSProject extends BaseProject {
           this.config.aws_secret_access_key
         );
       }
-    }
+    
   
     async destroyProject(name: string, path: string): Promise<void> {
         let awsStatus = false;
@@ -444,22 +449,29 @@ export default class AWSProject extends BaseProject {
         AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
         process.exit(1);
     }
-       const status = await AWSPolicies.delete(
-         this,
-         this.config.aws_region,
-         this.config.aws_access_key_id,
-         this.config.aws_secret_access_key
-       );
 
-       if (status) {
-         awsStatus = await AWSTerraformBackend.delete(
-           this,
-           this.config.project_id,
-           this.config.aws_region,
-           this.config.aws_access_key_id,
-           this.config.aws_secret_access_key
-         );
-       }
+    if (
+      !this.config.moduleType ||
+      (this.config.moduleType && this.config.moduleType.length > 1)
+    ) {
+      const status = await AWSPolicies.delete(
+        this,
+        this.config.aws_region,
+        this.config.aws_access_key_id,
+        this.config.aws_secret_access_key
+      );
+    }
+
+      awsStatus = await AWSTerraformBackend.delete(
+        this,
+        this.config.project_id,
+        this.config.aws_region,
+        this.config.aws_access_key_id,
+        this.config.aws_secret_access_key
+      );
+
+      await this.deleteFolder();
+       
     }
 
 

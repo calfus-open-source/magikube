@@ -122,7 +122,7 @@ export default class NewModule extends BaseCommand {
 
       initializeStatusFile("", modules, services);
       const projectConfig = SystemConfig.getInstance().getConfig();
-      await readStatusFile(projectConfig);
+      await readStatusFile(projectConfig, this.id);
 
       if (terraform) {
         // Run Terraform initialization and apply

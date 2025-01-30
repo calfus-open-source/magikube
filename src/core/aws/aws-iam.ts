@@ -106,7 +106,7 @@ export default class AWSPolicies {
 
         // const status = await readStatusFile(projectName)
         const projectConfig = SystemConfig.getInstance().getConfig();
-        const readFile = readStatusFile(projectConfig);
+        const readFile = readStatusFile(projectConfig, projectConfig.command);
         if (readFile.services["policy"] === "pending" || readFile.services["policy"] === "fail") {
             let folderpath;
             let policyPath;

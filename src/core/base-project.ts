@@ -5,7 +5,6 @@ import SystemConfig from "../config/system.js";
 import BaseCommand from "../commands/base.js";
 import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
-import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
 import { modules } from "./constants/constants.js";
 
@@ -56,7 +55,7 @@ export default abstract class BaseProject {
         `${this.config.environment}-config.tfvars`,
         projectName
       );
-      const readFile = readStatusFile(this.config);
+      const readFile = readStatusFile(this.config, this.config.command);
       // Destroy modules one by one
       for (const module of modules) {
         if (readFile.modules[module] == "success") {
