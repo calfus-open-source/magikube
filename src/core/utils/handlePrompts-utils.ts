@@ -25,7 +25,7 @@ export async function handlePrompts(
    const projectConfigFile = path.join(
      process.cwd(),
      commandName === "module" ? "" : responses.project_name,
-     "status.json"
+     ".magikube"
    );
   let project_config;
   if (fs.existsSync(projectConfigFile)) {

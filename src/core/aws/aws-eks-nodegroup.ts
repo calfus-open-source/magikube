@@ -17,6 +17,7 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
 
   async createMainFile(): Promise<void> {
     let command: BaseCommand | undefined;
+    const path = process.cwd();
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     const argocdInstance = new argoCdProject(command as BaseCommand, this.config);
@@ -34,8 +35,8 @@ export default class EKSNodeGrpClusterProject extends AWSProject {
       `${this.config.environment}-config.tfvars`,
       `${process.cwd()}/dist/templates/aws/eks-nodegroup/backend-config.tfvars.liquid` , "/infrastructure", true
     );
-    this.createProviderFile()
-    this.createCommon();
+    this.createProviderFile(path)
+    this.createCommon(path);
     this.createEKSng();
     gitOpsInstance.createGitOps(this.path, this.name);
     repositoryInstance.createrepository(this.path, this.name);
