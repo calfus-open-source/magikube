@@ -6,8 +6,9 @@ import { AppLogger } from "../../../logger/appLogger.js";
 import {
   initializeStatusFile,
   readStatusFile,
+  updateStatusFile,
 } from "../../../core/utils/statusUpdater-utils.js";
-import { services, modules } from "../../../core/constants/constants.js";
+import { services, modules, singleModules } from "../../../core/constants/constants.js";
 import path from "path";
 import fs from "fs";
 import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
@@ -120,7 +121,7 @@ export default class NewModule extends BaseCommand {
       SystemConfig.getInstance().mergeConfigs(dotMagikubeContent);
       const terraform = await SubModuleTemplateProject.getProject(this, "");
 
-      initializeStatusFile("", modules, services);
+      initializeStatusFile("", singleModules, services);
       const projectConfig = SystemConfig.getInstance().getConfig();
       await readStatusFile(projectConfig, this.id);
 
@@ -143,16 +144,17 @@ export default class NewModule extends BaseCommand {
           if (moduleType === "eks-nodegroup" || moduleType === "eks-fargate") {
             moduleType = "eks";
           }
-          AppLogger.info(
-            `Starting Terraform apply for module: ${moduleType}`,
-            true
-          );
+          AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
+          console.log(moduleType,"<<<<<moduleType")
+          console.log(projectConfig.project_name,"<<<<<<projectNAme")
+          updateStatusFile(projectConfig.project_name, `module.${moduleType}`, "fail");
           await terraform?.runTerraformApply(
             `${currentDir}/infrastructure`,
             moduleType,
             moduleName,
             "terraform.tfvars"
           );
+          updateStatusFile(projectConfig.project_name, `module.${moduleType}`, "success");
           AppLogger.debug(
             `Successfully applied Terraform for module: ${moduleType}`,
             true

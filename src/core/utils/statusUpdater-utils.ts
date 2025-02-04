@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import path from "path";
 import { AppLogger } from "../../logger/appLogger.js";
+import SystemConfig from "../../config/system.js";
 
 export function initializeStatusFile(
   projectName: string,
@@ -50,7 +51,17 @@ export function updateStatusFile(
   status: "success" | "fail"
 ) {
   // const statusFilePath = path.join(process.cwd(), projectName, "status.json");
-   const statusFilePath = path.join(process.cwd(), projectName, "status.json"); 
+  const projectConfig = SystemConfig.getInstance().getConfig();
+   let statusFilePath;
+   if (projectConfig.command === "module") {
+     statusFilePath = path.join(process.cwd(), "status.json");
+   } else {
+     statusFilePath = path.join(
+       process.cwd(),
+       projectConfig.project_name,
+       "status.json"
+     );
+   }
   let statusData: {
     modules: { [key: string]: string };
     services: { [key: string]: string };
@@ -63,7 +74,6 @@ export function updateStatusFile(
   if (fs.existsSync(statusFilePath)) {
     statusData = JSON.parse(fs.readFileSync(statusFilePath, "utf8"));
   }
-
   // Check if the service or module exists in the respective object
   if (statusData.modules && statusData.modules[serviceOrModule] !== undefined) {
     statusData.modules[serviceOrModule] = status;
