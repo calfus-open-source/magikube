@@ -145,8 +145,6 @@ export default class NewModule extends BaseCommand {
             moduleType = "eks";
           }
           AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
-          console.log(moduleType,"<<<<<moduleType")
-          console.log(projectConfig.project_name,"<<<<<<projectNAme")
           updateStatusFile(projectConfig.project_name, `module.${moduleType}`, "fail");
           await terraform?.runTerraformApply(
             `${currentDir}/infrastructure`,

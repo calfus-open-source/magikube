@@ -195,7 +195,10 @@ export default abstract class BaseProject {
 
     // Define the full path to the file
     const filePath = join(folderPath, filename);
-    const lastModule = project_config.moduleType[project_config.moduleType.length - 1];
+    let lastModule;
+    if(project_config.moduleType !== undefined){
+    lastModule = project_config.moduleType[project_config.moduleType.length - 1];
+    }
     if (
       project_config.command === "new" ||
       project_config.command === "resume" 

@@ -19,7 +19,6 @@ export default class CommonSubModuleProject extends AWSProject {
     projectConfig: any
   ): Promise<void> {
     let lastModule = moduleType[moduleType.length - 1];
-    console.log(lastModule, "<<<<<<<latestModule");
 
     // Store the original lastModule for later use
     const originalLastModule = lastModule;
@@ -28,7 +27,6 @@ export default class CommonSubModuleProject extends AWSProject {
     if (lastModule === "eks-fargate" || lastModule === "eks-nodegroup") {
       lastModule = "eks";
     }
-    console.log(lastModule, "<<<<lastModule");
 
     const parentPath = path.resolve(process.cwd(), "..");
     const distPath = path.resolve(
@@ -39,11 +37,6 @@ export default class CommonSubModuleProject extends AWSProject {
 
     await this.createProviderFile(parentPath);
     if (status.modules[`module.${lastModule}`] === "pending") {
-      console.log(lastModule, "<<<<<lastmodule1");
-      console.log(
-        `${distPath}/${originalLastModule}-module/main.tf.liquid`,
-        "<<<<<<pathhhhh"
-      ); // Use originalLastModule here
       this.createFile(
         "main.tf",
         `${distPath}/${originalLastModule}-module/main.tf.liquid`, // Use originalLastModule here
@@ -57,7 +50,6 @@ export default class CommonSubModuleProject extends AWSProject {
         true
       );
     }
-    console.log(lastModule, "<<<<<lastmodule2");
     this.createFile(
       "terraform.tfvars",
       `${distPath}/${originalLastModule}-module/terraform.tfvars.liquid`, // Use originalLastModule here
