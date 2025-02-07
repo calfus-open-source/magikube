@@ -171,6 +171,7 @@ export default abstract class BaseProject {
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
     const project_config = SystemConfig.getInstance().getConfig();
+    const status =  readStatusFile(project_config,project_config.command)
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
@@ -194,7 +195,10 @@ export default abstract class BaseProject {
 
     // Define the full path to the file
     const filePath = join(folderPath, filename);
-
+    let lastModule;
+    if(project_config.moduleType !== undefined){
+    lastModule = project_config.moduleType[project_config.moduleType.length - 1];
+    }
     if (
       project_config.command === "new" ||
       project_config.command === "resume" 
@@ -206,10 +210,10 @@ export default abstract class BaseProject {
     } else if (project_config.command === "module") {
       // Logic for the "module" command
       AppLogger.debug(`Creating or appending to ${filename} file for module command.`);
-      if (fs.existsSync(filePath)) {
+      if (fs.existsSync(filePath) &&  lastModule !== "vpc" ) {
         AppLogger.debug(`${filename} already exists. Appending content.`);
         fs.appendFileSync(filePath, `\n${output}`);
-      } else {
+      } else {   
         AppLogger.debug(`${filename} does not exist. Creating new file.`);
         fs.writeFileSync(filePath, output);
       }
