@@ -295,29 +295,29 @@ export default class CreateApplication extends BaseProject {
              const gitopsKeycloakFiles = ['deployment.yml', 'ingress.yml', 'service.yml', 'deployment-postgres.yml']
              const commonGitopsFiles = ['auth.yml', 'keycloak.yml', 'express.yml' ]
              for(const file of gitopsFiles) {
-                await this.createFile(file, `${filePath}/dist/gitops/auth-gitops/${file}.liquid`,`${filePath}/${projectName}/gitops/${projectName}-${environment}/keycloak-auth-service`, true);
+                await this.createFile(file, `${filePath}/dist/gitops/auth-gitops/${file}.liquid`,`gitops/${projectName}-${environment}/keycloak-auth-service`, true);
              }
             
               for(const file of gitopsKeycloakFiles) {
-                await this.createFile(file, `${filePath}/dist/gitops/keycloak-gitops/${file}.liquid`,`${filePath}/${projectName}/gitops/${projectName}-${environment}/keycloak`, true);
+                await this.createFile(file, `${filePath}/dist/gitops/keycloak-gitops/${file}.liquid`,`gitops/${projectName}-${environment}/keycloak`, true);
              }
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${filePath}/dist/gitops/express-gitops/${file}.liquid`,`${filePath}/${projectName}/gitops/${projectName}-${environment}/express`, true);
+                await this.createFile(file, `${filePath}/dist/gitops/express-gitops/${file}.liquid`,`gitops/${projectName}-${environment}/express`, true);
              }
              if(frontend_app_type == 'react'){
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${filePath}/dist/gitops/react-gitops/${file}.liquid`,`${filePath}/${projectName}/gitops/${projectName}-${environment}/react`, true);
+                await this.createFile(file, `${filePath}/dist/gitops/react-gitops/${file}.liquid`,`gitops/${projectName}-${environment}/react`, true);
              }
-             await this.createFile('react.yml', `${filePath}/dist/gitops/common-gitops-files/react.yml.liquid`, `${filePath}/${projectName}/gitops/${projectName}-${environment}`, true )
+             await this.createFile('react.yml', `${filePath}/dist/gitops/common-gitops-files/react.yml.liquid`, `gitops/${projectName}-${environment}`, true )
             }
             if(frontend_app_type == 'next'){
               for(const file of gitopsFiles) {
-                await this.createFile(file, `${filePath}/dist/gitops/next-gitops/${file}.liquid`,`${filePath}/${projectName}/gitops/${projectName}-${environment}/next/`, true);
+                await this.createFile(file, `${filePath}/dist/gitops/next-gitops/${file}.liquid`,`gitops/${projectName}-${environment}/next/`, true);
              }
-             await this.createFile('next.yml', `${filePath}/dist/gitops/common-gitops-files/next.yml.liquid`, `${filePath}/${projectName}/gitops/${projectName}-${environment}`, true )
+             await this.createFile('next.yml', `${filePath}/dist/gitops/common-gitops-files/next.yml.liquid`, `gitops/${projectName}-${environment}`, true )
             }
               for(const file of commonGitopsFiles){
-                await this.createFile(`${file}`, `${filePath}/dist/gitops/common-gitops-files/${file}.liquid`, `${filePath}/${projectName}/gitops/${projectName}-${environment}`, true)
+                await this.createFile(`${file}`, `${filePath}/dist/gitops/common-gitops-files/${file}.liquid`, `gitops/${projectName}-${environment}`, true)
             }
 
               AppLogger.info('Gitops setup is done.', true);
