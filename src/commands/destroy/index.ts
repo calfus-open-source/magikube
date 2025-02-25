@@ -11,6 +11,7 @@ import { executeCommandWithRetry } from "../../core/utils/executeCommandWithRetr
 import * as fs from "fs";
 import TemplateTerraformProject from "../../core/templatesTerraform-projects.js";
 import SubModuleTemplateProject from "../../core/submoduleTerraform.js";
+import MicroserviceProject from "../../core/microserviceTerraform.js";
 
 export default class DestroyProject extends BaseCommand {
   static args = {
@@ -41,6 +42,7 @@ Destroying magikube project named 'sample' in the current directory`,
     AppLogger.configureLogger(args.name, false);
 
     const responses = dotMagikubeConfig(args.name, process.cwd());
+
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, "infrastructure");
 
@@ -52,7 +54,6 @@ Destroying magikube project named 'sample' in the current directory`,
 
     SystemConfig.getInstance().mergeConfigs(responses);
     const project_config = SystemConfig.getInstance().getConfig();
-
     let terraform;
     if (project_config.command === "new" && !("template" in project_config)) {
       terraform = await TerraformProject.getProject(this);
@@ -60,57 +61,59 @@ Destroying magikube project named 'sample' in the current directory`,
       terraform = await TemplateTerraformProject.getProject(this);
     } else if (project_config.command === "module") {
       terraform = await SubModuleTemplateProject.getProject(this, args.name);
+    }else if (project_config.command === "create"){
+      terraform = await MicroserviceProject.getProject(this, args.name);
     }
+      if (terraform && responses.cloud_provider === "aws") {
+        await terraform.AWSProfileActivate(responses["aws_profile"]);
 
-    if (terraform && responses.cloud_provider === "aws") {
-      await terraform.AWSProfileActivate(responses["aws_profile"]);
+        if (
+          readFile.services["terraform-apply"] === "fail" ||
+          readFile.services["terraform-apply"] === "pending"
+        ) {
+          await runTerraformUnlockCommands(projectPath, responses);
+        }
 
-      if (
-        readFile.services["terraform-apply"] === "fail" ||
-        readFile.services["terraform-apply"] === "pending"
-      ) {
-        await runTerraformUnlockCommands(projectPath, responses);
-      }
-
-      if (
-        (project_config.command === "new" && project_config.template) ||
-        project_config.command === "module"
-      ) {
-        await executeCommandWithRetry(
-          `terraform init -backend-config=${project_config.environment}-config.tfvars`,
-          { cwd: infrastructurePath },
-          1
-        );
-
-        await terraform?.runTerraformDestroyTemplate(
-          infrastructurePath,
-          "terraform.tfvars"
-        );
-
-        if (fs.existsSync(`${process.cwd()}/${args.name}`)) {
-          AppLogger.debug(
-            `Removing folder ${process.cwd()}/${args.name}`,
-            true
-          );
+        if (
+          (project_config.command === "new" && project_config.template) ||
+          project_config.command === "module" ||
+          project_config.command === "create"
+        ) {
           await executeCommandWithRetry(
-            `rm -rf ${process.cwd()}/${args.name}`,
-            { cwd: `${process.cwd()}/${args.name}` },
+            `terraform init -backend-config=${project_config.environment}-config.tfvars`,
+            { cwd: infrastructurePath },
             1
           );
-        } else {
-          AppLogger.debug(
-            `Folder ${process.cwd()}/${args.name} does not exist in the path`,
-            true
+
+          await terraform?.runTerraformDestroyTemplate(
+            infrastructurePath,
+            "terraform.tfvars"
           );
-        }
+
+          if (fs.existsSync(`${process.cwd()}/${args.name}`)) {
+            AppLogger.debug(
+              `Removing folder ${process.cwd()}/${args.name}`,
+              true
+            );
+            await executeCommandWithRetry(
+              `rm -rf ${process.cwd()}/${args.name}`,
+              { cwd: `${process.cwd()}/${args.name}` },
+              1
+            );
+          } else {
+            AppLogger.debug(
+              `Folder ${process.cwd()}/${args.name} does not exist in the path`,
+              true
+            );
+          }
+        } else {
+          await terraform.destroyProject(args.name, process.cwd());
+        }     
       } else {
-        await terraform.destroyProject(args.name, process.cwd());
+        AppLogger.error(
+          "Terraform project initialization failed or unsupported cloud provider.",
+          true
+        );
       }
-    } else {
-      AppLogger.error(
-        "Terraform project initialization failed or unsupported cloud provider.",
-        true
-      );
-    }
   }
 }

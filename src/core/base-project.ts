@@ -1,6 +1,6 @@
 import { Liquid } from "liquidjs";
 import fs from "fs-extra";
-import { dirname, join } from "path";
+import path, { dirname, join } from "path";
 import SystemConfig from "../config/system.js";
 import BaseCommand from "../commands/base.js";
 import TerraformProject from "./terraform-project.js";
@@ -161,7 +161,6 @@ export default abstract class BaseProject {
     }
   }
 
-
   async createFile(
     filename: string,
     templateFilename: string,
@@ -181,14 +180,22 @@ export default abstract class BaseProject {
 
     // Read the template file
     const templateFile = fs.readFileSync(templateFilePath, "utf8");
-
     // Render the template using Liquid.js
     const output = await this.engine.parseAndRender(templateFile, {
       ...this.config,
     });
 
+    let projectPath;
+    if (
+      project_config.command === "new" ||
+      project_config.command === "resume"
+    ) {
+      projectPath = `${process.cwd()}/${project_config.project_name}`;
+    } else {
+      projectPath = process.cwd();
+    }
+    const folderPath = join(projectPath, folderName);
     // Ensure the folder exists
-    const folderPath = join(this.projectPath, folderName);
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
@@ -201,8 +208,8 @@ export default abstract class BaseProject {
     }
     if (
       project_config.command === "new" ||
-      project_config.command === "resume" 
-    
+      project_config.command === "resume" ||
+      project_config.command === "create"
     ) {
       // Logic for the "resume" command
       AppLogger.debug(`Creating ${filename} file for resume command.`);

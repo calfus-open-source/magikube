@@ -18,10 +18,11 @@ let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
     async createProject(name: string, path: string, commandName?: string): Promise<void> {  
-     await super.createProject(name, path);      
-     
+      if (commandName){
+         await super.createProject(name, path);      
+      }
       if (
-        !this.config.moduleType || 
+        (!this.config.moduleType && this.config.command !=="create") || 
         (this.config.moduleType && this.config.moduleType.length > 1) 
       ) {
         await AWSPolicies.create(
@@ -451,8 +452,8 @@ export default class AWSProject extends BaseProject {
     }
 
     if (
-      !this.config.moduleType ||
-      (this.config.moduleType && this.config.moduleType.length > 1)
+      (!this.config.moduleType || (this.config.moduleType && this.config.moduleType.length > 1)) &&
+      this.config.command !== "create"
     ) {
       const status = await AWSPolicies.delete(
         this,
@@ -473,6 +474,7 @@ export default class AWSProject extends BaseProject {
       await this.deleteFolder();
        
     }
+    
 
 
 

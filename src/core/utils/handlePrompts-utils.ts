@@ -11,22 +11,25 @@ export async function handlePrompts(
   args: any,
   commandName?: any,
   template?: any,
-  moduleType?: string
+  moduleType?: string,
+  serviceName?:string
 ): Promise<Answers> {
   let responses: any =
-    commandName === "module"
+    commandName === "module" || commandName === "create"
       ? ""
       : {
           project_name: args.name,
           project_id: uuidv4(),
-          template:template
+          template: template,
         };
   const promptGenerator = new PromptGenerator();
-   const projectConfigFile = path.join(
-     process.cwd(),
-     commandName === "module" ? "" : responses.project_name,
-     ".magikube"
-   );
+  const projectConfigFile = path.join(
+    process.cwd(),
+    commandName === "module" || commandName === "create"
+      ? ""
+      : responses.project_name,
+    ".magikube"
+  );
   let project_config;
   if (fs.existsSync(projectConfigFile)) {
     project_config = JSON.parse(fs.readFileSync(projectConfigFile).toString());
@@ -161,5 +164,36 @@ export async function handlePrompts(
       responses = { ...responses, ...backendResp };
     }
   }
-  return responses;
+  if (commandName === "create"){
+       for (const microServicePrompts of promptGenerator.getMicroService()) {
+         const microServiceResp = await inquirer.prompt(microServicePrompts);
+         responses = { ...responses, ...microServiceResp };
+       }
+    if (responses.service_type === "frontend-service") {
+      for (const frontendPrompt of promptGenerator.getFrontendApplicationType()) {
+        const frontendResp = await inquirer.prompt(frontendPrompt);
+        responses = { ...responses, ...frontendResp };
+      }
+    }
+    if (responses.service_type === "backend-service") {
+      for (const backendPrompt of promptGenerator.getBackendApplicationType()) {
+        const backendResp = await inquirer.prompt(backendPrompt);
+        responses = { ...responses, ...backendResp };
+      }
+    }
+
+    for (const regionPrompt of promptGenerator.getSourceCodeRepositories()) {
+      const sourceCodeRepoResp = await inquirer.prompt(regionPrompt);
+      responses = { ...responses, ...sourceCodeRepoResp };
+    }
+
+    for (const vcPrompt of promptGenerator.getVersionControlPrompts(
+       responses["source_code_repository"]
+     )) {
+       const vcResp = await inquirer.prompt(vcPrompt);
+       responses = { ...responses, ...vcResp };
+    }    
+    
+  }
+   return responses;
 }
