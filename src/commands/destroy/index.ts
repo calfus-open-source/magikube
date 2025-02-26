@@ -46,23 +46,12 @@ Destroying magikube project named 'sample' in the current directory`,
     responses.dryrun = flags.dryrun || false;
     SystemConfig.getInstance().mergeConfigs(responses);
     const project_config = SystemConfig.getInstance().getConfig();
-    // Check if the argument is "microservice"
-    // if (args.name === "microservice") {
-    //   await executeCommandWithRetry(
-    //     `curl -X DELETE -H "Authorization: token ${project_config.github_access_token}" \
-    //     -H "Accept: application/vnd.github.v3+json" \
-    //     https://api.github.com/repos/${project_config.git_user_name}/${}`,
-    //     { cwd: infrastructurePath },
-    //     1
-    //   );
-    //   process.exit(1);
-    // }
+
     AppLogger.debug(
       `Destroying magikube project named '${args.name}' in the current directory`,
       true
     );
-    //const repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
-    //remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`
+ 
     let terraform;
     if (project_config.command === "new" && !("template" in project_config)) {
       terraform = await TerraformProject.getProject(this);

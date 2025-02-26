@@ -18,9 +18,10 @@ let sshProcess: any;
 
 export default class AWSProject extends BaseProject {
     async createProject(name: string, path: string, commandName?: string): Promise<void> {  
-      if (commandName){
+      if(this.config.command === "new"){
          await super.createProject(name, path);      
       }
+ 
       if (
         (!this.config.moduleType && this.config.command !=="create") || 
         (this.config.moduleType && this.config.moduleType.length > 1) 
