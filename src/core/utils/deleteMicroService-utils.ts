@@ -1,11 +1,12 @@
 import { AppLogger } from "../../logger/appLogger.js";
 import { executeCommandWithRetry } from "./executeCommandWithRetry-utils.js";
+import { join } from "path";
+import fs from "fs"
 
 export async function deleteMicroservice(resp:any, createdServiceResp:any) {
   try {
     const repoName = `${resp.project_name}-${createdServiceResp.service_Name}-app`;
     const team = `${createdServiceResp.service_Name}-team`;
-
     AppLogger.info(`Starting deletion process for ${repoName}...`, true);
 
     // Step 1: Remove the repository from the team
@@ -39,23 +40,16 @@ export async function deleteMicroservice(resp:any, createdServiceResp:any) {
       "auth-service": "auth-service",
     };
 
-    const service =
-      serviceMap[createdServiceResp.service_Name] || serviceMap["default"];
-
-    await executeCommandWithRetry(
-      `rm -rf ${service}`,
-      { cwd: process.cwd() },
-      1
-    );
+    const service =serviceMap[createdServiceResp.service_Name] || serviceMap["default"];
+    await executeCommandWithRetry(`rm -rf ${service}`, { cwd: process.cwd() }, 1);
+    resp.services = resp.services.filter((service: any) => service !== createdServiceResp.service_Name);
+    const projectConfigFile = join(process.cwd(), ".magikube");
+    fs.writeFileSync(projectConfigFile, JSON.stringify(resp, null, 4));
     AppLogger.info(`${createdServiceResp.service_Name} service deleted successfully.`, true);
 
-    AppLogger.info(
-      `${createdServiceResp.service_Name} deleted successfully`,
-      true
-    );
   } catch (error) {
     AppLogger.error(
-      `An error occurred while deleting ${createdServiceResp.service_Name}: ${error}`,
+      `An error occurred while deleting ${createdServiceResp.service_Name} service: ${error}`,
       true
     );
   }
