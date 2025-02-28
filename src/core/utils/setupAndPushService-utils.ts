@@ -6,86 +6,167 @@ import fs from "fs";
 import { readStatusFile } from "./statusUpdater-utils.js";
 import { AppLogger } from "../../logger/appLogger.js";
 
-export async function setupAndPushServices(projectConfig: any,configObject: any) {
+export async function setupAndPushServices(
+  projectConfig: any,
+  configObject: any
+) {
   let command: BaseCommand | undefined;
-  const createApp = new CreateApplication(command as BaseCommand, projectConfig);
-  const status = await readStatusFile(projectConfig);
+  const createApp = new CreateApplication(
+    command as BaseCommand,
+    projectConfig
+  );
+  const status = await readStatusFile(projectConfig, projectConfig.command);
+
   try {
-    // Setup Authentication Service if failed or pending
-    if (status.services["auth-service"] !== "success") {
-      try {
-        const statusAuthenticationService = await createApp.setupAuthenticationService(projectConfig);
-        if (statusAuthenticationService) {
-          configObject.appName = "auth-service";
-          configObject.appType = "auth-service";
-          await ManageRepository.pushCode(configObject);
-        }
-      } catch (error) {
-        AppLogger.error(`Error setting up Authentication Service: ${error}`);
-      }
+    if (projectConfig.command === "new") {
+      await setupServices(projectConfig, configObject, createApp, status);
+    } else if (projectConfig.command === "create") {
+      await createService(projectConfig, configObject, createApp);
     }
+  } catch (error: any) {
+    AppLogger.error(
+      `An error occurred during the setup process:: ${error.message}`
+    );
+  }
+}
 
-    // Setup Keycloak Service if failed or pending
-    if (status.services["keycloak"] !== "success") {
-      try {
-        const statusKeycloakService = await createApp.setupKeyCloak(projectConfig);
-        if (statusKeycloakService) {
-          configObject.appName = "keycloak";
-          configObject.appType = "keycloak-service";
-          await ManageRepository.pushCode(configObject);
-        }
-      } catch (error) {
-        AppLogger.error(`Error setting up Keycloak Service: ${error}`);
-      }
-    }
+async function setupServices(
+  projectConfig: any,
+  configObject: any,
+  createApp: CreateApplication,
+  status: any
+) {
+  await setupService(
+    "auth-service",
+    "auth-service",
+    () => createApp.setupAuthenticationService(projectConfig),
+    configObject
+  );
+  await setupService(
+    "keycloak",
+    "keycloak-service",
+    () => createApp.setupKeyCloak(projectConfig),
+    configObject
+  );
 
-    // Setup Node.js Backend App if failed or pending
-    if (
-      projectConfig["backend_app_type"] &&
-      status.services["my-node-app"] !== "success"
-    ) {
-      try {
-        configObject.appName = projectConfig["node_app_name"];
-        configObject.appType = projectConfig["backend_app_type"];
-        await createApp.handleAppCreation( projectConfig["backend_app_type"],configObject,projectConfig);
-      } catch (error) { 
-        AppLogger.error(`Error setting up Node.js Backend App: ${error}`);
-      }
-    }
+  if (
+    projectConfig["backend_app_type"] &&
+    status.services["my-node-app"] !== "success"
+  ) {
+    await handleServiceCreation(
+      projectConfig["backend_app_type"],
+      projectConfig["node_app_name"],
+      projectConfig,
+      configObject,
+      createApp
+    );
+  }
 
-    // Setup Frontend App if failed or pending
-    if (projectConfig["frontend_app_type"]) {
-      const frontendAppType = projectConfig["frontend_app_type"];
-      if (status.services[frontendAppType] !== "success") {
-        try {
-          configObject.appType = frontendAppType;
-          await createApp.handleAppCreation(frontendAppType,
-            configObject,
-            projectConfig
-          );
-        } catch (error) {
-          AppLogger.error(`Error setting up Frontend App (${frontendAppType}): ${error}`);
-        }
-      }
+  if (projectConfig["frontend_app_type"]) {
+    const frontendAppType = projectConfig["frontend_app_type"];
+    if (status.services[frontendAppType] !== "success") {
+      await handleServiceCreation(
+        frontendAppType,
+        frontendAppType,
+        projectConfig,
+        configObject,
+        createApp
+      );
     }
+  }
 
-    // Setup GitOps if failed or pending
-    if (status.services["gitops"] !== "success") {
-      try {
-        const setupGitopsServiceStatus = await createApp.setupGitops(
-          projectConfig
-        );
-        if (setupGitopsServiceStatus) {
-          configObject.appName = `${projectConfig.environment}`;
-          configObject.appType = "gitops";
-          await ManageRepository.pushCode(configObject);
-        }
-      } catch (error) {
-        AppLogger.error(`Error setting up GitOps: ${error}`);
-      }
+  await setupService(
+    "gitops",
+    "gitops",
+    () => createApp.setupGitops(projectConfig),
+    configObject,
+    `${projectConfig.environment}`
+  );
+}
+
+async function createService(
+  projectConfig: any,
+  configObject: any,
+  createApp: CreateApplication
+) {
+  if (projectConfig.service_type === "auth-service") {
+    await setupService(
+      "auth-service",
+      "auth-service",
+      () => createApp.setupAuthenticationService(projectConfig),
+      configObject
+    );
+  }
+
+  if (projectConfig.service_type === "keycloak") {
+    await setupService(
+      "keycloak",
+      "keycloak",
+      () => createApp.setupKeyCloak(projectConfig),
+      configObject
+    );
+  }
+
+  if (
+    projectConfig["backend_app_type"] &&
+    projectConfig.service_type === "backend-service"
+  ) {
+    await handleServiceCreation(
+      projectConfig["backend_app_type"],
+      projectConfig["node_app_name"],
+      projectConfig,
+      configObject,
+      createApp
+    );
+  }
+
+  if (
+    projectConfig["frontend_app_type"] &&
+    projectConfig.service_type === "frontend-service"
+  ) {
+    const frontendAppType = projectConfig["frontend_app_type"];
+    await handleServiceCreation(
+      frontendAppType,
+      frontendAppType,
+      projectConfig,
+      configObject,
+      createApp
+    );
+  }
+}
+
+async function setupService(
+  serviceName: string,
+  appType: string,
+  setupFunction: () => Promise<boolean>,
+  configObject: any,
+  appName?: string
+) {
+  try {
+    const status = await setupFunction();
+    if (status) {
+      configObject.appName = appName || serviceName;
+      configObject.appType = appType;
+      await ManageRepository.pushCode(configObject);
     }
-  } catch (error:any) {
-    AppLogger.error(`An error occurred during the setup process:: ${error.message}`);
+  } catch (error) {
+    AppLogger.error(`Error setting up ${serviceName}: ${error}`);
+  }
+}
+
+async function handleServiceCreation(
+  appType: string,
+  appName: string,
+  projectConfig: any,
+  configObject: any,
+  createApp: CreateApplication
+) {
+  try {
+    configObject.appName = appName;
+    configObject.appType = appType;
+    await createApp.handleAppCreation(appType, configObject, projectConfig);
+  } catch (error) {
+    AppLogger.error(`Error setting up ${appType} App: ${error}`);
   }
 }
 

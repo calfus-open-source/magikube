@@ -15,10 +15,16 @@ let publicKeyId: string;
 export class ManageRepository {
     static async pushCode(configObject: ConfigObject) {
         const {token, userName, orgName, sourceCodeRepo, region, appName, projectName, appType, awsAccessKey, awsSecretKey, environment} = configObject;
+        const projectConfig = SystemConfig.getInstance().getConfig();
         let repoSetupError: boolean = false;
         const execCommand = (command: string, projectPath: string) => executeCommandWithRetry(command, { cwd: projectPath,  stdio: 'pipe' },1)
         const gitopsRepo = `${projectName}-${environment}-gitops`;
-        const projectPath = appType === 'gitops' ? `${process.cwd()}/${projectName}/${appType}` :`${process.cwd()}/${projectName}/${appName}`;
+        let projectPath;
+        if(projectConfig.command === "create"){
+        projectPath = appType === 'gitops' ? `${process.cwd()}/${appType}` :`${process.cwd()}/${appName}`;
+        }else{
+         projectPath = appType === 'gitops' ? `${process.cwd()}/${projectName}/${appType}` :`${process.cwd()}/${projectName}/${appName}`;
+        }
         const repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
         // Function to execute command and log it
         const execAndLog = (command: string, description: string): string => {
@@ -59,6 +65,7 @@ export class ManageRepository {
                 key: response.data.key,
                 keyId: response.data.key_id,
                 };
+
             } catch (error) {
                 AppLogger.error(`Error fetching public key:${error}` , true);
                 throw error; // Re-throw the error after logging it

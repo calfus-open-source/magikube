@@ -11,6 +11,10 @@ import { executeCommandWithRetry } from "../../core/utils/executeCommandWithRetr
 import * as fs from "fs";
 import TemplateTerraformProject from "../../core/templatesTerraform-projects.js";
 import SubModuleTemplateProject from "../../core/submoduleTerraform.js";
+import MicroserviceProject from "../../core/microserviceTerraform.js";
+import PromptGenerator from "../../prompts/prompt-generator.js";
+import inquirer from "inquirer";
+import { deleteMicroservice } from "../../core/utils/deleteMicroService-utils.js";
 
 export default class DestroyProject extends BaseCommand {
   static args = {
@@ -37,22 +41,34 @@ Destroying magikube project named 'sample' in the current directory`,
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(DestroyProject);
+    if (args.name === "microservice") {
+      const promptGenerator = new PromptGenerator();
+      const resp = dotMagikubeConfig("", process.cwd());
+      AppLogger.configureLogger(resp.project_name, false);
+
+      let createdServiceResp;
+      for (const microServicePrompts of promptGenerator.getCreatedServices(
+        resp.services
+      )) {
+        createdServiceResp = await inquirer.prompt(microServicePrompts);
+      }
+      await deleteMicroservice(resp, createdServiceResp);
+      process.exit(1);
+    }
     const projectPath = path.join(process.cwd(), args.name);
     AppLogger.configureLogger(args.name, false);
-
     const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, "infrastructure");
-
     responses.dryrun = flags.dryrun || false;
+    SystemConfig.getInstance().mergeConfigs(responses);
+    const project_config = SystemConfig.getInstance().getConfig();
+
     AppLogger.debug(
       `Destroying magikube project named '${args.name}' in the current directory`,
       true
     );
-
-    SystemConfig.getInstance().mergeConfigs(responses);
-    const project_config = SystemConfig.getInstance().getConfig();
-
+    // Default behavior for other project types
     let terraform;
     if (project_config.command === "new" && !("template" in project_config)) {
       terraform = await TerraformProject.getProject(this);
@@ -60,6 +76,8 @@ Destroying magikube project named 'sample' in the current directory`,
       terraform = await TemplateTerraformProject.getProject(this);
     } else if (project_config.command === "module") {
       terraform = await SubModuleTemplateProject.getProject(this, args.name);
+    } else if (project_config.command === "create") {
+      terraform = await MicroserviceProject.getProject(this, args.name);
     }
 
     if (terraform && responses.cloud_provider === "aws") {
@@ -74,7 +92,8 @@ Destroying magikube project named 'sample' in the current directory`,
 
       if (
         (project_config.command === "new" && project_config.template) ||
-        project_config.command === "module"
+        project_config.command === "module" ||
+        project_config.command === "create"
       ) {
         await executeCommandWithRetry(
           `terraform init -backend-config=${project_config.environment}-config.tfvars`,

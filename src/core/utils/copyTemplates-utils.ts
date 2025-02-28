@@ -5,11 +5,10 @@ import { AppLogger } from "../../logger/appLogger.js";
 
 export async function cloneAndCopyTemplates(commandName: string | undefined): Promise<void> {
   try {
-    const parentPath = commandName === "module" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
+    const parentPath = commandName === "module" || commandName === "create"  ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const dir_infra = `${parentPath}/infrastructure-templates`;
     const dir_templates = `${parentPath}/magikube-templates`;
     const distFolder = `${parentPath}/dist`; // Dist folder path
-
     if (!fs.existsSync(distFolder)) {
       await executeCommandWithRetry(
         `mkdir -p ${distFolder}/templates/aws`, // Create the required subfolders in dist
@@ -21,7 +20,7 @@ export async function cloneAndCopyTemplates(commandName: string | undefined): Pr
     // Clone infrastructure templates repository if not already cloned
     if (!fs.existsSync(dir_infra)) {
       await executeCommandWithRetry(
-        "git clone https://github.com/calfus-open-source/infrastructure-templates.git",
+        "git clone -b rb/template-chnages https://github.com/calfus-open-source/infrastructure-templates.git",
         { cwd: parentPath },
         1
       );
@@ -44,7 +43,6 @@ export async function cloneAndCopyTemplates(commandName: string | undefined): Pr
       { cwd: parentPath },
       1
     );
-
     // Clone application templates repository if not already cloned
     if (!fs.existsSync(dir_templates)) {
       await executeCommandWithRetry(
@@ -67,13 +65,9 @@ export async function cloneAndCopyTemplates(commandName: string | undefined): Pr
       { cwd: parentPath },
       1
     );
-
-    AppLogger.info("Templates cloned and copied successfully.");
+    AppLogger.info("Templates cloned and copied successfully.", true);
   } catch (error:any) {
-    AppLogger.error(
-      "An error occurred during the cloning and copying process:",
-      error
-    );
+    AppLogger.error("An error occurred during the cloning and copying process:", error);
     throw error; // Re-throw the error for further handling if needed
   }
 }

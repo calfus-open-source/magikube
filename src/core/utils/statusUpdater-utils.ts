@@ -53,7 +53,7 @@ export function updateStatusFile(
   // const statusFilePath = path.join(process.cwd(), projectName, "status.json");
   const projectConfig = SystemConfig.getInstance().getConfig();
    let statusFilePath;
-   if (projectConfig.command === "module") {
+   if (projectConfig.command === "module" || projectConfig.command === "create") {
      statusFilePath = path.join(process.cwd(), "status.json");
    } else {
      statusFilePath = path.join(
@@ -92,7 +92,7 @@ export function updateStatusFile(
 // To reade the status.json file
 export function readStatusFile(projectConfig:any, command?:any){
   let statusFilePath;
-  if (command === "module") {
+  if (command === "module" || command === "create") {
     statusFilePath = path.join(process.cwd(), "status.json");
   } else {
     statusFilePath = path.join(

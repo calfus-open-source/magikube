@@ -159,7 +159,7 @@ export default class CreateProject extends BaseCommand {
       );
 
       if (terraform) {
-        await terraform.createProject(projectName, process.cwd());
+        await terraform.createProject(projectName, process.cwd(), this.id);
 
         if (responses.cloud_provider === "aws") {
           await terraform.AWSProfileActivate(responses.aws_profile);

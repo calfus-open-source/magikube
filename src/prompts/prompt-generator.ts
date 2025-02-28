@@ -102,6 +102,21 @@ const awsPrompts: any[] = [
       SystemConfig.getInstance().getConfig().source_code_repository,
   },
 ];
+const sourceCodeRepositories: any[] = [
+  {
+    message: "Source code repository: ",
+    name: "source_code_repository",
+    type: "list",
+    choices: [
+      VersionControl.GITHUB,
+      // VersionControl.CODECOMMIT,
+      VersionControl.BITBUCKET,
+    ],
+    default:
+      VersionControl.GITHUB ||
+      SystemConfig.getInstance().getConfig().source_code_repository,
+  },
+];
 
 const k8sPrompts: any[] = [
   {
@@ -226,6 +241,15 @@ const domainPrompt: any[] = [
   }
 ];
 
+const microServicePrompts: any[] = [
+  {
+    choices: ["frontend-service","backend-service","auth-service","keycloak"],
+    message: "Select a MicroService:",
+    name: "service_type",
+    type: "list",
+  },
+];
+
 enum ApplicationType {
   REACT = "react",
   NEXT = "next",
@@ -276,6 +300,27 @@ export default class PromptGenerator {
     return awsProfile;
   }
 
+  getMicroService(): any[] {
+    return microServicePrompts;
+  }
+
+  getCreatedServices(services:string[]): any[] {
+      return [
+        {
+          type: "list",
+          name: "service_Name",
+          message: "Select a service to destroy:",
+          choices: services,
+          validate: (input: string) => {
+            if (!input || input.trim() === "") {
+              return "A valid service must be selected.";
+            }
+            return true;
+          },
+        },
+      ];
+  }
+
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
     if (cloudProvider === CloudProvider.AWS) {
       return awsPrompts;
@@ -291,6 +336,10 @@ export default class PromptGenerator {
       );
       process.exit(1);
     }
+  }
+
+  getSourceCodeRepositories() {
+    return sourceCodeRepositories;
   }
 
   getClusterPrompts(clusterType: string): any[] {
