@@ -12,7 +12,7 @@ export const modules = [
 
 export const singleModules = ["module.vpc", "module.eks", "module.rds", "module.acm"];
 
-export const RestrictedCommands = ["vpc", "rds", "eks", "acm", "ecr"]
+export const InvalidProjectNames = ["vpc", "rds", "eks", "acm", "ecr"]
 
 export const services =[
     "policy",

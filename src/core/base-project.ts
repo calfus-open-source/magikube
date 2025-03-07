@@ -199,7 +199,6 @@ export default abstract class BaseProject {
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
-
     // Define the full path to the file
     const filePath = join(folderPath, filename);
     let lastModule;
