@@ -165,6 +165,7 @@ export async function handlePrompts(
     }
   }
   if (commandName === "create"){
+     const resp = dotMagikubeConfig("", process.cwd());
        for (const microServicePrompts of promptGenerator.getMicroService()) {
          const microServiceResp = await inquirer.prompt(microServicePrompts);
          responses = { ...responses, ...microServiceResp };
@@ -181,18 +182,19 @@ export async function handlePrompts(
         responses = { ...responses, ...backendResp };
       }
     }
+    if (!resp.services || resp.services.length === 0) {
+      for (const regionPrompt of promptGenerator.getSourceCodeRepositories()) {
+        const sourceCodeRepoResp = await inquirer.prompt(regionPrompt);
+        responses = { ...responses, ...sourceCodeRepoResp };
+      }
 
-    for (const regionPrompt of promptGenerator.getSourceCodeRepositories()) {
-      const sourceCodeRepoResp = await inquirer.prompt(regionPrompt);
-      responses = { ...responses, ...sourceCodeRepoResp };
-    }
-
-    for (const vcPrompt of promptGenerator.getVersionControlPrompts(
-       responses["source_code_repository"]
-     )) {
-       const vcResp = await inquirer.prompt(vcPrompt);
-       responses = { ...responses, ...vcResp };
-    }    
+      for (const vcPrompt of promptGenerator.getVersionControlPrompts(
+        responses["source_code_repository"]
+      )) {
+        const vcResp = await inquirer.prompt(vcPrompt);
+        responses = { ...responses, ...vcResp };
+      }
+    }  
     
   }
    return responses;

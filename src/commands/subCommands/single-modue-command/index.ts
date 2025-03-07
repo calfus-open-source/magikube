@@ -73,11 +73,9 @@ export default class NewModule extends BaseCommand {
     const dotMagikubeContent = JSON.parse(
       fs.readFileSync(dotmagikubeFilePath, "utf-8")
     );
+
     AppLogger.configureLogger(dotMagikubeContent.project_name);
-    AppLogger.info(
-      `Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,
-      true
-    );
+    AppLogger.info( `Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,true);
 
     try {
       const template = "";
@@ -87,25 +85,23 @@ export default class NewModule extends BaseCommand {
         template,
         moduleType
       );
-      await cloneAndCopyTemplates(this.id);
+
+      const distFolderPath = path.resolve(currentDir, "..");
+      // Check if dist folder exist
+      if (!fs.existsSync(`${distFolderPath}/dist`)){
+        await cloneAndCopyTemplates(this.id);
+      }  
+
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleType", moduleType);
       updateMagikubeArrayProperty(dotMagikubeContent, "moduleName", moduleName);
 
       // Handle CIDR block and domain responses if provided
       if (responses?.cidrBlock) {
-        updateMagikubeArrayProperty(
-          dotMagikubeContent,
-          "cidr_blocks",
-          responses.cidrBlock
-        );
+        updateMagikubeArrayProperty(dotMagikubeContent, "cidr_blocks", responses.cidrBlock);
       }
 
       if (responses?.domain) {
-        updateMagikubeArrayProperty(
-          dotMagikubeContent,
-          "domains",
-          responses.domain
-        );
+        updateMagikubeArrayProperty(dotMagikubeContent, "domains", responses.domain);
       }
 
       dotMagikubeContent.command = this.id;
@@ -126,13 +122,13 @@ export default class NewModule extends BaseCommand {
       await readStatusFile(projectConfig, this.id);
 
       if (terraform) {
-        // Run Terraform initialization and apply
-        await terraform.createProject("", process.cwd());
+        await terraform.createProject("", currentDir);
         if (projectConfig["cloud_provider"] === "aws") {
           await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
         }
-
+        //Delay of 15 second
         await new Promise((resolve) => setTimeout(resolve, 15000));
+        // Run Terraform initialization
         await terraform?.runTerraformInit(
           `${currentDir}/infrastructure`,
           `${projectConfig["environment"]}-config.tfvars`,
@@ -144,15 +140,26 @@ export default class NewModule extends BaseCommand {
           if (moduleType === "eks-nodegroup" || moduleType === "eks-fargate") {
             moduleType = "eks";
           }
-          AppLogger.info(`Starting Terraform apply for module: ${moduleType}`, true);
-          updateStatusFile(projectConfig.project_name, `module.${moduleType}`, "fail");
+          AppLogger.info(
+            `Starting Terraform apply for module: ${moduleType}`,
+            true
+          );
+          updateStatusFile(
+            projectConfig.project_name,
+            `module.${moduleType}`,
+            "fail"
+          );
           await terraform?.runTerraformApply(
             `${currentDir}/infrastructure`,
             moduleType,
             moduleName,
             "terraform.tfvars"
           );
-          updateStatusFile(projectConfig.project_name, `module.${moduleType}`, "success");
+          updateStatusFile(
+            projectConfig.project_name,
+            `module.${moduleType}`,
+            "success"
+          );
           AppLogger.debug(
             `Successfully applied Terraform for module: ${moduleType}`,
             true

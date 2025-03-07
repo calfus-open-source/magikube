@@ -20,7 +20,7 @@ export async function cloneAndCopyTemplates(commandName: string | undefined): Pr
     // Clone infrastructure templates repository if not already cloned
     if (!fs.existsSync(dir_infra)) {
       await executeCommandWithRetry(
-        "git clone -b rb/template-chnages https://github.com/calfus-open-source/infrastructure-templates.git",
+        "git clone https://github.com/calfus-open-source/infrastructure-templates.git",
         { cwd: parentPath },
         1
       );

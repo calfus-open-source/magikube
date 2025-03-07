@@ -21,7 +21,8 @@ import { handlePrompts } from "./handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "./copyTemplates-utils.js";
 
 export async function handleTemplateFlag(args:any, commandName?:any ,template?:any) {
-  const responses = dotMagikubeConfig(args.name, process.cwd());
+  const currentDir = process.cwd();
+  const responses = dotMagikubeConfig(args.name, currentDir);
   const moduleType = "";
   const domain =
     template === "vpc-rds-nodegroup-acm-ingress"
@@ -30,7 +31,7 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
 
   await cloneAndCopyTemplates(commandName);
   AppLogger.debug(
-    `Creating new magikube project namedddddd '${args.name}' in the current directory`,
+    `Creating new magikube project named '${args.name}' in the current directory`,
     true
   );
   const projectName = args.name;
@@ -58,13 +59,13 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
   );
   SystemConfig.getInstance().mergeConfigs({ accountId: accountId });
   if (terraform) {
-    await terraform.createProject(projectName, process.cwd());
+    await terraform.createProject(projectName, currentDir);
     if (responses["cloud_provider"] === "aws") {
       await terraform.AWSProfileActivate(responses["aws_profile"]);
     }
     await new Promise((resolve) => setTimeout(resolve, 15000));
     await terraform?.runTerraformInit(
-      process.cwd() + "/" + projectName + "/infrastructure",
+      currentDir + "/" + projectName + "/infrastructure",
       `${responses["environment"]}-config.tfvars`,
       projectName
     );
@@ -93,7 +94,7 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
         ) {
           await executeCommandWithRetry(
             "terraform apply -auto-approve",
-            { cwd: `${process.cwd()}/${projectName}/infrastructure` },
+            { cwd: `${currentDir}/${projectName}/infrastructure` },
             1
           );
           updateStatusFile(projectName, "terraform-apply", "success");
@@ -103,7 +104,7 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
           );
         } else {
           await terraform?.runTerraformApply(
-            process.cwd() + "/" + projectName + "/infrastructure",
+            currentDir + "/" + projectName + "/infrastructure",
             module,
             moduleName,
             "terraform.tfvars"
