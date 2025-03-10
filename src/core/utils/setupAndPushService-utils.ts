@@ -16,9 +16,8 @@ export async function setupAndPushServices(
     projectConfig
   );
   const status = await readStatusFile(projectConfig, projectConfig.command);
-
   try {
-    if (projectConfig.command === "new") {
+    if (projectConfig.command === "new" || projectConfig.command === "resume") {
       await setupServices(projectConfig, configObject, createApp, status);
     } else if (projectConfig.command === "create") {
       await createService(projectConfig, configObject, createApp);

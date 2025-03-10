@@ -46,7 +46,7 @@ export default class CreateApplication extends BaseProject {
            applicationPath = `${process.cwd()}/${appName}`;
          } else {
            copyFilePath = process.cwd();
-           createFilePath = `${process.cwd()}/${projectName}/${appName}`;
+           createFilePath = `${appName}`;
            applicationPath = `${process.cwd()}/${projectName}/${appName}`;
          } 
         try {
@@ -103,7 +103,7 @@ export default class CreateApplication extends BaseProject {
                   applicationPath = `${process.cwd()}/${appName}`;
                 } else {
                   copyFilePath = process.cwd();
-                  createFilePath = `${process.cwd()}/${projectName}/${appName}`;
+                  createFilePath = `${appName}`;
                   applicationPath = `${process.cwd()}/${projectName}/${appName}`;
                 }
         try {
@@ -147,8 +147,8 @@ export default class CreateApplication extends BaseProject {
            applicationPath = `${process.cwd()}/${nodeAppName}`;
          } else {
            copyFilePath = process.cwd();
-           createFilePath = `${process.cwd()}/${projectName}/${nodeAppName}`;
-            applicationPath = `${process.cwd()}/${projectName}/${nodeAppName}`;
+           createFilePath = `${nodeAppName}`;
+           applicationPath = `${process.cwd()}/${projectName}/${nodeAppName}`;
          }
         try {
             AppLogger.info('Creating node-express app!', true);
@@ -196,7 +196,7 @@ export default class CreateApplication extends BaseProject {
           applicationPath = `${process.cwd()}/${nextAppName}`;
         } else {
           copyFilePath = process.cwd();
-          createFilePath = `${process.cwd()}/${projectName}/${nextAppName}`;
+          createFilePath = `${nextAppName}`;
           applicationPath = `${process.cwd()}/${projectName}/${nextAppName}`;
         }
         try {
@@ -243,7 +243,7 @@ export default class CreateApplication extends BaseProject {
           applicationPath = `${process.cwd()}/${reactAppName}`;
         } else {
           copyFilePath = process.cwd();
-          createFilePath = `${process.cwd()}/${projectName}/${reactAppName}`;
+          createFilePath = `${reactAppName}`;
           applicationPath = `${process.cwd()}/${projectName}/${reactAppName}`;
 
         }

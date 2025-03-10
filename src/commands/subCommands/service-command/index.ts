@@ -25,9 +25,12 @@ export default class Microservice extends BaseCommand {
       required: true,
     }),
   };
-  static description = "Create a new microservice in the current Magikube project";
+  static description =
+    "Create a new microservice in the current Magikube project";
 
-  static examples = [ `$ magikube create microservice Creates a new microservice in the current project`,];
+  static examples = [
+    `$ magikube create microservice Creates a new microservice in the current project`,
+  ];
 
   async run(): Promise<void> {
     // Extract the argument
@@ -46,26 +49,35 @@ export default class Microservice extends BaseCommand {
     const currentDir = process.cwd();
     const dotmagikubeFilePath = path.join(currentDir, ".magikube");
     if (!fs.existsSync(dotmagikubeFilePath)) {
-      AppLogger.error(`The .magikube file is missing in the current directory: ${currentDir}`, true);
+      AppLogger.error(
+        `The .magikube file is missing in the current directory: ${currentDir}`,
+        true
+      );
       process.exit(1);
     }
-    
+
     // Read the .magikube file
     const resp = dotMagikubeConfig("", process.cwd());
     // Handle prompts and create the microservice
     const projectName = path.basename(currentDir);
-    
     const responses = await handlePrompts({}, this.id, "", "", "");
-    responses.command = this.id; 
+    responses.command = this.id;
     if (responses.service_type === "frontend-service") {
-      updateMagikubeArrayProperty(resp, "services", responses.frontend_app_type);
+      updateMagikubeArrayProperty(
+        resp,
+        "services",
+        responses.frontend_app_type
+      );
     } else if (responses.service_type === "backend-service") {
       updateMagikubeArrayProperty(resp, "services", responses.backend_app_type);
     } else {
       updateMagikubeArrayProperty(resp, "services", responses.service_type);
     }
     AppLogger.configureLogger(projectName);
-    await cloneAndCopyTemplates(this.id);
+    const distFolderPath = path.resolve(process.cwd(), "..");
+    if (!fs.existsSync(`${distFolderPath}/dist`)) {
+      await cloneAndCopyTemplates(this.id);
+    }
     AppLogger.debug(
       `Creating new Magikube project named in the current directory`,
       true
@@ -99,6 +111,7 @@ export default class Microservice extends BaseCommand {
       awsSecretKey,
       environment,
     };
+    // Read the status.json file
     await readStatusFile(projectConfig, this.id);
     if (terraform) {
       await terraform.createProject(projectName, process.cwd(), this.id);
@@ -106,7 +119,9 @@ export default class Microservice extends BaseCommand {
       if (projectConfig["cloud_provider"] === "aws") {
         await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
       }
+      // Add delay of 15 sec 
       await new Promise((resolve) => setTimeout(resolve, 15000));
+      // Initialize the terraform
       await terraform?.runTerraformInit(
         `${currentDir}/infrastructure`,
         `${projectConfig["environment"]}-config.tfvars`,
@@ -118,6 +133,7 @@ export default class Microservice extends BaseCommand {
           true
         );
         updateStatusFile(projectConfig.project_name, `terraform-apply`, "fail");
+        // Apply terraform on module.repository module
         await terraform?.runTerraformApply(
           `${currentDir}/infrastructure`,
           "module.repository",
@@ -139,6 +155,8 @@ export default class Microservice extends BaseCommand {
           true
         );
       }
+
+      // Create the microservice
       await setupAndPushServices(projectConfig, configObject);
     }
   }
