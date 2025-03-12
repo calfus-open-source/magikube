@@ -74,7 +74,7 @@ export default class NewModule extends BaseCommand {
       fs.readFileSync(dotmagikubeFilePath, "utf-8")
     );
 
-    AppLogger.configureLogger(dotMagikubeContent.project_name);
+    AppLogger.configureLogger(dotMagikubeContent.project_name, this.id);
     AppLogger.info( `Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,true);
 
     try {

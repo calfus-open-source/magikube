@@ -3,26 +3,32 @@ import fs from 'fs';
 import path from 'path';
 import 'winston-daily-rotate-file';
 import winston, { createLogger } from 'winston';
-
 export class AppLogger {
   private static fileLogger: any;
   private static consoleLogger: any;
-  private static logDirectory = path.join(process.cwd(), 'logs');
+  private static logDirectory: string;
 
   private static createLogFolderIfNotExists() {
     if (!fs.existsSync(this.logDirectory)) {
-      fs.mkdirSync(this.logDirectory);
+      fs.mkdirSync(this.logDirectory, { recursive: true });
     }
   }
 
-  public static configureLogger(projectName?: string, shouldCreateLogFile: boolean = true) {
-
-    // Ensure `logDirectory` is defined
-    if (!this.logDirectory) {
-      throw new Error("logDirectory is not defined.");
+  public static configureLogger(
+    projectName?: string,
+    command ?: string,
+    shouldCreateLogFile: boolean = true
+  ) {
+    console.log(command,"<<<<<<<command")
+    // Set log directory based on command type
+    if (command === "new" || command === "resume" || command === "destroy") {
+      this.logDirectory = path.join(process.cwd(), "logs");
+    } else if (command === "create" || command === "module") {
+      this.logDirectory = path.join(process.cwd(), "..", "logs"); // Parent directory
+    } else {
+      throw new Error(`Unknown command type: ${command}`);
     }
 
-    // Create log folder if it doesn’t exist
     this.createLogFolderIfNotExists();
 
     const filepath = path.join(this.logDirectory, '.');

@@ -87,7 +87,7 @@ export default class CreateProject extends BaseCommand {
     // validate the project name
     validateUserInput(args.name);
     validateRestrictedInputs(args.name);
-    AppLogger.configureLogger(args.name);
+    AppLogger.configureLogger(args.name, this.id);
     AppLogger.info("Logger Started ...");
 
     try {

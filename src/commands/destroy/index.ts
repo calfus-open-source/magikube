@@ -6,7 +6,7 @@ import { AppLogger } from "../../logger/appLogger.js";
 import { readStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import { dotMagikubeConfig } from "../../core/utils/projectConfigReader-utils.js";
 import { runTerraformUnlockCommands } from "../../core/utils/unlockTerraformState-utils.js";
-import path from "path";
+import path, { join, resolve } from "path";
 import { executeCommandWithRetry } from "../../core/utils/executeCommandWithRetry-utils.js";
 import * as fs from "fs";
 import TemplateTerraformProject from "../../core/templatesTerraform-projects.js";
@@ -15,8 +15,10 @@ import MicroserviceProject from "../../core/microserviceTerraform.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import inquirer from "inquirer";
 import { deleteMicroservice } from "../../core/utils/deleteMicroService-utils.js";
+import { Liquid } from "liquidjs";
 
 export default class DestroyProject extends BaseCommand {
+  protected engine = new Liquid();
   static args = {
     name: Args.string({
       description: "Project name to be destroyed",
@@ -44,7 +46,7 @@ Destroying magikube project named 'sample' in the current directory`,
     if (args.name === "microservice") {
       const promptGenerator = new PromptGenerator();
       const resp = dotMagikubeConfig("", process.cwd());
-      AppLogger.configureLogger(resp.project_name, false);
+      AppLogger.configureLogger(resp.project_name, this.id, false);
 
       let createdServiceResp;
       for (const microServicePrompts of promptGenerator.getCreatedServices(
@@ -53,10 +55,17 @@ Destroying magikube project named 'sample' in the current directory`,
         createdServiceResp = await inquirer.prompt(microServicePrompts);
       }
       await deleteMicroservice(resp, createdServiceResp);
+      const parentPath = resolve(process.cwd(), "..");
+      const templateFilePath = join( parentPath,"dist/templates/aws/predefined/submodule/github-module/terraform.tfvars.liquid");
+      const templateFile = fs.readFileSync(templateFilePath, "utf8");
+      const output = await this.engine.parseAndRender(templateFile, { ...resp });
+      const folderPath = join(process.cwd(), "infrastructure");
+      const filePath = join(folderPath, "terraform.tfvars");
+      fs.writeFileSync(filePath, output);
       process.exit(1);
     }
     const projectPath = path.join(process.cwd(), args.name);
-    AppLogger.configureLogger(args.name, false);
+     AppLogger.configureLogger(args.name, this.id , false);
     const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, "infrastructure");

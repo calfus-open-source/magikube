@@ -39,7 +39,7 @@ export default class RestartProject extends BaseCommand {
   async run(): Promise<void> {
     const { args } = await this.parse(RestartProject);
     // Initialize the logger
-    AppLogger.configureLogger();
+    AppLogger.configureLogger(args.name, this.id);
     AppLogger.info("Logger Started ...");
 
     //  Read the .magikube file
