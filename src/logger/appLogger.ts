@@ -19,7 +19,6 @@ export class AppLogger {
     command ?: string,
     shouldCreateLogFile: boolean = true
   ) {
-    console.log(command,"<<<<<<<command")
     // Set log directory based on command type
     if (command === "new" || command === "resume" || command === "destroy") {
       this.logDirectory = path.join(process.cwd(), "logs");

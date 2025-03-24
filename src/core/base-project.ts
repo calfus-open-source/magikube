@@ -7,6 +7,7 @@ import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
 import { modules } from "./constants/constants.js";
+import { appendUniqueLines } from "./utils/appendUniqueLines-utils.js";
 
 export default abstract class BaseProject {
   protected config: any = {};
@@ -78,6 +79,8 @@ export default abstract class BaseProject {
         }
       }
     }
+
+    
     // Check if it has multiple modules
     if (this.config.cluster_type === "k8s") {
       // Initialize the terraform
@@ -207,31 +210,28 @@ export default abstract class BaseProject {
     }
     if (
       project_config.command === "new" ||
-      project_config.command === "resume" ||
-      project_config.command === "create"
+      project_config.command === "resume" 
     ) {
       // Logic for the "resume" command
       AppLogger.debug(`Creating ${filename} file for resume command.`);
       fs.writeFileSync(filePath, output);
-    } else if (project_config.command === "module") {
+    } else if (
+      project_config.command === "module" ||
+      project_config.command === "create"
+    ) {
       // Logic for the "module" command
-      AppLogger.debug(`Creating or appending to ${filename} file for module command.`);
-      if (fs.existsSync(filePath) &&  lastModule !== "vpc" ) {
-        AppLogger.debug(`${filename} already exists. Appending content.`);
-        fs.appendFileSync(filePath, `\n${output}`);
-      } else {   
-        AppLogger.debug(`${filename} does not exist. Creating new file.`);
-        fs.writeFileSync(filePath, output);
-      }
+      AppLogger.debug(
+        `Creating or appending to ${filename} file for module command.`
+      );
+      // Example Usage
+      const updatedFileContent = appendUniqueLines(output, templateFilename, filePath);
     }
   }
 
+
   async generateContent(templateFilename: string): Promise<any> {
     AppLogger.debug(`Creating content from ${templateFilename}`);
-    const templateFile = fs.readFileSync(
-      join(templateFilename),
-      "utf8"
-    );
+    const templateFile = fs.readFileSync(join(templateFilename), "utf8");
     return await this.engine.parseAndRender(templateFile, { ...this.config });
   }
 

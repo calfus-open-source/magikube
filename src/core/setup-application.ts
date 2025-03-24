@@ -208,8 +208,8 @@ export default class CreateApplication extends BaseProject {
             const githubActionFiles = ['ci-build.yml'];
 
             for (const file of files) {
-                const route = appRouterFiles.includes(file) ? `${copyFilePath}/${projectName}/${nextAppName}/app` : `${createFilePath}`;
-                await this.createFile(file, `${copyFilePath}/dist/next/${file}.liquid`, route, true);
+                //const route = appRouterFiles.includes(file) ? `${copyFilePath}/${projectName}/${nextAppName}/app` : `${createFilePath}`;
+                await this.createFile(file, `${copyFilePath}/dist/next/${file}.liquid`, `${createFilePath}`, true);
             }
             for (const file of dotFiles) {
                 await this.createFile(`.${file}`, `${copyFilePath}/dist/next/${file}.liquid`, `${createFilePath}`, true);
