@@ -73,7 +73,7 @@ export default class Microservice extends BaseCommand {
     } else {
       updateMagikubeArrayProperty(resp, "services", responses.service_type);
     }
-    AppLogger.configureLogger(projectName);
+    AppLogger.configureLogger(projectName, this.id,);
     const distFolderPath = path.resolve(process.cwd(), "..");
     if (!fs.existsSync(`${distFolderPath}/dist`)) {
       await cloneAndCopyTemplates(this.id);
