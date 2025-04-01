@@ -223,8 +223,8 @@ export default abstract class BaseProject {
       AppLogger.debug(
         `Creating or appending to ${filename} file for module command.`
       );
-      // Example Usage
-      const updatedFileContent = appendUniqueLines(output, templateFilename, filePath);
+
+      await appendUniqueLines(output, templateFilename, filePath);
     }
   }
 
