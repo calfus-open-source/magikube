@@ -239,9 +239,8 @@ export default abstract class BaseProject {
     source: string,
     destination: string
   ): Promise<void> {
-    const fullPath = join(new URL(".", import.meta.url).pathname, source);
+    const fullPath = source;
     const destFullPath = join(this.projectPath, destination);
-
     if (!fs.existsSync(fullPath)) {
       AppLogger.error(`Source path ${fullPath} does not exist`);
       return;
