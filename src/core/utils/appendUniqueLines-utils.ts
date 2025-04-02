@@ -6,6 +6,12 @@ export async function appendUniqueLines(
   sourceFile: string,
   destFile: string
 ): Promise<string> {
+  // If destination file doesn't exist, write the output directly
+  if (!fs.existsSync(destFile)) {
+    fs.writeFileSync(destFile, output, "utf8");
+    AppLogger.info(`Created ${destFile} and added rendered content`);
+    return fs.readFileSync(destFile, "utf8");
+  }
 
   const sourceContent = fs.existsSync(sourceFile)
     ? fs.readFileSync(sourceFile, "utf8")
@@ -13,14 +19,11 @@ export async function appendUniqueLines(
 
   if (!sourceContent) {
     AppLogger.warn(`Source file ${sourceFile} is empty. Nothing to process.`);
-    return "";
+    return fs.readFileSync(destFile, "utf8");
   }
 
   const sourceLines = output.split("\n");
-  const destContent = fs.existsSync(destFile)
-    ? fs.readFileSync(destFile, "utf8")
-    : "";
-
+  const destContent = fs.readFileSync(destFile, "utf8");
   const destLines = destContent.split("\n");
   const destSet = new Set(
     destLines.map((line) => line.trim()).filter((line) => line !== "")
@@ -58,15 +61,15 @@ export async function appendUniqueLines(
     }
   }
 
-  if (!fs.existsSync(destFile)) {
-    fs.writeFileSync(destFile, output, "utf8");
-    AppLogger.info(`Created ${destFile} and added rendered content`);
-  } else if (uniqueLines.length > 0) {
+  if (uniqueLines.length > 0) {
     fs.appendFileSync(destFile, "\n" + uniqueLines.join("\n"), "utf8");
     AppLogger.info(`Updated ${destFile} with ${uniqueLines.length} new lines`);
   } else {
-    AppLogger.error(`No unique lines to append to ${destFile}`);
+    AppLogger.info(
+      `No unique lines to append to ${destFile}. File remains unchanged.`
+    );
   }
+
   return fs.readFileSync(destFile, "utf8");
 }
 

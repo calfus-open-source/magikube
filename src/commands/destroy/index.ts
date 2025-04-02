@@ -104,12 +104,8 @@ Destroying magikube project named 'sample' in the current directory`,
         project_config.command === "module" ||
         project_config.command === "create"
       ) {
-        await executeCommandWithRetry(
-          `terraform init -backend-config=${project_config.environment}-config.tfvars`,
-          { cwd: infrastructurePath },
-          1
-        );
 
+        await runTerraformUnlockCommands(projectPath, responses);
         await terraform?.runTerraformDestroyTemplate(
           infrastructurePath,
           "terraform.tfvars"
