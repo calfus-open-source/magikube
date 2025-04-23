@@ -8,24 +8,13 @@ import { AppLogger } from "../../logger/appLogger.js";
 import CreateApplication from "../../core/setup-application.js";
 import { ConfigObject } from "../../core/interface.js";
 import { Colours } from "../../prompts/constants.js";
-import {
-  initializeStatusFile,
-  readStatusFile,
-} from "../../core/utils/statusUpdater-utils.js";
+import {initializeStatusFile,} from "../../core/utils/statusUpdater-utils.js";
 import AWSAccount from "../../core/aws/aws-account.js";
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
-import {
-  services,
-  modules,
-  InvalidProjectNames,
-  supportedTemplates,
-} from "../../core/constants/constants.js";
-import {
-  handleEKS,
-  handleK8s,
-} from "../../core/utils/terraformHandlers-utils.js";
+import { services, modules, InvalidProjectNames, supportedTemplates } from "../../core/constants/constants.js";
+import { handleEKS, handleK8s } from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 import { createEmptyMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
 import { handleTemplateFlag } from "../../core/utils/handleTemplateProject-utils.js";

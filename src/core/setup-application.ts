@@ -263,7 +263,7 @@ export default class CreateApplication extends BaseProject {
             for (const file of reactCommonFiles) {
                 await this.createFile(file, `${copyFilePath}/dist/react/${file}.liquid`, `${createFilePath}`,true);
             }
-            const dotFiles = ['gitignore', 'eslintrc.json','env.local','env.local']
+            const dotFiles = ['gitignore', 'eslintrc.json','env.local']
             for (const file of dotFiles) {
                 await this.createFile(`.${file}`, `${copyFilePath}/dist/react/${file}.liquid`, `${createFilePath}`,true);
             }
@@ -282,8 +282,50 @@ export default class CreateApplication extends BaseProject {
             updateStatusFile(projectName, reactAppName, "fail");
             fs.rmdirSync(`${applicationPath}`, { recursive: true });
             process.exit(1);
+      }
     }
+
+    //create GenAI aplication
+    createGenAIApp =  async (projectConfig:any) => {
+        console.log(projectConfig, "<<<<<<projectConfig");
+            const { genAI_app_name: genAIAppName, projectName } = projectConfig;
+            console.log('genAIAppName: ', genAIAppName);
+            console.log('appName: ', projectConfig);
+            
+            let copyFilePath;
+            let createFilePath;
+            let applicationPath;
+            if (this.config.command === "create") {
+              copyFilePath = path.resolve(process.cwd(), "..");
+              createFilePath = `${genAIAppName}`;
+              applicationPath = `${process.cwd()}/${genAIAppName}`;
+            } else {
+              copyFilePath = process.cwd();
+              console.log('copyFilePath: ', copyFilePath);
+              createFilePath = `${genAIAppName}`;
+              applicationPath = `${process.cwd()}/${projectName}/${genAIAppName}`;
+            }
+         try {
+            AppLogger.info("creating gen AI app...", true);
+            const genAIserviceFiles = ["main.py", "requirements.txt", "Dockerfile"];
+            const dotFiles = ["env.local", "gitignore"];
+            for(const file of genAIserviceFiles){
+              await this.createFile(file, `${copyFilePath}/dist/genAI/${file}.liquid`, `${createFilePath}`,true) 
+            }
+            for(const file of dotFiles){
+              await this.createFile(`.${file}`, `${copyFilePath}/dist/genAI/${file}.liquid`, `${createFilePath}`,true)
+            }
+            updateStatusFile(projectName, genAIAppName, "success");
+            AppLogger.info("Gen AI service setup is done.", true);
+            return true;
+         }
+         catch(error:any){
+            updateStatusFile(projectName, genAIAppName, "fail");
+            AppLogger.error(`Failed to setup the gen AI service: ${error}`,true)
+            process.exit(1);
+         }   
     }
+ 
 
     //Setup Gitops 
     async setupGitops(projectConfig:any){

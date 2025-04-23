@@ -163,6 +163,11 @@ export async function handlePrompts(
       const backendResp = await inquirer.prompt(backendPrompt);
       responses = { ...responses, ...backendResp };
     }
+
+    for (const genAIPrompt of promptGenerator.getgenAIApplication()) {
+      const backendResp = await inquirer.prompt(genAIPrompt);
+      responses = { ...responses, ...backendResp };
+    }
   }
   if (commandName === "create"){
      const resp = dotMagikubeConfig("", process.cwd());

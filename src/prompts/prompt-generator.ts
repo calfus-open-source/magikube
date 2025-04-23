@@ -250,6 +250,14 @@ const microServicePrompts: any[] = [
   },
 ];
 
+const openAIApiKey: any[] = [
+  {
+    message: "Enter Open AI API key: ",
+    name: "open_ai_api_key",
+    type: "password",
+  },
+];
+
 enum ApplicationType {
   REACT = "react",
   NEXT = "next",
@@ -417,5 +425,9 @@ export default class PromptGenerator {
         type: "list",
       },
     ];
+  }
+
+  getgenAIApplication(): any[] {
+    return openAIApiKey;
   }
 }

@@ -22,6 +22,7 @@ export const services =[
     "keycloak",
     "my-node-app",
     "react", 
+    "my-genAI-app",
     "gitops"
 ];
 
@@ -44,9 +45,9 @@ export const rdsVpcModules = ["module.vpc"];
 export const ec2VpcModules = ["module.vpc", "module.ec2"];
 
 export const vpceksNodegroupIngressModules = [
-  "module.vpc",
-  "module.eks",
-  "module.acm",
-  "module.ingress-controller"
+    "module.vpc",
+    "module.eks",
+    "module.acm",
+    "module.ingress-controller"
 ];
 
