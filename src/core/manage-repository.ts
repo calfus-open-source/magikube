@@ -20,13 +20,18 @@ export class ManageRepository {
         const execCommand = (command: string, projectPath: string) => executeCommandWithRetry(command, { cwd: projectPath,  stdio: 'pipe' },1)
         const gitopsRepo = `${projectName}-${environment}-gitops`;
         let projectPath;
+        let repoName:string;
         if(projectConfig.command === "create"){
         projectPath = appType === 'gitops' ? `${process.cwd()}/${appType}` :`${process.cwd()}/${appName}`;
         }else{
          projectPath = appType === 'gitops' ? `${process.cwd()}/${projectName}/${appType}` :`${process.cwd()}/${projectName}/${appName}`;
         }
-        const repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
-        // Function to execute command and log it
+        if(projectConfig.service_type === "gen-ai-service"){
+            repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${projectConfig.service_type}-app`;
+        }else{
+            repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
+        }
+       
         const execAndLog = (command: string, description: string): string => {
             try {
                 AppLogger.debug(`${command} this Command Executed`);

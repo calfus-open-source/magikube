@@ -122,7 +122,7 @@ async function createService(
 
   if(
     projectConfig["genAI_app_name"] && 
-    projectConfig.service_type === "my-genAI-app"){
+    projectConfig.service_type === "gen-ai-service"){
         await setupService(
           "my-genAI-app",
           "my-genAI-app",

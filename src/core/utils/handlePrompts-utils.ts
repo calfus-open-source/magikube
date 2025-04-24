@@ -165,8 +165,8 @@ export async function handlePrompts(
     }
 
     for (const genAIPrompt of promptGenerator.getgenAIApplication()) {
-      const backendResp = await inquirer.prompt(genAIPrompt);
-      responses = { ...responses, ...backendResp };
+      const genAIResp = await inquirer.prompt(genAIPrompt);
+      responses = { ...responses, ...genAIResp };
     }
   }
   if (commandName === "create"){
@@ -185,6 +185,12 @@ export async function handlePrompts(
       for (const backendPrompt of promptGenerator.getBackendApplicationType()) {
         const backendResp = await inquirer.prompt(backendPrompt);
         responses = { ...responses, ...backendResp };
+      }
+    }
+    if (responses.service_type === "gen-ai-service") {
+      for (const genAIPrompt of promptGenerator.getgenAIApplication()) {
+        const genAIResp = await inquirer.prompt(genAIPrompt);
+        responses = { ...responses, ...genAIResp };
       }
     }
     if (!resp.services || resp.services.length === 0) {

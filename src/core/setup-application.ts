@@ -287,11 +287,7 @@ export default class CreateApplication extends BaseProject {
 
     //create GenAI aplication
     createGenAIApp =  async (projectConfig:any) => {
-        console.log(projectConfig, "<<<<<<projectConfig");
-            const { genAI_app_name: genAIAppName, projectName } = projectConfig;
-            console.log('genAIAppName: ', genAIAppName);
-            console.log('appName: ', projectConfig);
-            
+            const { genAI_app_name: genAIAppName, projectName } = projectConfig;            
             let copyFilePath;
             let createFilePath;
             let applicationPath;
@@ -301,7 +297,6 @@ export default class CreateApplication extends BaseProject {
               applicationPath = `${process.cwd()}/${genAIAppName}`;
             } else {
               copyFilePath = process.cwd();
-              console.log('copyFilePath: ', copyFilePath);
               createFilePath = `${genAIAppName}`;
               applicationPath = `${process.cwd()}/${projectName}/${genAIAppName}`;
             }

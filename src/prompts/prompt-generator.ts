@@ -243,14 +243,14 @@ const domainPrompt: any[] = [
 
 const microServicePrompts: any[] = [
   {
-    choices: ["frontend-service","backend-service","auth-service","keycloak"],
+    choices: ["frontend-service","backend-service","auth-service","keycloak","gen-ai-service"],
     message: "Select a MicroService:",
     name: "service_type",
     type: "list",
   },
 ];
 
-const openAIApiKey: any[] = [
+const openAIApiKeyPrompt: any[] = [
   {
     message: "Enter Open AI API key: ",
     name: "open_ai_api_key",
@@ -428,6 +428,6 @@ export default class PromptGenerator {
   }
 
   getgenAIApplication(): any[] {
-    return openAIApiKey;
+    return openAIApiKeyPrompt;
   }
 }
