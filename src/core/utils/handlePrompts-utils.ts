@@ -193,6 +193,12 @@ export async function handlePrompts(
         responses = { ...responses, ...genAIResp };
       }
     }
+
+      for (const serviceName of promptGenerator.getServiceName()) {
+        const serviceNameResp = await inquirer.prompt(serviceName);
+        responses = { ...responses, ...serviceNameResp };
+      }
+    
     if (!resp.services || resp.services.length === 0) {
       for (const regionPrompt of promptGenerator.getSourceCodeRepositories()) {
         const sourceCodeRepoResp = await inquirer.prompt(regionPrompt);

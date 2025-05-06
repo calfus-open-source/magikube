@@ -232,13 +232,21 @@ const domainPrompt: any[] = [
     message: "Enter the Domain Name: ",
     name: "domain",
     type: "input",
+  }
+];
+
+const serviceNamePrompt: any[] = [
+  {
+    message: "Enter the Service Name: ",
+    name: "service_name",
+    type: "input",
     validate: (input: string) => {
       if (!input || input.trim() === "") {
         return "Domain name is required.";
       }
       return true;
-    }
-  }
+    },
+  },
 ];
 
 const microServicePrompts: any[] = [
@@ -312,21 +320,21 @@ export default class PromptGenerator {
     return microServicePrompts;
   }
 
-  getCreatedServices(services:string[]): any[] {
-      return [
-        {
-          type: "list",
-          name: "service_Name",
-          message: "Select a service to destroy:",
-          choices: services,
-          validate: (input: string) => {
-            if (!input || input.trim() === "") {
-              return "A valid service must be selected.";
-            }
-            return true;
-          },
+  getCreatedServices(services: string[]): any[] {
+    return [
+      {
+        type: "list",
+        name: "service_Name",
+        message: "Select a service to destroy:",
+        choices: services,
+        validate: (input: string) => {
+          if (!input || input.trim() === "") {
+            return "A valid service must be selected.";
+          }
+          return true;
         },
-      ];
+      },
+    ];
   }
 
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
@@ -430,4 +438,9 @@ export default class PromptGenerator {
   getgenAIApplication(): any[] {
     return openAIApiKeyPrompt;
   }
+
+  getServiceName() : any[] {
+    return serviceNamePrompt;
+  }
+
 }

@@ -15,6 +15,9 @@ let publicKeyId: string;
 export class ManageRepository {
     static async pushCode(configObject: ConfigObject) {
         const {token, userName, orgName, sourceCodeRepo, region, appName, projectName, appType, awsAccessKey, awsSecretKey, environment} = configObject;
+        console.log('configObject: ', configObject);
+        console.log('appType: ', appType);
+        console.log('appName: ', appName);
         const projectConfig = SystemConfig.getInstance().getConfig();
         let repoSetupError: boolean = false;
         const execCommand = (command: string, projectPath: string) => executeCommandWithRetry(command, { cwd: projectPath,  stdio: 'pipe' },1)
@@ -31,7 +34,7 @@ export class ManageRepository {
         }else{
             repoName = appType === 'gitops' ? `${projectName}-${appName}-gitops` : `${projectName}-${appType}-app`;
         }
-       
+       console.log(repoName, "<<<<<<repoName");
         const execAndLog = (command: string, description: string): string => {
             try {
                 AppLogger.debug(`${command} this Command Executed`);

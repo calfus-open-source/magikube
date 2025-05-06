@@ -23,7 +23,7 @@ export default class Microservice extends BaseCommand {
     name: Args.string({
       description: "Project name to be created",
       required: true,
-    }),
+    }),                                                                                                                                                                                                                        
   };
   static description =
     "Create a new microservice in the current Magikube project";
@@ -61,7 +61,13 @@ export default class Microservice extends BaseCommand {
     // Handle prompts and create the microservice
     const projectName = path.basename(currentDir);
     const responses = await handlePrompts({}, this.id, "", "", "");
+    console.log('responses: ', responses);
     responses.command = this.id;
+       updateMagikubeArrayProperty(
+         resp,
+         "service_names",
+         responses.service_name
+       );
     if (responses.service_type === "frontend-service") {
       updateMagikubeArrayProperty(
         resp,
@@ -83,6 +89,7 @@ export default class Microservice extends BaseCommand {
       true
     );
     const combinedConfig = { ...resp, ...responses };
+    console.log('combinedConfig: ', combinedConfig);
     SystemConfig.getInstance().mergeConfigs(combinedConfig);
     const projectConfig = SystemConfig.getInstance().getConfig();
     const projectConfigFile = join(process.cwd(), ".magikube");
