@@ -257,7 +257,7 @@ export default class AWSProject extends BaseProject {
     }
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
-        AppLogger.debug(`Running terraform init..., ${projectPath}`, true);
+        AppLogger.debug(`Running terraform init...`, true);
         const progressBar = ProgressBar.createProgressBar();
         progressBar.start(100, 0, { message: 'Terraform Init in progress...' });
         

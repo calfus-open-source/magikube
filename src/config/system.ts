@@ -69,6 +69,10 @@ class SystemConfig {
         "react_app_name": "my-react-app"
     }
 
+    private genAIAppConfig: any = {
+        "genAI_app_name": "my-genAI-app"
+    }
+
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
@@ -146,7 +150,8 @@ class SystemConfig {
             ...this.eksNodeGroupSystemConfig,
             ...this.nextAppConfig,
             ...this.nodeAppConfig,
-            ...this.reactAppConfig
+            ...this.reactAppConfig,
+            ...this.genAIAppConfig
         }, null, 4);
         fs.writeFileSync(path, data);
     }

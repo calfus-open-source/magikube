@@ -1,9 +1,6 @@
 import { Args } from "@oclif/core";
 import BaseCommand from "../base.js";
-import * as fs from "fs";
 import { AppLogger } from "../../logger/appLogger.js";
-import CreateApplication from "../../core/setup-application.js";
-import { ManageRepository } from "../../core/manage-repository.js";
 import { ConfigObject } from "../../core/interface.js";
 import { Answers } from "inquirer";
 import { v4 as uuidv4 } from "uuid";

@@ -1,11 +1,18 @@
 import * as fs from "fs";
 import { AppLogger } from "../../logger/appLogger.js";
+import SystemConfig from "../../config/system.js";
 
 export async function appendUniqueLines(
   output: any,
   sourceFile: string,
   destFile: string
 ): Promise<string> {
+  const projectConfig = SystemConfig.getInstance().getConfig();
+  if (destFile.endsWith("/terraform.tfvars") &&  projectConfig.command !== "module") {
+    fs.writeFileSync(destFile, output, "utf8");
+    return fs.readFileSync(destFile, "utf8");
+  }
+    
   // If destination file doesn't exist, write the output directly
   if (!fs.existsSync(destFile)) {
     fs.writeFileSync(destFile, output, "utf8");
@@ -72,4 +79,8 @@ export async function appendUniqueLines(
 
   return fs.readFileSync(destFile, "utf8");
 }
+
+
+
+
 

@@ -1,7 +1,7 @@
 import CreateProject from "./commands/new/index.js";
 import DestroyProject from "./commands/destroy/index.js"; 
 import RestartProject from "./commands/restart/index.js";  
-import NewModule from "./commands/subCommands/single-modue-command/index.js";
+import NewModule from "./commands/subCommands/modue-command/index.js";
 import Microservice from "./commands/subCommands/service-command/index.js";
 
 export const COMMANDS = {

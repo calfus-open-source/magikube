@@ -1,9 +1,6 @@
 import path, { join } from "path";
 import AWSProject from "./aws-project.js";
-import SystemConfig from "../../config/system.js";
-import { readStatusFile } from "../utils/statusUpdater-utils.js";
 import repositoryProject from "../code-repository/common-repository.js";
-import command from "@oclif/core/lib/help/command.js";
 import BaseCommand from "../../commands/base.js";
 
 export default class CreateMicroserviceProject extends AWSProject {

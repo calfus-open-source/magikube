@@ -9,21 +9,21 @@ import {
   initializeStatusFile,
   updateStatusFile,
 } from "../../../core/utils/statusUpdater-utils.js";
-import { singleModules, services } from "../../../core/constants/constants.js";
+import { services } from "../../../core/constants/constants.js";
 import { readStatusFile } from "../../../core/utils/statusUpdater-utils.js";
 import MicroserviceProject from "../../../core/microserviceTerraform.js";
 import { dotMagikubeConfig } from "../../../core/utils/projectConfigReader-utils.js";
 import { Args } from "@oclif/core";
 import { setupAndPushServices } from "../../../core/utils/setupAndPushService-utils.js";
 import { ConfigObject } from "../../../core/interface.js";
-import { updateMagikubeArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
+import { updateDotMagikubeArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
 export default class Microservice extends BaseCommand {
   // Define the expected arguments
   static args = {
     name: Args.string({
       description: "Project name to be created",
       required: true,
-    }),
+    }),                                                                                                                                                                                                                        
   };
   static description =
     "Create a new microservice in the current Magikube project";
@@ -58,26 +58,26 @@ export default class Microservice extends BaseCommand {
 
     // Read the .magikube file
     const resp = dotMagikubeConfig("", process.cwd());
-    // Handle prompts and create the microservice
     const projectName = path.basename(currentDir);
+    // Handle prompts and create the microservice
     const responses = await handlePrompts({}, this.id, "", "", "");
     responses.command = this.id;
+    updateDotMagikubeArrayProperty(resp, "service_names", responses.service_name);
     if (responses.service_type === "frontend-service") {
-      updateMagikubeArrayProperty(
-        resp,
-        "services",
-        responses.frontend_app_type
-      );
+      updateDotMagikubeArrayProperty(resp, "services", responses.frontend_app_type);
     } else if (responses.service_type === "backend-service") {
-      updateMagikubeArrayProperty(resp, "services", responses.backend_app_type);
+      updateDotMagikubeArrayProperty(resp, "services", responses.backend_app_type);
     } else {
-      updateMagikubeArrayProperty(resp, "services", responses.service_type);
+      updateDotMagikubeArrayProperty(resp, "services", responses.service_type);
     }
-    AppLogger.configureLogger(projectName, this.id,);
+    AppLogger.configureLogger(projectName, this.id);
     const distFolderPath = path.resolve(process.cwd(), "..");
+
+    // Create dist folder if not exist
     if (!fs.existsSync(`${distFolderPath}/dist`)) {
       await cloneAndCopyTemplates(this.id);
     }
+    
     AppLogger.debug(
       `Creating new Magikube project named in the current directory`,
       true
@@ -119,7 +119,7 @@ export default class Microservice extends BaseCommand {
       if (projectConfig["cloud_provider"] === "aws") {
         await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
       }
-      // Add delay of 15 sec 
+      // Add delay of 15 sec
       await new Promise((resolve) => setTimeout(resolve, 15000));
       // Initialize the terraform
       await terraform?.runTerraformInit(

@@ -35,18 +35,30 @@ async function setupServices(
   createApp: CreateApplication,
   status: any
 ) {
-  await setupService(
-    "auth-service",
-    "auth-service",
-    () => createApp.setupAuthenticationService(projectConfig),
-    configObject
-  );
-  await setupService(
-    "keycloak",
-    "keycloak-service",
-    () => createApp.setupKeyCloak(projectConfig),
-    configObject
-  );
+  if (status.services["auth-service"] !== "success") {
+    await setupService(
+      "auth-service",
+      "auth-service",
+      () => createApp.setupAuthenticationService(projectConfig),
+      configObject
+    );
+  }
+  if (status.services["keycloak"] !== "success"){
+    await setupService(
+      "keycloak",
+      "keycloak-service",
+      () => createApp.setupKeyCloak(projectConfig),
+      configObject
+    );
+  }
+  if (status.services["my-genAI-app"] !== "success") {
+    await setupService(
+      "my-genAI-app",
+      "gen-ai-service",
+      () => createApp.createGenAIApp(projectConfig),
+      configObject
+    );
+  }
 
   if (
     projectConfig["backend_app_type"] &&
@@ -73,14 +85,15 @@ async function setupServices(
       );
     }
   }
-
-  await setupService(
-    "gitops",
-    "gitops",
-    () => createApp.setupGitops(projectConfig),
-    configObject,
-    `${projectConfig.environment}`
-  );
+  if (status.services["gitops"] !== "success") {
+    await setupService(
+      "gitops",
+      "gitops",
+      () => createApp.setupGitops(projectConfig),
+      configObject,
+      `${projectConfig.environment}`
+    );
+  }
 }
 
 async function createService(
@@ -104,6 +117,18 @@ async function createService(
       () => createApp.setupKeyCloak(projectConfig),
       configObject
     );
+  }
+
+
+  if(
+    projectConfig["genAI_app_name"] && 
+    projectConfig.service_type === "gen-ai-service"){
+        await setupService(
+          "my-genAI-app",
+          "my-genAI-app",
+          () => createApp.createGenAIApp(projectConfig),
+          configObject
+        );
   }
 
   if (

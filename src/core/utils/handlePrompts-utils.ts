@@ -163,6 +163,11 @@ export async function handlePrompts(
       const backendResp = await inquirer.prompt(backendPrompt);
       responses = { ...responses, ...backendResp };
     }
+
+    for (const genAIPrompt of promptGenerator.getgenAIApplication()) {
+      const genAIResp = await inquirer.prompt(genAIPrompt);
+      responses = { ...responses, ...genAIResp };
+    }
   }
   if (commandName === "create"){
      const resp = dotMagikubeConfig("", process.cwd());
@@ -182,6 +187,18 @@ export async function handlePrompts(
         responses = { ...responses, ...backendResp };
       }
     }
+    if (responses.service_type === "gen-ai-service") {
+      for (const genAIPrompt of promptGenerator.getgenAIApplication()) {
+        const genAIResp = await inquirer.prompt(genAIPrompt);
+        responses = { ...responses, ...genAIResp };
+      }
+    }
+
+      for (const serviceName of promptGenerator.getServiceName()) {
+        const serviceNameResp = await inquirer.prompt(serviceName);
+        responses = { ...responses, ...serviceNameResp };
+      }
+    
     if (!resp.services || resp.services.length === 0) {
       for (const regionPrompt of promptGenerator.getSourceCodeRepositories()) {
         const sourceCodeRepoResp = await inquirer.prompt(regionPrompt);
