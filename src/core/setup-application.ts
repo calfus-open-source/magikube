@@ -34,7 +34,7 @@ export default class CreateApplication extends BaseProject {
     }
     
     // Setup Auth service
-    async setupAuthenticationService(projectConfig: any){
+    async setupAuthenticationService(projectConfig:any ){
         const appName = 'auth-service';
         const { project_name: projectName } = projectConfig; 
          let copyFilePath;
@@ -42,8 +42,8 @@ export default class CreateApplication extends BaseProject {
          let applicationPath;
          if (this.config.command === "create") {
            copyFilePath = path.resolve(process.cwd(), "..");
-           createFilePath = `${appName}`;
-           applicationPath = `${process.cwd()}/${appName}`;
+           createFilePath = `${projectConfig.service_name}`;
+           applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
          } else {
            copyFilePath = process.cwd();
            createFilePath = `${appName}`;
@@ -99,8 +99,8 @@ export default class CreateApplication extends BaseProject {
                 let applicationPath;
                 if (this.config.command === "create") {
                   copyFilePath = path.resolve(process.cwd(), "..");
-                  createFilePath = `${appName}`;
-                  applicationPath = `${process.cwd()}/${appName}`;
+                  createFilePath = `${projectConfig.service_name}`;
+                  applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
                 } else {
                   copyFilePath = process.cwd();
                   createFilePath = `${appName}`;
@@ -135,16 +135,17 @@ export default class CreateApplication extends BaseProject {
     }
     
    // Create Node.js application
-    createNodeExpressApp = async (projectConfig: any) => {
-        const { appName: nodeAppName, projectName} = projectConfig;
+    createNodeExpressApp = async (configObject: any) => {
+        const projectConfig = SystemConfig.getInstance().getConfig();
+        const { appName: nodeAppName, projectName } = configObject;
         const filePath = process.cwd();
          let copyFilePath;
          let createFilePath;
          let applicationPath;
          if (this.config.command === "create") {
            copyFilePath = path.resolve(process.cwd(), "..");
-           createFilePath = `${nodeAppName}`;
-           applicationPath = `${process.cwd()}/${nodeAppName}`;
+           createFilePath = `${projectConfig.service_name}`;
+           applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
          } else {
            copyFilePath = process.cwd();
            createFilePath = `${nodeAppName}`;
@@ -184,16 +185,17 @@ export default class CreateApplication extends BaseProject {
     }
 
     // Create Next.js application
-    createNextApp = async (projectConfig: any) => {
+    createNextApp = async (configObject: any) => {
         const filePath = process.cwd();
-        const { appName: nextAppName, projectName } = projectConfig;
+        const projectConfig = SystemConfig.getInstance().getConfig();
+        const { appName: nextAppName, projectName } = configObject;
         let copyFilePath;
         let createFilePath;
         let applicationPath;
         if (this.config.command === "create") {
           copyFilePath = path.resolve(process.cwd(), "..");
-          createFilePath = `${nextAppName}`;
-          applicationPath = `${process.cwd()}/${nextAppName}`;
+          createFilePath = `${projectConfig.service_name}`;
+          applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
         } else {
           copyFilePath = process.cwd();
           createFilePath = `${nextAppName}`;
@@ -232,15 +234,16 @@ export default class CreateApplication extends BaseProject {
     };
 
     // create React application
-    createReactApp = async (projectConfig: any) => {
-        const { appName: reactAppName, projectName } = projectConfig;
+    createReactApp = async (configObject: any) => {
+        const projectConfig = SystemConfig.getInstance().getConfig();
+        const { appName: reactAppName, projectName } = configObject;
         let copyFilePath;
         let createFilePath;
         let applicationPath;
         if (this.config.command === "create") {
           copyFilePath = path.resolve(process.cwd(), "..");
-          createFilePath = `${reactAppName}`;
-          applicationPath = `${process.cwd()}/${reactAppName}`;
+          createFilePath = `${projectConfig.service_name}`;
+          applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
         } else {
           copyFilePath = process.cwd();
           createFilePath = `${reactAppName}`;
@@ -286,15 +289,16 @@ export default class CreateApplication extends BaseProject {
     }
 
     //create GenAI aplication
-    createGenAIApp =  async (projectConfig:any) => {
-            const { genAI_app_name: genAIAppName, projectName } = projectConfig;            
+    createGenAIApp =  async (configObject:any) => {
+            const projectConfig = SystemConfig.getInstance().getConfig();
+            const { genAI_app_name: genAIAppName, projectName } = configObject;            
             let copyFilePath;
             let createFilePath;
             let applicationPath;
             if (this.config.command === "create") {
               copyFilePath = path.resolve(process.cwd(), "..");
-              createFilePath = `${genAIAppName}`;
-              applicationPath = `${process.cwd()}/${genAIAppName}`;
+              createFilePath = `${projectConfig.service_name}`;
+              applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
             } else {
               copyFilePath = process.cwd();
               createFilePath = `${genAIAppName}`;
