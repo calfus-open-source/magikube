@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { executeCommandWithRetry } from './executeCommandWithRetry-utils.js';
 import { execSync } from 'child_process';
+import { AppLogger } from '../../logger/appLogger.js';
  
 export async function runTerraformUnlockCommands(projectPath:string, project_config:any ) {
   try {
@@ -25,7 +26,7 @@ export async function runTerraformUnlockCommands(projectPath:string, project_con
       throw new Error(`Terraform state file not found: ${terraformStateFile}`);
     }
   } catch (error) {
-    console.error('Error running Terraform unlock commands:', error);
+    AppLogger.error(`Error running Terraform unlock commands:${error}`, true);
     throw error;
   }
 }

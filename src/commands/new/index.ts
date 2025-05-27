@@ -108,18 +108,13 @@ export default class CreateProject extends BaseCommand {
 
       // Default project creation process
       const responses: Answers = await handlePrompts(args, this.id);
-
       // check if dist folder present
       responses.command = this.id;
       if (!fs.existsSync(`${process.cwd()}/dist`)) {
         await cloneAndCopyTemplates(this.id);
       }
-
-      AppLogger.debug(
-        `Creating new Magikube project named '${args.name}' in the current directory`,
-        true
-      );
-
+      
+      AppLogger.debug( `Creating new Magikube project named '${args.name}' in the current directory`, true);
       SystemConfig.getInstance().mergeConfigs(responses);
       const terraform = await TerraformProject.getProject(this);
       const projectConfig = SystemConfig.getInstance().getConfig();
@@ -148,18 +143,13 @@ export default class CreateProject extends BaseCommand {
         awsSecretKey,
         environment,
       };
-
-      const accountId = await AWSAccount.getAccountId(
-        awsAccessKey,
-        awsSecretKey,
-        region
-      );
+       
+      //get Account ID and merge it in systemConfig
+      const accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
       SystemConfig.getInstance().mergeConfigs({ accountId });
       
       //setup Gitops service
-      const setupGitopsServiceStatus = await createApp.setupGitops(
-        projectConfig
-      );
+      const setupGitopsServiceStatus = await createApp.setupGitops(projectConfig);
 
       if (terraform) {
         await terraform.createProject(projectName, process.cwd(), this.id);

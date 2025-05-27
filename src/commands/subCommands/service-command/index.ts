@@ -16,7 +16,7 @@ import { dotMagikubeConfig } from "../../../core/utils/projectConfigReader-utils
 import { Args } from "@oclif/core";
 import { setupAndPushServices } from "../../../core/utils/setupAndPushService-utils.js";
 import { ConfigObject } from "../../../core/interface.js";
-import { updateDotMagikubeArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
+import { updateArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
 export default class Microservice extends BaseCommand {
   // Define the expected arguments
   static args = {
@@ -62,13 +62,13 @@ export default class Microservice extends BaseCommand {
     // Handle prompts and create the microservice
     const responses = await handlePrompts({}, this.id, "", "", "");
     responses.command = this.id;
-    updateDotMagikubeArrayProperty(resp, "service_names", responses.service_name);
+    updateArrayProperty(resp, "service_names", responses.service_name);
     if (responses.service_type === "frontend-service") {
-      updateDotMagikubeArrayProperty(resp, "services", responses.frontend_app_type);
+      updateArrayProperty(resp, "services", responses.frontend_app_type);
     } else if (responses.service_type === "backend-service") {
-      updateDotMagikubeArrayProperty(resp, "services", responses.backend_app_type);
+      updateArrayProperty(resp, "services", responses.backend_app_type);
     } else {
-      updateDotMagikubeArrayProperty(resp, "services", responses.service_type);
+      updateArrayProperty(resp, "services", responses.service_type);
     }
     AppLogger.configureLogger(projectName, this.id);
     const distFolderPath = path.resolve(process.cwd(), "..");
