@@ -43,29 +43,52 @@ Destroying magikube project named 'sample' in the current directory`,
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(DestroyProject);
-    if (args.name === "microservice") {
-      const promptGenerator = new PromptGenerator();
-      const resp = dotMagikubeConfig("", process.cwd());
-      AppLogger.configureLogger(resp.project_name, this.id, false);
 
-      let createdServiceResp;
-      for (const microServicePrompts of promptGenerator.getCreatedServices(
-        resp.services
-      )) {
-        createdServiceResp = await inquirer.prompt(microServicePrompts);
+    if (args.name === "microservice") {
+      try {
+        // Initialize configuration and logger
+        const promptGenerator = new PromptGenerator();
+        const config = dotMagikubeConfig("", process.cwd());
+        AppLogger.configureLogger(config.project_name, this.id, false);
+
+        // Prompt for microservice creation
+        const microServicePrompts = promptGenerator.getCreatedServices(
+          config.service_names
+        );
+        const createdServiceResp = await inquirer.prompt(microServicePrompts);
+
+        // Delete microservice and update system config
+        const deletionResult = await deleteMicroservice(
+          config,
+          createdServiceResp
+        );
+        // Write updated config to .magikube file
+        const dotMagikubeFile = join(process.cwd(), ".magikube");
+        fs.writeFileSync(dotMagikubeFile, JSON.stringify(deletionResult, null, 2));
+        // Render and write terraform template
+        const parentPath = resolve(process.cwd(), "..");
+        const templateFilePath = join( parentPath, "dist/templates/aws/predefined/submodule/github-module/terraform.tfvars.liquid");
+        // write terraform.tfvars file again
+        const templateFile = fs.readFileSync(templateFilePath, "utf8");
+        const output = await this.engine.parseAndRender(templateFile, config);
+        const folderPath = join(process.cwd(), "infrastructure");
+        fs.writeFileSync(`${folderPath}/terraform.tfvars`, output, "utf8");
+        //remove service folder from project
+        await executeCommandWithRetry(
+          `rm -rf ${createdServiceResp.service_Name}`,
+          { cwd: process.cwd() },
+          1
+        );
+        AppLogger.info(`${createdServiceResp.service_Name} service deleted successfully`, true);
+        process.exit(0); // Successful exit
+      } catch (error) {
+        AppLogger.error(`Error in deleting microservice: ${error}`, true );
+        process.exit(1); // Exit with error$
       }
-      await deleteMicroservice(resp, createdServiceResp);
-      const parentPath = resolve(process.cwd(), "..");
-      const templateFilePath = join( parentPath,"dist/templates/aws/predefined/submodule/github-module/terraform.tfvars.liquid");
-      const templateFile = fs.readFileSync(templateFilePath, "utf8");
-      const output = await this.engine.parseAndRender(templateFile, { ...resp });
-      const folderPath = join(process.cwd(), "infrastructure");
-      const filePath = join(folderPath, "terraform.tfvars");
-      fs.writeFileSync(filePath, output);
-      process.exit(1);
     }
+
     const projectPath = path.join(process.cwd(), args.name);
-     AppLogger.configureLogger(args.name, this.id , false);
+    AppLogger.configureLogger(args.name, this.id, false);
     const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, "infrastructure");
@@ -104,7 +127,6 @@ Destroying magikube project named 'sample' in the current directory`,
         project_config.command === "module" ||
         project_config.command === "create"
       ) {
-
         await runTerraformUnlockCommands(projectPath, responses);
         await terraform?.runTerraformDestroyTemplate(
           infrastructurePath,

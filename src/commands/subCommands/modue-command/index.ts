@@ -15,7 +15,7 @@ import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
 import { Colours } from "../../../prompts/constants.js";
 import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
 import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
-import { updateDotMagikubeArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
+import { updateArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
 
 // Helper function to validate module input
 function validateModuleInput(input: string): void {
@@ -92,16 +92,16 @@ export default class NewModule extends BaseCommand {
         await cloneAndCopyTemplates(this.id);
       }  
 
-      updateDotMagikubeArrayProperty(dotMagikubeContent, "moduleType", moduleType);
-      updateDotMagikubeArrayProperty(dotMagikubeContent, "moduleName", moduleName);
+      updateArrayProperty(dotMagikubeContent, "moduleType", moduleType);
+      updateArrayProperty(dotMagikubeContent, "moduleName", moduleName);
 
       // Handle CIDR block and domain responses if provided
       if (responses?.cidrBlock) {
-        updateDotMagikubeArrayProperty(dotMagikubeContent, "cidr_blocks", responses.cidrBlock);
+        updateArrayProperty(dotMagikubeContent, "cidr_blocks", responses.cidrBlock);
       }
 
       if (responses?.domain) {
-        updateDotMagikubeArrayProperty(dotMagikubeContent, "domains", responses.domain);
+        updateArrayProperty(dotMagikubeContent, "domains", responses.domain);
       }
 
       dotMagikubeContent.command = this.id;
