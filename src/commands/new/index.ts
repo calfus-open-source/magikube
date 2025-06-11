@@ -17,7 +17,8 @@ import { services, modules, InvalidProjectNames, supportedTemplates } from "../.
 import { handleEKS, handleK8s } from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 import { createEmptyMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
-import { handleTemplateFlag } from "../../core/utils/handleTemplateProject-utils.js";
+import { handleTemplateFlag } from "../../core/utils/groupingTemplateProject-utils.js";
+import { BASTION_SYSTEM_CONFIG,MASTER_SYSTEM_CONFIG, WORKER_SYSTEM_CONFIG, KUBERNITIES_SYSTEM_CONFIG, EKSNODEGROUP_SYSTEM_CONFIG, NEXT_APP_CONFIG, REACT_APP_CONFIG, GEN_AI_CONFIG, NODE_APP_CONFIG, } from "../../core/constants/systemDefaults.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -96,8 +97,8 @@ export default class CreateProject extends BaseCommand {
         );
         process.exit(0);
       }
-
-      // Handle project creation with a valid predefined template
+      
+      //Create project with valid predefined template
       if (
         flags.template &&
         this.predefinedTemplates.includes(flags.template.trim())
@@ -107,6 +108,21 @@ export default class CreateProject extends BaseCommand {
       }
 
       // Default project creation process
+      
+      // default system config values
+      const systemConfig = {
+        ...BASTION_SYSTEM_CONFIG,
+        ...MASTER_SYSTEM_CONFIG,
+        ...WORKER_SYSTEM_CONFIG,
+        ...KUBERNITIES_SYSTEM_CONFIG,
+        ...EKSNODEGROUP_SYSTEM_CONFIG,
+        ...NEXT_APP_CONFIG,
+        ...REACT_APP_CONFIG,
+        ...NODE_APP_CONFIG,
+        ...GEN_AI_CONFIG
+      };
+
+      //taking input from user
       const responses: Answers = await handlePrompts(args, this.id);
       // check if dist folder present
       responses.command = this.id;
@@ -115,7 +131,8 @@ export default class CreateProject extends BaseCommand {
       }
       
       AppLogger.debug( `Creating new Magikube project named '${args.name}' in the current directory`, true);
-      SystemConfig.getInstance().mergeConfigs(responses);
+      const combinedConfig = { ...systemConfig, ...responses };
+      SystemConfig.getInstance().mergeConfigs(combinedConfig);
       const terraform = await TerraformProject.getProject(this);
       const projectConfig = SystemConfig.getInstance().getConfig();
       const createApp = new CreateApplication(this, projectConfig);

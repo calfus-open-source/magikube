@@ -19,8 +19,19 @@ import { modules } from "../constants/constants.js";
 import { dotMagikubeConfig } from "./projectConfigReader-utils.js";
 import { handlePrompts } from "./handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "./copyTemplates-utils.js";
+import {
+  BASTION_SYSTEM_CONFIG,
+  MASTER_SYSTEM_CONFIG,
+  WORKER_SYSTEM_CONFIG,
+  KUBERNITIES_SYSTEM_CONFIG,
+  EKSNODEGROUP_SYSTEM_CONFIG,
+} from "../constants/systemDefaults.js";
 
-export async function handleTemplateFlag(args:any, commandName?:any ,template?:any) {
+export async function handleTemplateFlag(
+  args: any,
+  commandName?: any,
+  template?: any
+) {
   const currentDir = process.cwd();
   const responses = dotMagikubeConfig(args.name, currentDir);
   const moduleType = "";
@@ -35,17 +46,45 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
     true
   );
   const projectName = args.name;
+
   if (template) {
     responses.template = template;
     responses.command = commandName;
     responses.project_name = projectName;
     if (domain) responses.domain_name = domain.domain;
   }
-  SystemConfig.getInstance().mergeConfigs(responses);
+  
+  //Conditionally using default system config values
+  const combinedConfig: any =
+  responses.template === "eks-fargate-vpc"
+    ? { ...KUBERNITIES_SYSTEM_CONFIG, ...responses }
+    : responses.template === "eks-nodegroup-vpc"
+    ? {
+        ...KUBERNITIES_SYSTEM_CONFIG,
+        ...EKSNODEGROUP_SYSTEM_CONFIG,
+        ...responses,
+      }
+    : responses.template === "rds-vpc"
+    ? { ...responses }
+    : responses.template === "ec2-vpc"
+    ? {
+        ...BASTION_SYSTEM_CONFIG,
+        ...MASTER_SYSTEM_CONFIG,
+        ...WORKER_SYSTEM_CONFIG,
+        ...responses,
+      }
+    : responses.template === "vpc-rds-nodegroup-acm-ingress"
+    ? {
+        ...EKSNODEGROUP_SYSTEM_CONFIG,
+        ...KUBERNITIES_SYSTEM_CONFIG,
+        ...responses,
+      }
+    : undefined;
+  SystemConfig.getInstance().mergeConfigs(combinedConfig);
   const projectConfig = SystemConfig.getInstance().getConfig();
+  AppLogger.info(`Setting up Infrastructure using template :'${template}'.`, true);
   const terraform = await TemplateTerraformProject.getProject(commandName);
-  AppLogger.info(`Using template '${template}' for project setup.`, true);
-  initializeStatusFile(projectName, modules, services);
+  initializeStatusFile(projectName, modules);
   const {
     aws_region: region,
     aws_access_key_id: awsAccessKey,
@@ -69,6 +108,7 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
       `${responses["environment"]}-config.tfvars`,
       projectName
     );
+    //taking module
     const modules: any =
       projectConfig.template === "eks-fargate-vpc"
         ? eksFargateVpcModules
@@ -85,7 +125,6 @@ export async function handleTemplateFlag(args:any, commandName?:any ,template?:a
     for (const module of modules) {
       const moduleName = "";
       try {
-       
         updateStatusFile(projectName, "terraform-apply", "fail");
         AppLogger.info(`Starting Terraform apply for module: ${module}`, true);
         if (
