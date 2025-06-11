@@ -8,14 +8,14 @@ import {
   readStatusFile,
   updateStatusFile,
 } from "../../../core/utils/statusUpdater-utils.js";
-import { services, modules, singleModules } from "../../../core/constants/constants.js";
+import { services, singleModules } from "../../../core/constants/constants.js";
 import path from "path";
 import fs from "fs";
 import SubModuleTemplateProject from "../../../core/submoduleTerraform.js";
 import { Colours } from "../../../prompts/constants.js";
 import { cloneAndCopyTemplates } from "../../../core/utils/copyTemplates-utils.js";
 import { handlePrompts } from "../../../core/utils/handlePrompts-utils.js";
-import { updateArrayProperty } from "../../../core/utils/updateDotMagikube-utils.js";
+import { updateProjectConfigArrays } from "../../../core/utils/updateDotMagikube-utils.js";
 
 // Helper function to validate module input
 function validateModuleInput(input: string): void {
@@ -75,7 +75,10 @@ export default class NewModule extends BaseCommand {
     );
 
     AppLogger.configureLogger(dotMagikubeContent.project_name, this.id);
-    AppLogger.info( `Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,true);
+    AppLogger.info(
+      `Starting new module setup: ${moduleName} of type ${moduleType} in the current project`,
+      true
+    );
 
     try {
       const template = "";
@@ -86,22 +89,37 @@ export default class NewModule extends BaseCommand {
         moduleType
       );
 
-      const distFolderPath = path.resolve(currentDir, "..");
-      // Check if dist folder exist
-      if (!fs.existsSync(`${distFolderPath}/dist`)){
-        await cloneAndCopyTemplates(this.id);
-      }  
-
-      updateArrayProperty(dotMagikubeContent, "moduleType", moduleType);
-      updateArrayProperty(dotMagikubeContent, "moduleName", moduleName);
-
-      // Handle CIDR block and domain responses if provided
-      if (responses?.cidrBlock) {
-        updateArrayProperty(dotMagikubeContent, "cidr_blocks", responses.cidrBlock);
+      // Log responses for debugging
+      AppLogger.info(`Prompt responses: ${JSON.stringify(responses)}`, true);
+      if (moduleType === "vpc" && !responses?.cidrBlock) {
+        AppLogger.warn(
+          `No cidrBlock provided for vpc module ${moduleName}`,
+          true
+        );
       }
 
+      const distFolderPath = path.resolve(currentDir, "..");
+      // Check if dist folder exists
+      if (!fs.existsSync(`${distFolderPath}/dist`)) {
+        await cloneAndCopyTemplates(this.id);
+      }
+
+      // Update the modules structure and vpcNames/cidr_blocks in config Object
+      updateProjectConfigArrays(
+        dotMagikubeContent,
+        moduleType,
+        moduleName,
+        responses?.cidrBlock
+      );
+
+      // Handle domain responses if provided
       if (responses?.domain) {
-        updateArrayProperty(dotMagikubeContent, "domains", responses.domain);
+        if (!dotMagikubeContent.domains) {
+          dotMagikubeContent.domains = [];
+        }
+        if (!dotMagikubeContent.domains.includes(responses.domain)) {
+          dotMagikubeContent.domains.push(responses.domain);
+        }
       }
 
       dotMagikubeContent.command = this.id;
@@ -115,6 +133,12 @@ export default class NewModule extends BaseCommand {
 
       // Merge configurations and initialize project
       SystemConfig.getInstance().mergeConfigs(dotMagikubeContent);
+      const mergedConfig = SystemConfig.getInstance().getConfig();
+      AppLogger.info(
+        `Merged config: ${JSON.stringify(mergedConfig, null, 2)}`,
+        true
+      );
+
       const terraform = await SubModuleTemplateProject.getProject(this, "");
 
       initializeStatusFile("", singleModules, services);
@@ -126,7 +150,7 @@ export default class NewModule extends BaseCommand {
         if (projectConfig["cloud_provider"] === "aws") {
           await terraform.AWSProfileActivate(projectConfig["aws_profile"]);
         }
-        //Delay of 15 second
+        // Delay of 15 seconds
         await new Promise((resolve) => setTimeout(resolve, 15000));
         // Run Terraform initialization
         await terraform?.runTerraformInit(

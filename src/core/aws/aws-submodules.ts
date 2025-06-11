@@ -11,21 +11,20 @@ export default class CommonSubModuleProject extends AWSProject {
     this.path = path;
     this.name = name;
     super.createProject(name, path);
-    this.createMainFile(projectConfig.moduleType, projectConfig); // Pass moduleType to createMainFile
+    this.createMainFile(projectConfig); // Pass moduleType to createMainFile
   }
 
   async createMainFile(
-    moduleType: string | string[],
     projectConfig: any
   ): Promise<void> {
-    let lastModule = moduleType[moduleType.length - 1];
-
+    const moduleTypesArray = Object.keys(projectConfig.modules);
+    let lastModuleType = moduleTypesArray[moduleTypesArray.length-1];
     // Store the original lastModule for later use
-    const originalLastModule = lastModule;
+    const originalLastModule = lastModuleType;
 
     // Check if lastModule is 'eks-fargate' or 'eks-nodegroup' and set it to 'eks' for general cases
-    if (lastModule === "eks-fargate" || lastModule === "eks-nodegroup") {
-      lastModule = "eks";
+    if (lastModuleType === "eks-fargate" || lastModuleType === "eks-nodegroup") {
+      lastModuleType = "eks";
     }
 
     const parentPath = path.resolve(process.cwd(), "..");
@@ -36,7 +35,7 @@ export default class CommonSubModuleProject extends AWSProject {
     const status = await readStatusFile(this.config, this.config.command);
 
     await this.createProviderFile(parentPath);
-    if (status.modules[`module.${lastModule}`] === "pending") {
+    if (status.modules[`module.${lastModuleType}`] === "pending") {
       this.createFile(
         "main.tf",
         `${distPath}/${originalLastModule}-module/main.tf.liquid`, // Use originalLastModule here
@@ -60,7 +59,7 @@ export default class CommonSubModuleProject extends AWSProject {
     // Use the originalLastModule for specific conditions
     if (
       originalLastModule === "vpc" &&
-      status.modules[`module.${lastModule}`] === "pending"
+      status.modules[`module.${lastModuleType}`] === "pending"
     ) {
       this.createFile(
         `${this.config.environment}-config.tfvars`,

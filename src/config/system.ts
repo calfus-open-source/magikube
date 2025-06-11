@@ -4,75 +4,6 @@ import UserConfig from './user.js';
 class SystemConfig {
     private config: any = {};
     private static _instance: SystemConfig;
-    private bastionSystemConfig: any = {
-        "bastion_host_ami_owner": "099720109477",
-        "bastion_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
-        "bastion_host_ami_virtualization_type": "hvm",
-        "bastion_instance_type": "t3.micro",
-        "bastion_instance_count": "1",
-    };
-
-    private masterSystemConfig: any = {
-        "master_host_ami_owner": "099720109477",
-        "master_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
-        "master_host_ami_virtualization_type": "hvm",
-        "master_instance_type": "t3.medium",
-        "master_instance_count": "1",
-        "ebs_volume_size": "100",
-        "ebs_volume_type": "gp2",
-    };
-    private workerSystemConfig: any = {
-        "worker_host_ami_owner": "099720109477",
-        "worker_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
-        "worker_host_ami_virtualization_type": "hvm",
-        "worker_instance_type": "t3.medium",
-        "worker_instance_count": "2",
-        "ebs_volume_size": "100",
-        "ebs_volume_type": "gp2",
-    };
-
-    private kubernetesSystemConfig: any = {
-        "ebs_vol_size": "100G",
-        "service_cidr": "192.168.0.0/17",
-        "pod_network_cidr": "192.168.128.0/17",
-        "kube_version": "1.29",
-        "kube_cni_version": "1.2.0-00",
-        "disk_size": "100G",
-        "kube_reserved_cpu": "100m",
-        "kube_reserved_memory": "300Mi",
-        "system_reserved_cpu": "100m",
-        "system_reserved_memory": "200Mi",
-        "eviction_memory_threshold": "100Mi",
-    };
-
-    private eksNodeGroupSystemConfig: any = {
-        "node_host_ami_owner": "099720109477",
-        "node_host_ami_name": "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*",
-        "node_host_ami_virtualization_type": "hvm",
-        "node_instance_type": "t3.medium",
-        "node_desired_size": "2",
-        "node_max_size": "3",
-        "node_min_size": "2",
-        "ebs_volume_size": "100",
-        "ebs_volume_type": "gp2",
-    };
-
-    private nextAppConfig: any = {
-        'next_app_name': "my-next-app"
-    }
-
-    private nodeAppConfig: any = {
-        "node_app_name": "my-node-app"
-    }
-
-    private reactAppConfig: any = {
-        "react_app_name": "my-react-app"
-    }
-
-    private genAIAppConfig: any = {
-        "genAI_app_name": "my-genAI-app"
-    }
-
     static getInstance(): SystemConfig {
         if (!SystemConfig._instance) {
             SystemConfig._instance = new SystemConfig();
@@ -143,15 +74,6 @@ class SystemConfig {
             "argocd_helm_version": "6.0.6",
             "aws_az_count": "2",
             "aws_vpc_cidr": "10.0.0.0/16",
-            ...this.bastionSystemConfig,
-            ...this.masterSystemConfig,
-            ...this.workerSystemConfig,
-            ...this.kubernetesSystemConfig,
-            ...this.eksNodeGroupSystemConfig,
-            ...this.nextAppConfig,
-            ...this.nodeAppConfig,
-            ...this.reactAppConfig,
-            ...this.genAIAppConfig
         }, null, 4);
         fs.writeFileSync(path, data);
     }
