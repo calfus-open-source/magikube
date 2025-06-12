@@ -84,7 +84,6 @@ export async function handleTemplateFlag(
   const projectConfig = SystemConfig.getInstance().getConfig();
   AppLogger.info(`Setting up Infrastructure using template :'${template}'.`, true);
   const terraform = await TemplateTerraformProject.getProject(commandName);
-  initializeStatusFile(projectName, modules);
   const {
     aws_region: region,
     aws_access_key_id: awsAccessKey,
@@ -122,10 +121,12 @@ export async function handleTemplateFlag(
         ? vpceksNodegroupIngressModules
         : undefined;
     let allModulesAppliedSuccessfully = true;
+    initializeStatusFile(projectName, modules);
     for (const module of modules) {
       const moduleName = "";
       try {
         updateStatusFile(projectName, "terraform-apply", "fail");
+        updateStatusFile(projectName, module, "fail");
         AppLogger.info(`Starting Terraform apply for module: ${module}`, true);
         if (
           projectConfig.template == "ec2-vpc" ||
@@ -157,6 +158,7 @@ export async function handleTemplateFlag(
       } catch (error) {
         AppLogger.error(`Error applying Terraform for module: ${error}`, true);
         allModulesAppliedSuccessfully = false;
+        updateStatusFile(projectName, module, "fail");
         updateStatusFile(projectName, "terraform-apply", "fail");
       }
     }

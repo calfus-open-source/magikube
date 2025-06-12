@@ -141,7 +141,7 @@ export default class NewModule extends BaseCommand {
 
       const terraform = await SubModuleTemplateProject.getProject(this, "");
 
-      initializeStatusFile("", singleModules, services);
+      initializeStatusFile("", [moduleType], ["policy"]);
       const projectConfig = SystemConfig.getInstance().getConfig();
       await readStatusFile(projectConfig, this.id);
 
@@ -170,7 +170,7 @@ export default class NewModule extends BaseCommand {
           );
           updateStatusFile(
             projectConfig.project_name,
-            `module.${moduleType}`,
+            moduleType,
             "fail"
           );
           await terraform?.runTerraformApply(
@@ -181,7 +181,7 @@ export default class NewModule extends BaseCommand {
           );
           updateStatusFile(
             projectConfig.project_name,
-            `module.${moduleType}`,
+            moduleType,
             "success"
           );
           AppLogger.debug(

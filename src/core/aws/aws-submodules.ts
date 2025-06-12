@@ -6,24 +6,25 @@ import { readStatusFile } from "../utils/statusUpdater-utils.js";
 export default class CommonSubModuleProject extends AWSProject {
   private path: string | undefined;
   private name: string | undefined;
+
   async createProject(name: string, path: string): Promise<void> {
     const projectConfig = SystemConfig.getInstance().getConfig();
     this.path = path;
     this.name = name;
     super.createProject(name, path);
-    this.createMainFile(projectConfig); // Pass moduleType to createMainFile
+    this.createMainFile(projectConfig);
   }
 
-  async createMainFile(
-    projectConfig: any
-  ): Promise<void> {
+  async createMainFile(projectConfig: any): Promise<void> {
     const moduleTypesArray = Object.keys(projectConfig.modules);
-    let lastModuleType = moduleTypesArray[moduleTypesArray.length-1];
-    // Store the original lastModule for later use
+    let lastModuleType = moduleTypesArray[moduleTypesArray.length - 1];
     const originalLastModule = lastModuleType;
 
-    // Check if lastModule is 'eks-fargate' or 'eks-nodegroup' and set it to 'eks' for general cases
-    if (lastModuleType === "eks-fargate" || lastModuleType === "eks-nodegroup") {
+    // Normalize for logic purposes, but keep original for accessing files/status
+    if (
+      lastModuleType === "eks-fargate" ||
+      lastModuleType === "eks-nodegroup"
+    ) {
       lastModuleType = "eks";
     }
 
@@ -35,32 +36,31 @@ export default class CommonSubModuleProject extends AWSProject {
     const status = await readStatusFile(this.config, this.config.command);
 
     await this.createProviderFile(parentPath);
-    if (status.modules[`module.${lastModuleType}`] === "pending") {
+    const moduleStatus = status.modules[originalLastModule];
+
+    if (moduleStatus === "pending") {
       this.createFile(
         "main.tf",
-        `${distPath}/${originalLastModule}-module/main.tf.liquid`, // Use originalLastModule here
+        `${distPath}/${originalLastModule}-module/main.tf.liquid`,
         "/infrastructure",
         true
       );
       this.createFile(
         "variables.tf",
-        `${distPath}/${originalLastModule}-module/variables.tf.liquid`, // Use originalLastModule here
+        `${distPath}/${originalLastModule}-module/variables.tf.liquid`,
         "/infrastructure",
         true
       );
     }
+
     this.createFile(
       "terraform.tfvars",
-      `${distPath}/${originalLastModule}-module/terraform.tfvars.liquid`, // Use originalLastModule here
+      `${distPath}/${originalLastModule}-module/terraform.tfvars.liquid`,
       "/infrastructure",
       true
     );
 
-    // Use the originalLastModule for specific conditions
-    if (
-      originalLastModule === "vpc" &&
-      status.modules[`module.${lastModuleType}`] === "pending"
-    ) {
+    if (originalLastModule === "vpc" && moduleStatus === "pending") {
       this.createFile(
         `${this.config.environment}-config.tfvars`,
         `${distPath}/backend-config.tfvars.liquid`,
@@ -69,20 +69,18 @@ export default class CommonSubModuleProject extends AWSProject {
       );
       this.createVpc(parentPath);
     } else if (
-      originalLastModule === "eks-fargate" && // Use originalLastModule here
-      status.modules[`module.eks`] === "pending"
+      originalLastModule === "eks-fargate" &&
+      moduleStatus === "pending"
     ) {
       this.createEKS(parentPath);
     } else if (
-      originalLastModule === "eks-nodegroup" && // Use originalLastModule here
-      status.modules[`module.eks`] === "pending"
+      originalLastModule === "eks-nodegroup" &&
+      moduleStatus === "pending"
     ) {
       this.createEKSng(parentPath);
-    } else if (originalLastModule === "rds") {
-      // Use originalLastModule here
+    } else if (originalLastModule === "rds" && moduleStatus === "pending") {
       this.createRdsmodule(parentPath);
-    } else if (originalLastModule === "acm") {
-      // Use originalLastModule here
+    } else if (originalLastModule === "acm" && moduleStatus === "pending") {
       this.createFile(
         `${this.config.environment}-config.tfvars`,
         `${distPath}/backend-config.tfvars.liquid`,
@@ -92,6 +90,7 @@ export default class CommonSubModuleProject extends AWSProject {
       this.createACM(parentPath);
     }
   }
+
   async createRdsmodule(path: string): Promise<void> {
     this.createFile(
       "main.tf",
@@ -106,6 +105,7 @@ export default class CommonSubModuleProject extends AWSProject {
       true
     );
   }
+
   async createEKSng(path: string): Promise<void> {
     this.createFile(
       "main.tf",

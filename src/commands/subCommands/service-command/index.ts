@@ -113,7 +113,7 @@ export default class Microservice extends BaseCommand {
         JSON.stringify(combinedConfig, null, 4)
       );
       const terraform = await MicroserviceProject.getProject(this);
-      initializeStatusFile("", [], [responses.service_type]);
+      initializeStatusFile("", [], [responses.service_name]);
       const {
         github_access_token: token,
         git_user_name: userName,
