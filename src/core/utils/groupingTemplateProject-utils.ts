@@ -23,7 +23,7 @@ import {
   BASTION_SYSTEM_CONFIG,
   MASTER_SYSTEM_CONFIG,
   WORKER_SYSTEM_CONFIG,
-  KUBERNITIES_SYSTEM_CONFIG,
+  KUBERNETES_SYSTEM_CONFIG,
   EKSNODEGROUP_SYSTEM_CONFIG,
 } from "../constants/systemDefaults.js";
 
@@ -57,10 +57,10 @@ export async function handleTemplateFlag(
   //Conditionally using default system config values
   const combinedConfig: any =
   responses.template === "eks-fargate-vpc"
-    ? { ...KUBERNITIES_SYSTEM_CONFIG, ...responses }
+    ? { ...KUBERNETES_SYSTEM_CONFIG, ...responses }
     : responses.template === "eks-nodegroup-vpc"
     ? {
-        ...KUBERNITIES_SYSTEM_CONFIG,
+        ...KUBERNETES_SYSTEM_CONFIG,
         ...EKSNODEGROUP_SYSTEM_CONFIG,
         ...responses,
       }
@@ -76,7 +76,7 @@ export async function handleTemplateFlag(
     : responses.template === "vpc-rds-nodegroup-acm-ingress"
     ? {
         ...EKSNODEGROUP_SYSTEM_CONFIG,
-        ...KUBERNITIES_SYSTEM_CONFIG,
+        ...KUBERNETES_SYSTEM_CONFIG,
         ...responses,
       }
     : undefined;
@@ -100,7 +100,7 @@ export async function handleTemplateFlag(
   if (terraform) {
     await terraform.createProject(projectName, currentDir);
     if (responses["cloud_provider"] === "aws") {
-      await terraform.AWSProfileActivate(responses["aws_profile"]);
+      await (terraform as any).AWSProfileActivate(responses["aws_profile"]);
     }
     await new Promise((resolve) => setTimeout(resolve, 15000));
     await terraform?.runTerraformInit(

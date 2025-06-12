@@ -1,4 +1,5 @@
 import BaseProject from '../base-project.js';
+import { CloudProject } from '../interfaces/cloud-project.js';
 import AWSTerraformBackend from "./aws-tf-backend.js";
 import AWSPolicies from "./aws-iam.js";
 import { spawn, execSync } from 'child_process';
@@ -16,7 +17,7 @@ import SystemConfig from '../../config/system.js';
 
 let sshProcess: any;
 
-export default class AWSProject extends BaseProject {
+export default class AWSProject extends BaseProject implements CloudProject {
     async createProject(name: string, path: string, commandName?: string): Promise<void> {  
       if(this.config.command === "new"){
          await super.createProject(name, path);      

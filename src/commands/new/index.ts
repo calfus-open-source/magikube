@@ -18,7 +18,7 @@ import { handleEKS, handleK8s } from "../../core/utils/terraformHandlers-utils.j
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
 import { createEmptyMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
 import { handleTemplateFlag } from "../../core/utils/groupingTemplateProject-utils.js";
-import { BASTION_SYSTEM_CONFIG,MASTER_SYSTEM_CONFIG, WORKER_SYSTEM_CONFIG, KUBERNITIES_SYSTEM_CONFIG, EKSNODEGROUP_SYSTEM_CONFIG, NEXT_APP_CONFIG, REACT_APP_CONFIG, GEN_AI_CONFIG, NODE_APP_CONFIG, } from "../../core/constants/systemDefaults.js";
+import { BASTION_SYSTEM_CONFIG,MASTER_SYSTEM_CONFIG, WORKER_SYSTEM_CONFIG, KUBERNETES_SYSTEM_CONFIG, EKSNODEGROUP_SYSTEM_CONFIG, NEXT_APP_CONFIG, REACT_APP_CONFIG, GEN_AI_CONFIG, NODE_APP_CONFIG, } from "../../core/constants/systemDefaults.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -114,7 +114,7 @@ export default class CreateProject extends BaseCommand {
         ...BASTION_SYSTEM_CONFIG,
         ...MASTER_SYSTEM_CONFIG,
         ...WORKER_SYSTEM_CONFIG,
-        ...KUBERNITIES_SYSTEM_CONFIG,
+        ...KUBERNETES_SYSTEM_CONFIG,
         ...EKSNODEGROUP_SYSTEM_CONFIG,
         ...NEXT_APP_CONFIG,
         ...REACT_APP_CONFIG,
@@ -146,32 +146,73 @@ export default class CreateProject extends BaseCommand {
         aws_region: region,
         aws_access_key_id: awsAccessKey,
         aws_secret_access_key: awsSecretKey,
+        azure_location: azureLocation,
+        azure_client_id: azureClientId,
+        azure_client_secret: azureClientSecret,
+        azure_tenant_id: azureTenantId,
+        azure_subscription_id: azureSubscriptionId,
         environment,
       } = projectConfig;
 
-      const configObject: ConfigObject = {
-        token,
-        userName,
-        orgName,
-        sourceCodeRepo,
-        region,
-        projectName,
-        awsAccessKey,
-        awsSecretKey,
-        environment,
-      };
-       
-      //get Account ID and merge it in systemConfig
-      const accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
-      SystemConfig.getInstance().mergeConfigs({ accountId });
+      let configObject: ConfigObject;
+      let accountId: string | undefined;
+
+      if (projectConfig.cloud_provider === "aws") {
+        configObject = {
+          token,
+          userName,
+          orgName,
+          sourceCodeRepo,
+          region,
+          projectName,
+          awsAccessKey,
+          awsSecretKey,
+          environment,
+        };
+        
+        //get Account ID and merge it in systemConfig
+        accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
+        SystemConfig.getInstance().mergeConfigs({ accountId });
+      } else if (projectConfig.cloud_provider === "azure") {
+        configObject = {
+          token,
+          userName,
+          orgName,
+          sourceCodeRepo,
+          region: azureLocation,
+          projectName,
+          awsAccessKey: azureClientId, // Using same interface for simplicity
+          awsSecretKey: azureClientSecret, // Using same interface for simplicity
+          environment,
+        };
+      } else {
+        // Default to AWS for backward compatibility
+        configObject = {
+          token,
+          userName,
+          orgName,
+          sourceCodeRepo,
+          region,
+          projectName,
+          awsAccessKey,
+          awsSecretKey,
+          environment,
+        };
+        
+        //get Account ID and merge it in systemConfig
+        accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
+        SystemConfig.getInstance().mergeConfigs({ accountId });
+      }
       
       //setup Gitops service
       const setupGitopsServiceStatus = await createApp.setupGitops(projectConfig);
 
       if (terraform) {
-        await terraform.createProject(projectName, process.cwd(), this.id);
-        if (responses.cloud_provider === "aws") {
-          await terraform.AWSProfileActivate(responses.aws_profile);
+        await terraform.createProject(projectName, process.cwd());
+        if (responses.cloud_provider === "aws" && 'AWSProfileActivate' in terraform) {
+          await (terraform as any).AWSProfileActivate(responses.aws_profile);
+        } else if (responses.cloud_provider === "azure" && 'AzureProfileActivate' in terraform) {
+          await (terraform as any).AzureProfileActivate(responses.azure_profile);
         }
 
         // setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
@@ -179,6 +220,18 @@ export default class CreateProject extends BaseCommand {
           responses.cluster_type === "eks-fargate" ||
           responses.cluster_type === "eks-nodegroup"
         ) {
+          await handleEKS(
+            projectName,
+            responses,
+            terraform,
+            setupGitopsServiceStatus,
+            configObject
+          );
+        }
+
+        // setup infrastructure if cluster type is aks
+        if (responses.cluster_type === "aks") {
+          // Handle AKS similar to EKS
           await handleEKS(
             projectName,
             responses,

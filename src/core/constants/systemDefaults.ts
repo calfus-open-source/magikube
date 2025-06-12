@@ -28,7 +28,7 @@ export const WORKER_SYSTEM_CONFIG = Object.freeze({
     "ebs_volume_type": "gp2",
 });
 
-export const KUBERNITIES_SYSTEM_CONFIG = Object.freeze({
+export const KUBERNETES_SYSTEM_CONFIG = Object.freeze({
     "ebs_vol_size": "100G",
     "service_cidr": "192.168.0.0/17",
     "pod_network_cidr": "192.168.128.0/17",

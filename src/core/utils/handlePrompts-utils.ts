@@ -6,6 +6,7 @@ import path, { join } from "path";
 import fs from "fs";
 import { AppLogger } from "../../logger/appLogger.js";
 import { dotMagikubeConfig } from "./projectConfigReader-utils.js";
+import AzurePolicies from "../azure/azure-iam.js";
 
 export async function handlePrompts(
   args: any,
@@ -14,8 +15,15 @@ export async function handlePrompts(
   moduleType?: string,
   serviceName?:string
 ): Promise<Answers> {
+
+  AppLogger.info(`Command name: ${commandName}`, true);
+  AppLogger.info(`Template: ${template}`, true);
+  AppLogger.info(`Module type: ${moduleType}`, true);
+  AppLogger.info(`Service name: ${serviceName}`, true);
+  AppLogger.info(`Args: ${JSON.stringify(args)}`, true);
+
   let responses: any =
-    commandName === "module" || commandName === "create"
+    commandName === "module" || commandName === "create" || commandName === "new"
       ? ""
       : {
           project_name: args.name,
@@ -25,7 +33,7 @@ export async function handlePrompts(
   const promptGenerator = new PromptGenerator();
   const projectConfigFile = path.join(
     process.cwd(),
-    commandName === "module" || commandName === "create"
+    commandName === "module" || commandName === "create" || commandName === "new"
       ? ""
       : responses.project_name,
     ".magikube"
@@ -42,26 +50,68 @@ export async function handlePrompts(
         responses = { ...responses, ...resp };
       }
 
-      for (const regionPrompt of promptGenerator.getRegion()) {
-        const regionResp = await inquirer.prompt(regionPrompt);
-        responses = { ...responses, ...regionResp };
-      }
-
-      for (const regionPrompt of promptGenerator.getAwsProfile()) {
-        const regionResp = await inquirer.prompt(regionPrompt);
-        responses = { ...responses, ...regionResp };
-      }
-
-      const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
-        responses["cloud_provider"],
-        responses
-      );
-      if (credentialPrompts.length > 0) {
-        for (const prompt of credentialPrompts) {
-          const credentialResp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...credentialResp };
+      if (responses.cloud_provider === "aws") {
+        for (const regionPrompt of promptGenerator.getRegion()) {
+          const regionResp = await inquirer.prompt(regionPrompt);
+          responses = { ...responses, ...regionResp };
         }
-        credentialsPrompts.saveCredentials(responses);
+
+        for (const profilePrompt of promptGenerator.getAwsProfile()) {
+          const profileResp = await inquirer.prompt(profilePrompt);
+          responses = { ...responses, ...profileResp };
+        }
+      } else if (responses.cloud_provider === "azure") {
+        for (const regionPrompt of promptGenerator.getAzureRegion()) {
+          const regionResp = await inquirer.prompt(regionPrompt);
+          responses = { ...responses, ...regionResp };
+        }
+
+        for (const profilePrompt of promptGenerator.getAzureProfile()) {
+          const profileResp = await inquirer.prompt(profilePrompt);
+          responses = { ...responses, ...profileResp };
+        }
+
+        // Collect Azure credentials
+        const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
+          responses["cloud_provider"],
+          responses
+        );
+        
+        if (credentialPrompts.length > 0) {
+          for (const prompt of credentialPrompts) {
+            const credentialResp = await inquirer.prompt(prompt);
+            responses = { ...responses, ...credentialResp };
+          }
+          credentialsPrompts.saveCredentials(responses);
+        } else {
+          AppLogger.info("No credential prompts - using existing profile credentials", true);
+        }
+
+        // Azure login attempt
+        AppLogger.info("Attempting Azure login...", true);
+        const loginResp = await AzurePolicies.getAzureLogin();
+        
+        if (loginResp === false) {
+          AppLogger.error("Azure login failed!", true);
+        } else {
+          AppLogger.info("Azure login successful!", true);
+          responses = { ...responses, ...loginResp };
+        }
+      }
+
+      // Move general credential collection for AWS or other cases
+      if (responses.cloud_provider !== "azure") {
+        const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
+          responses["cloud_provider"],
+          responses
+        );
+        if (credentialPrompts.length > 0) {
+          for (const prompt of credentialPrompts) {
+            const credentialResp = await inquirer.prompt(prompt);
+            responses = { ...responses, ...credentialResp };
+          }
+          credentialsPrompts.saveCredentials(responses);
+        }
       }
 
       for (const envPrompt of promptGenerator.getEnvironment()) {
@@ -129,6 +179,23 @@ export async function handlePrompts(
         credentialsPrompts.saveCredentials(responses);
       }
 
+      // Azure login after credential collection
+      if (resp["cloud_provider"] === "azure") {
+        AppLogger.info("Attempting Azure login...", true);
+        try {
+          const loginResp = await AzurePolicies.getAzureLogin();
+          
+          if (loginResp === false) {
+            AppLogger.error("Azure login failed!", true);
+          } else {
+            AppLogger.info("Azure login successful!", true);
+            responses = { ...responses, ...loginResp };
+          }
+        } catch (error) {
+          AppLogger.error(`Azure login error: ${error}`, true);
+        }
+      }
+
       for (const vcPrompt of promptGenerator.getVersionControlPrompts(
         responses["source_code_repository"]
       )) {
@@ -170,11 +237,11 @@ export async function handlePrompts(
     }
   }
   if (commandName === "create"){
-     const resp = dotMagikubeConfig("", process.cwd());
-       for (const microServicePrompts of promptGenerator.getMicroService()) {
-         const microServiceResp = await inquirer.prompt(microServicePrompts);
-         responses = { ...responses, ...microServiceResp };
-       }
+    const resp = dotMagikubeConfig("", process.cwd());
+      for (const microServicePrompts of promptGenerator.getMicroService()) {
+        const microServiceResp = await inquirer.prompt(microServicePrompts);
+        responses = { ...responses, ...microServiceResp };
+      }
     if (responses.service_type === "frontend-service") {
       for (const frontendPrompt of promptGenerator.getFrontendApplicationType()) {
         const frontendResp = await inquirer.prompt(frontendPrompt);
@@ -214,5 +281,5 @@ export async function handlePrompts(
     }  
     
   }
-   return responses;
+  return responses;
 }

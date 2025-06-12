@@ -1,7 +1,7 @@
 {
   "name": "magikube",
   "description": "Infrastructure as Code in minutes using magikube",
-  "version": "0.0.1",
+  "version": "1.6.0",
   "author": "Calfus",
   "bin": {
     "magikube": "./bin/run.js"
@@ -12,11 +12,18 @@
     "@aws-sdk/client-iam": "^3.577.0",
     "@aws-sdk/client-s3": "^3.577.0",
     "@aws-sdk/client-sts": "^3.577.0",
+    "@azure/arm-authorization": "latest",
+    "@azure/arm-keyvault": "^1.0.0",
+    "@azure/arm-resources": "^1.0.0",
+    "@azure/arm-subscriptions": "^1.0.0",
+    "@azure/identity": "^4.0.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
     "@types/uuid": "^9.0.8",
     "axios": "1.7.4",
+    "azure": "^2.3.1-preview",
     "chalk": "^5.3.0",
     "clear": "^0.1.0",
     "cli-progress": "^3.12.0",
