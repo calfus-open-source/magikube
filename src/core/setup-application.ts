@@ -37,6 +37,7 @@ export default class CreateApplication extends BaseProject {
     async setupAuthenticationService(projectConfig:any ){
         const appName = 'auth-service';
         const { project_name: projectName } = projectConfig; 
+        const authServiceName = this.config.command === "create" ? projectConfig.service_name : appName;     
          let copyFilePath;
          let createFilePath;
          let applicationPath;
@@ -77,13 +78,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             await executeCommandWithRetry('npm install', {cwd:`${applicationPath}`},3);
-            updateStatusFile(projectName, appName, "success")
+            updateStatusFile(projectName, authServiceName, "success");
             AppLogger.info('Auth-Service created successfully!', true);
             return true
 
         } catch (error) {
             AppLogger.error(`Failed to setup authentication service, ${error}`, true);
-            updateStatusFile(projectName, appName, "fail");
+            updateStatusFile(projectName, authServiceName, "fail");
             fs.rmdirSync(`${applicationPath}`, { recursive: true });
             process.exit(1);
   
@@ -93,6 +94,7 @@ export default class CreateApplication extends BaseProject {
     // Setup Keycloak
     async setupKeyCloak(projectConfig: any) {
         const appName = 'keycloak';
+        const keycloakAppName = this.config.command === "create" ? projectConfig.service_name : appName;     
         const { project_name: projectName } = projectConfig;
                 let copyFilePath;
                 let createFilePath;
@@ -122,13 +124,13 @@ export default class CreateApplication extends BaseProject {
             }
 
             AppLogger.info('Keycloak service created successfully.', true);
-            updateStatusFile(projectName, appName, "success");
+            updateStatusFile(projectName, keycloakAppName, "success");
 
             return true
 
         } catch (error) {
             AppLogger.error(`Failed to setup keycloak, ${error}`, true);
-            updateStatusFile(projectName, appName, "fail");
+            updateStatusFile(projectName, keycloakAppName, "fail");
             fs.rmdirSync(`${applicationPath}`, { recursive: true });
             process.exit(1);
       }
@@ -137,7 +139,8 @@ export default class CreateApplication extends BaseProject {
    // Create Node.js application
     createNodeExpressApp = async (configObject: any) => {
         const projectConfig = SystemConfig.getInstance().getConfig();
-        const { appName: nodeAppName, projectName } = configObject;
+        const { appName, projectName } = configObject;
+        const nodeAppName = this.config.command === "create" ? projectConfig.service_name : appName;     
         const filePath = process.cwd();
          let copyFilePath;
          let createFilePath;
@@ -188,7 +191,9 @@ export default class CreateApplication extends BaseProject {
     createNextApp = async (configObject: any) => {
         const filePath = process.cwd();
         const projectConfig = SystemConfig.getInstance().getConfig();
-        const { appName: nextAppName, projectName } = configObject;
+        const { appName, projectName } = configObject;
+        const nextAppName = this.config.command === "create" ? projectConfig.service_name : appName;
+
         let copyFilePath;
         let createFilePath;
         let applicationPath;
@@ -236,7 +241,8 @@ export default class CreateApplication extends BaseProject {
     // create React application
     createReactApp = async (configObject: any) => {
         const projectConfig = SystemConfig.getInstance().getConfig();
-        const { appName: reactAppName, projectName } = configObject;
+        const { appName, projectName } = configObject;
+        const reactAppName = this.config.command === "create" ? projectConfig.service_name : appName;
         let copyFilePath;
         let createFilePath;
         let applicationPath;
@@ -291,7 +297,8 @@ export default class CreateApplication extends BaseProject {
     //create GenAI aplication
     createGenAIApp =  async (configObject:any) => {
             const projectConfig = SystemConfig.getInstance().getConfig();
-            const { genAI_app_name: genAIAppName, projectName } = configObject;            
+            const { genAI_app_name, projectName } = configObject;       
+            const genAIAppName = this.config.command === "create" ? projectConfig.service_name : genAI_app_name;     
             let copyFilePath;
             let createFilePath;
             let applicationPath;
