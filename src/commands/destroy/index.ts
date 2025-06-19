@@ -113,7 +113,7 @@ Destroying magikube project named 'sample' in the current directory`,
     }
 
     if (terraform && responses.cloud_provider === "aws") {
-      await terraform.AWSProfileActivate(responses["aws_profile"]);
+      await(terraform as any).AWSProfileActivate(responses["aws_profile"]);
 
       if (
         readFile.services["terraform-apply"] === "fail" ||

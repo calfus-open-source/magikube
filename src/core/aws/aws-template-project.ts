@@ -2,7 +2,7 @@ import AWSProject from "./aws-project.js";
 import BaseCommand from "../../commands/base.js";
 import gitOpsProject from "../gitops/common-gitops.js";
 import repositoryProject from "../code-repository/common-repository.js";
-import argoCdProject from "../argocd/setup-argocd.js";
+import argoCdProject from "../argocd/setup-argocd-aws.js";
 import SystemConfig from "../../config/system.js";
 
 export default class AWSTemplateProject extends AWSProject {

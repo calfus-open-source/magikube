@@ -8,7 +8,7 @@ import { AppLogger } from "../../logger/appLogger.js";
 import CreateApplication from "../../core/setup-application.js";
 import { ConfigObject } from "../../core/interface.js";
 import { Colours } from "../../prompts/constants.js";
-import {initializeStatusFile,} from "../../core/utils/statusUpdater-utils.js";
+import { initializeStatusFile } from "../../core/utils/statusUpdater-utils.js";
 import AWSAccount from "../../core/aws/aws-account.js";
 import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
 import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
@@ -16,7 +16,7 @@ import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
 import { services, modules, InvalidProjectNames, supportedTemplates } from "../../core/constants/constants.js";
 import { handleEKS, handleK8s } from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
-import { createEmptyMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
+import { createBlankMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
 import { handleTemplateFlag } from "../../core/utils/groupingTemplateProject-utils.js";
 import { BASTION_SYSTEM_CONFIG,MASTER_SYSTEM_CONFIG, WORKER_SYSTEM_CONFIG, KUBERNETES_SYSTEM_CONFIG, EKSNODEGROUP_SYSTEM_CONFIG, NEXT_APP_CONFIG, REACT_APP_CONFIG, GEN_AI_CONFIG, NODE_APP_CONFIG, } from "../../core/constants/systemDefaults.js";
 
@@ -90,7 +90,7 @@ export default class CreateProject extends BaseCommand {
         );
         // merge the response in system config
         SystemConfig.getInstance().mergeConfigs(responses);
-        await createEmptyMagikubeProject(args.name, responses);
+        await createBlankMagikubeProject(args.name, responses);
         AppLogger.info(
           `Created an empty project named '${args.name}' with .magikube folder populated with configurations.`,
           true
@@ -130,7 +130,7 @@ export default class CreateProject extends BaseCommand {
         await cloneAndCopyTemplates(this.id);
       }
       
-      AppLogger.debug( `Creating new Magikube project named '${args.name}' in the current directory`, true);
+      AppLogger.info( `Creating new Magikube project named '${args.name}' in the current directory`, true);
       const combinedConfig = { ...systemConfig, ...responses };
       SystemConfig.getInstance().mergeConfigs(combinedConfig);
       const terraform = await TerraformProject.getProject(this);
@@ -169,7 +169,6 @@ export default class CreateProject extends BaseCommand {
           awsSecretKey,
           environment,
         };
-        
         //get Account ID and merge it in systemConfig
         accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
         SystemConfig.getInstance().mergeConfigs({ accountId });
@@ -198,21 +197,27 @@ export default class CreateProject extends BaseCommand {
           awsSecretKey,
           environment,
         };
-        
-        //get Account ID and merge it in systemConfig
-        accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
-        SystemConfig.getInstance().mergeConfigs({ accountId });
       }
-      
+
       //setup Gitops service
-      const setupGitopsServiceStatus = await createApp.setupGitops(projectConfig);
+      const setupGitopsServiceStatus = await createApp.setupGitops(
+        projectConfig
+      );
 
       if (terraform) {
         await terraform.createProject(projectName, process.cwd());
-        if (responses.cloud_provider === "aws" && 'AWSProfileActivate' in terraform) {
+        if (
+          responses.cloud_provider === "aws" &&
+          "AWSProfileActivate" in terraform
+        ) {
           await (terraform as any).AWSProfileActivate(responses.aws_profile);
-        } else if (responses.cloud_provider === "azure" && 'AzureProfileActivate' in terraform) {
-          await (terraform as any).AzureProfileActivate(responses.azure_profile);
+        } else if (
+          responses.cloud_provider === "azure" &&
+          "AzureProfileActivate" in terraform
+        ) {
+          await (terraform as any).AzureProfileActivate(
+            responses.azure_profile
+          );
         }
 
         // setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
@@ -254,7 +259,7 @@ export default class CreateProject extends BaseCommand {
         // create microservices
         await setupAndPushServices(projectConfig, configObject);
       }
-      
+
       // check the status of microservice
       await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
