@@ -6,7 +6,7 @@ import AWSProject from './aws/aws-project.js';
 import EKSNodeGroupProject from './aws/aws-eks-nodegroup.js';
 import EKSNodeGrpClusterProject from './aws/aws-eks-nodegroup.js';
 import AzureProject from './azure/azure-project.js';
-import AKSProject from './azure/azure-aks-project.js';
+import AzureAKSProject from './azure/azure-aks-project.js';
 import BaseProject from './base-project.js';
 import { CloudProject } from './interfaces/cloud-project.js';
 
@@ -26,7 +26,7 @@ export default abstract class TerraformProject {
             command.error(`Cloud provider '${config.cloud_provider}' and cluster type '${config.cluster_type}' not supported`);
         } else if (config.cloud_provider === 'azure') {
             if (config.cluster_type === 'aks') 
-                return new AKSProject(command, config) as BaseProject & CloudProject;
+                return new AzureAKSProject(command, config) as BaseProject & CloudProject;
 
             if (config.cluster_type === 'k8s') 
                 return new AzureProject(command, config) as BaseProject & CloudProject;

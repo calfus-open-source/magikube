@@ -80,7 +80,6 @@ export default abstract class BaseProject {
       }
     }
 
-    
     // Check if it has multiple modules
     if (this.config.cluster_type === "k8s") {
       // Initialize the terraform
@@ -128,16 +127,20 @@ export default abstract class BaseProject {
   }
 
   async createProject(name: string, path: string): Promise<void> {
-    //initialize terraform in the path
-    this.projectPath = join(path, name);
-    await this.createFolder();
-
-    const projectConfigFile = join(this.projectPath, ".magikube");
-    AppLogger.debug(`Creating project '${name}' in the path`, true);
-    fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
-
-    // await this.createProviderFile();
+    try {
+      this.projectPath = join(path, name);
+      await this.createFolder();
+      const projectConfigFile = join(this.projectPath, ".magikube");
+      fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
+      AppLogger.info(`Created project folder with name: '${name}'`, true);
+    } catch (error) {
+      AppLogger.error(
+        `Failed to create project folder'${name}': ${(error as Error).message}`
+      );
+      throw error;
+    }
   }
+
   async createFolder(): Promise<void> {
     //create a folder with the name in the path
 
@@ -154,12 +157,21 @@ export default abstract class BaseProject {
     }
   }
 
-  async createProviderFile(path?:string): Promise<void> {
-    const providerFilePath = join(this.projectPath, "infrastructure", "providers.tf" );
+  async createProviderFile(path?: string): Promise<void> {
+    const providerFilePath = join(
+      this.projectPath,
+      "infrastructure",
+      "providers.tf"
+    );
     if (!fs.existsSync(providerFilePath)) {
       // Proceed to create the file if it doesn't exist
       AppLogger.debug(`Creating 'providers.tf' at ${providerFilePath}`);
-      await this.createFile( "providers.tf", `${path}/dist/templates/common/providers.tf.liquid`, "/infrastructure", true );
+      await this.createFile(
+        "providers.tf",
+        `${path}/dist/templates/common/providers.tf.liquid`,
+        "/infrastructure",
+        true
+      );
       AppLogger.debug(`providers.tf create at : ${providerFilePath}`);
     }
   }
@@ -173,7 +185,7 @@ export default abstract class BaseProject {
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
     const project_config = SystemConfig.getInstance().getConfig();
-    const status =  readStatusFile(project_config,project_config.command)
+    const status = readStatusFile(project_config, project_config.command);
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
@@ -205,12 +217,13 @@ export default abstract class BaseProject {
     // Define the full path to the file
     const filePath = join(folderPath, filename);
     let lastModule;
-    if(project_config.moduleType !== undefined){
-    lastModule = project_config.moduleType[project_config.moduleType.length - 1];
+    if (project_config.moduleType !== undefined) {
+      lastModule =
+        project_config.moduleType[project_config.moduleType.length - 1];
     }
     if (
       project_config.command === "new" ||
-      project_config.command === "resume" 
+      project_config.command === "resume"
     ) {
       // Logic for the "resume" command
       AppLogger.debug(`Creating ${filename} file for resume command.`);
@@ -227,7 +240,6 @@ export default abstract class BaseProject {
       await appendUniqueLines(output, templateFilename, filePath);
     }
   }
-
 
   async generateContent(templateFilename: string): Promise<any> {
     AppLogger.debug(`Creating content from ${templateFilename}`);

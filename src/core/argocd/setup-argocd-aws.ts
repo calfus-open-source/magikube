@@ -1,7 +1,7 @@
 import BaseProject from "../base-project.js";
 import { join } from 'path';
 
-export default class argoCdProject extends BaseProject {
+export default class argoCdProjectAWS extends BaseProject {
   async argoCdProject(path: any, name: any): Promise<void> {
     this.projectPath = join(path, name);
        this.createFile(

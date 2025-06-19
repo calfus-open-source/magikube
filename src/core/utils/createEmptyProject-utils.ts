@@ -3,7 +3,7 @@ import { AppLogger } from "../../logger/appLogger.js";
 import { join } from "path";
 import fs from "fs";
 
-export async function createEmptyMagikubeProject(projectName: string,responses: Answers) {
+export async function createBlankMagikubeProject(projectName: string,responses: Answers) {
   const projectPath = join(process.cwd(), projectName);
   createFolder(projectPath);
   const projectConfigFile = join(projectPath, ".magikube");

@@ -268,7 +268,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
         process.env.AZURE_CLIENT_SECRET = creds.clientSecret;
         process.env.AZURE_TENANT_ID = creds.tenantId;
         process.env.AZURE_SUBSCRIPTION_ID = creds.subscriptionId;
-        AppLogger.debug(`Activating Azure profile: ${profileName}`);
+        AppLogger.info(`Activating Azure profile: ${profileName}`,true);
     }
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {
