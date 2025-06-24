@@ -66,18 +66,7 @@ class SystemConfig {
         const data = JSON.stringify({
             "terraform_version": "1.8.2",
             "github_provider_version": "~> 6.0",
-            "aws_provider_version": "5.58.0",
-            "aws_vpc_module_version": "5.5.1",
-            "aws_eks_module_version": "20.20.0",
-            "aws_eks_cluster_version": "1.30",
-            "aws_load_balancer_controller_version": "1.8.0",
-            "azure_provider_version": "4.0.0",
-            "azure_aks_module_version": "1.0.0",
-            "azure_aks_cluster_version": "1.30",
-            "azure_load_balancer_controller_version": "1.8.0",
             "argocd_helm_version": "6.0.6",
-            "aws_az_count": "2",
-            "aws_vpc_cidr": "10.0.0.0/16",
         }, null, 4);
         fs.writeFileSync(path, data);
     }

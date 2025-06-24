@@ -10,6 +10,21 @@ export const modules = [
     "module.environment"
 ];
 
+export const awsDestroyModules = [
+  "module.rds",
+  "module.environment",
+  "module.argo",
+  "module.ingress-controller",
+  "module.repository",
+  "module.gitops",
+  "module.ecr-repo",
+  "module.acm",
+  "module.eks",
+  "module.vpc",
+];
+
+export const azureDestroyModules = []
+
 export const singleModules = ["module.vpc", "module.eks", "module.rds", "module.acm"];
 
 export const InvalidProjectNames = ["vpc", "rds", "eks", "acm", "ecr"]

@@ -1,7 +1,7 @@
 import { Args } from "@oclif/core";
 import BaseCommand from "../base.js";
 import { AppLogger } from "../../logger/appLogger.js";
-import { ConfigObject } from "../../core/interface.js";
+import { FullConfigObject } from "../../core/interface.js";
 import { Answers } from "inquirer";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
@@ -161,16 +161,15 @@ export default class RestartProject extends BaseCommand {
           environment: environment,
         } = project_config;
 
-        const configObject: ConfigObject = {
-          token,
-          userName,
-          orgName,
-          sourceCodeRepo,
-          region,
-          projectName,
-          awsAccessKey,
-          awsSecretKey,
-          environment,
+        const configObject: FullConfigObject = {
+          common: {
+            token,
+            userName,
+            orgName,
+            sourceCodeRepo,
+            projectName: args.name,
+            environment,
+          },
         };
 
         // create microservices

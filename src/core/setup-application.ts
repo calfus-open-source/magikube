@@ -2,7 +2,7 @@ import { AppLogger } from "../logger/appLogger.js";
 import BaseProject from "./base-project.js";
 import fs from 'fs-extra';
 import SystemConfig from "../config/system.js";
-import { AppTypeMap, ConfigObject } from "./interface.js";
+import { AppTypeMap, FullConfigObject } from "./interface.js";
 import { ManageRepository } from "./manage-repository.js";
 import BaseCommand from "../commands/base.js";
 import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
@@ -374,13 +374,13 @@ export default class CreateApplication extends BaseProject {
     }
 
     // Wrapper for app creation and repo setup
-    async handleAppCreation(appType: string, configObject: ConfigObject, projectConfig: any) {
+    async handleAppCreation(appType: string, configObject: FullConfigObject, projectConfig: any) {
         try {
             const appConfig = this.appTypeMap[appType];
             if (appConfig) {
-                configObject.appName = projectConfig[appConfig.appNameKey];
-                configObject.appType = projectConfig[appConfig.appTypeKey];
-                const appStatus = await appConfig.createAppFunction(configObject);
+                configObject.common.appName = projectConfig[appConfig.appNameKey];
+                configObject.common.appType = projectConfig[appConfig.appTypeKey];
+                const appStatus = await appConfig.createAppFunction(configObject.common);
                 // After app creation, repository setup initiates
                 if (appStatus) {
                     
