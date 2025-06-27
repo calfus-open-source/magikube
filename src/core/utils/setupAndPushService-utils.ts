@@ -169,8 +169,8 @@ async function setupService(
   try {
     const status = await setupFunction();
     if (status) {
-      configObject.appName = appName || serviceName;
-      configObject.appType = appType;
+      configObject.common.appName = appName || serviceName;
+      configObject.common.appType = appType;
       await ManageRepository.pushCode(configObject);
     }
   } catch (error) {
@@ -186,8 +186,8 @@ async function handleServiceCreation(
   createApp: CreateApplication
 ) {
   try {
-    configObject.appName = appName;
-    configObject.appType = appType;
+    configObject.common.appName = appName;
+    configObject.common.appType = appType;
     await createApp.handleAppCreation(appType, configObject, projectConfig);
   } catch (error) {
     AppLogger.error(`Error setting up ${appType} App: ${error}`);

@@ -1,6 +1,6 @@
 import { AppLogger } from "../logger/appLogger.js";
 import { ProgressBar } from "../logger/progressLogger.js";
-import { ConfigObject } from "./interface.js";
+import { FullConfigObject } from "./interface.js";
 import axios from "axios";
 import SystemConfig from "../config/system.js";
 import fs from "fs-extra";
@@ -13,24 +13,24 @@ let encryptedGithubToken: string;
 let publicKey: string;
 let publicKeyId: string;
 export class ManageRepository {
-  static async pushCode(configObject: ConfigObject) {
+  static async pushCode(configObject: FullConfigObject) {
     const {
       token,
       userName,
       orgName,
       sourceCodeRepo,
-      region,
-      appName,
       projectName,
-      appType,
-      awsAccessKey,
-      awsSecretKey,
       environment,
-    } = configObject;
+      appName,
+      appType,
+    } = configObject.common;
+    const region = configObject.aws?.region || "";
+    const awsAccessKey = configObject.aws?.awsAccessKey || "";
+    const awsSecretKey = configObject.aws?.awsSecretKey || "";
     const projectConfig = SystemConfig.getInstance().getConfig();
     let repoSetupError: boolean = false;
     const execCommand = (command: string, projectPath: string) =>
-     executeCommandWithRetry(command, { cwd: projectPath, stdio: "pipe" }, 1);
+      executeCommandWithRetry(command, { cwd: projectPath, stdio: "pipe" }, 1);
     const gitopsRepo = `${projectName}-${environment}-gitops`;
     let projectPath;
     let repoName: string;
@@ -75,7 +75,7 @@ export class ManageRepository {
     };
 
     let remoteRepoUrl;
-    if(sourceCodeRepo == "github") {
+    if (sourceCodeRepo == "github") {
       remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
     }
 

@@ -1,6 +1,5 @@
 import BaseProject from '../base-project.js';
 import AzureTerraformBackend from "./azure-tf-backend.js";
-import AzurePolicies from "./azure-iam.js";
 import { spawn, execSync } from 'child_process';
 import fs from 'fs';
 import * as jsyaml from 'js-yaml';
@@ -21,21 +20,6 @@ export default class AzureProject extends BaseProject implements CloudProject {
     async createProject(name: string, path: string, commandName?: string): Promise<void> {  
         if(this.config.command === "new"){
             await super.createProject(name, path);
-        }
-
-        if (
-            (!this.config.moduleType && this.config.command !=="create") || 
-            (this.config.moduleType && this.config.moduleType.length > 1) 
-        ) {
-        await AzurePolicies.create(
-            this,
-            this.config.azure_location,
-            this.config.azure_client_id,
-            this.config.azure_client_secret,
-            this.config.azure_tenant_id,
-            this.config.azure_subscription_id,
-            this.config.project_name
-        );
         }
 
         await AzureTerraformBackend.create(
@@ -78,17 +62,6 @@ export default class AzureProject extends BaseProject implements CloudProject {
             }
         }
 
-            const status = await AzurePolicies.delete(
-                this,
-                this.config.azure_location,
-                this.config.azure_client_id,
-                this.config.azure_client_secret,
-                this.config.azure_tenant_id,
-                this.config.azure_subscription_id
-            );
-
-
-            if (status) {
                 azureStatus = await AzureTerraformBackend.delete(
                     this,
                     this.config.project_id,
@@ -98,8 +71,6 @@ export default class AzureProject extends BaseProject implements CloudProject {
                     this.config.azure_tenant_id,
                     this.config.azure_subscription_id
                 );
-            }
-        
     }
   }
 
@@ -268,7 +239,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
         process.env.AZURE_CLIENT_SECRET = creds.clientSecret;
         process.env.AZURE_TENANT_ID = creds.tenantId;
         process.env.AZURE_SUBSCRIPTION_ID = creds.subscriptionId;
-        AppLogger.debug(`Activating Azure profile: ${profileName}`);
+        AppLogger.info(`Activating Azure profile: ${profileName}`,true);
     }
 
     async runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void> {

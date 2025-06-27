@@ -23,7 +23,7 @@ export async function handlePrompts(
   AppLogger.info(`Args: ${JSON.stringify(args)}`, true);
 
   let responses: any =
-    commandName === "module" || commandName === "create" || commandName === "new"
+    commandName === "module" || commandName === "create"
       ? ""
       : {
           project_name: args.name,
@@ -33,7 +33,7 @@ export async function handlePrompts(
   const promptGenerator = new PromptGenerator();
   const projectConfigFile = path.join(
     process.cwd(),
-    commandName === "module" || commandName === "create" || commandName === "new"
+    commandName === "module" || commandName === "create"
       ? ""
       : responses.project_name,
     ".magikube"

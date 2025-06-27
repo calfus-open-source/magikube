@@ -15,7 +15,7 @@ import MicroserviceProject from "../../../core/microserviceTerraform.js";
 import { dotMagikubeConfig } from "../../../core/utils/projectConfigReader-utils.js";
 import { Args } from "@oclif/core";
 import { setupAndPushServices } from "../../../core/utils/setupAndPushService-utils.js";
-import { ConfigObject } from "../../../core/interface.js";
+import { FullConfigObject } from "../../../core/interface.js";
 import { updateProjectConfigArrays } from "../../../core/utils/updateDotMagikube-utils.js";
 import {
   GEN_AI_CONFIG,
@@ -125,16 +125,15 @@ export default class Microservice extends BaseCommand {
         environment,
       } = projectConfig;
 
-      const configObject: ConfigObject = {
-        token,
-        userName,
-        orgName,
-        sourceCodeRepo,
-        region,
-        projectName,
-        awsAccessKey,
-        awsSecretKey,
-        environment,
+      const configObject: FullConfigObject = {
+        common: {
+          token,
+          userName,
+          orgName,
+          sourceCodeRepo,
+          projectName: args.name,
+          environment,
+        },
       };
       // Read the status.json file
       await readStatusFile(projectConfig, this.id);
