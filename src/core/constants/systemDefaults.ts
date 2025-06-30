@@ -8,7 +8,6 @@ export const BASTION_SYSTEM_CONFIG = Object.freeze({
 });
 
 export const AWS_SPECIFIC_CONFIG = Object.freeze({
-    "aws_provider_version": "5.91.0",
     "aws_vpc_module_version": "5.5.1",
     "aws_eks_module_version": "20.20.0",
     "aws_eks_cluster_version": "1.30",

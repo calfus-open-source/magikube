@@ -40,7 +40,7 @@ export async function handleTemplateFlag(
       ? await handlePrompts(args, commandName, template, moduleType)
       : null;
 
-  await cloneAndCopyTemplates(commandName);
+  await cloneAndCopyTemplates(commandName, responses.cloud_provider);
   AppLogger.debug(
     `Creating new magikube project named '${args.name}' in the current directory`,
     true

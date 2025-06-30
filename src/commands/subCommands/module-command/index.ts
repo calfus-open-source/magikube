@@ -101,7 +101,7 @@ export default class NewModule extends BaseCommand {
       const distFolderPath = path.resolve(currentDir, "..");
       // Check if dist folder exists
       if (!fs.existsSync(`${distFolderPath}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
       }
 
       // Update the modules structure and vpcNames/cidr_blocks in config Object

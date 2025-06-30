@@ -382,8 +382,7 @@ export default class CreateApplication extends BaseProject {
                 configObject.common.appType = projectConfig[appConfig.appTypeKey];
                 const appStatus = await appConfig.createAppFunction(configObject.common);
                 // After app creation, repository setup initiates
-                if (appStatus) {
-                    
+                if (appStatus) {   
                     const repoSetupError = await ManageRepository.pushCode(configObject);
                     if (repoSetupError) {
                         throw new Error('Repo Setup Error');

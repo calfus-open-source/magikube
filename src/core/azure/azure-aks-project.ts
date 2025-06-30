@@ -17,35 +17,19 @@ export default class AzureAKSProject extends AzureProject implements CloudProjec
   }
 
   async createMainFile(): Promise<void> {
-    let command: BaseCommand | undefined;
+    let command: BaseCommand | undefined;  
     const gitOpsInstance = new gitOpsProject(command as BaseCommand, this.config);
     const repositoryInstance = new repositoryProject(command as BaseCommand, this.config);
     const argocdInstance = new argoCdProjectAzure(command as BaseCommand, this.config);
     const path = process.cwd();
-    this.createFile("main.tf", `${path}/dist/templates/azure/dev/main.tf.liquid` , `/infrastructure`, true);
-    this.createFile( "terraform.tfvars",`${path}/dist/templates/azure/dev/terraform.tfvars.liquid` ,`/infrastructure`, true);
-    this.createFile( "variables.tf",`${path}/dist/templates/azure/dev/variables.tf.liquid`, "/infrastructure", true);
-    this.createFile( `${this.config.environment}-config.tfvars`, `${path}/dist/templates/azure/dev/backend-config.tfvars.liquid` , "/infrastructure", true);
+    this.createFile("main.tf", `${path}/dist/templates/azure/environments/dev/main.tf.liquid` , `/infrastructure`, true);
+    this.createFile( "terraform.tfvars",`${path}/dist/templates/azure/environments/dev/terraform.tfvars.liquid` ,`/infrastructure`, true);
+    this.createFile( "variables.tf",`${path}/dist/templates/azure/environments/dev/variables.tf.liquid`, "/infrastructure", true);
+    this.createFile( `${this.config.environment}-config.tfvars`, `${path}/dist/templates/azure/environments/dev/backend-config.tfvars.liquid` , "/infrastructure", true);
     this.createProviderFile(path)
     this.createCommon(path);
-    this.createAKS(); 
     gitOpsInstance.createGitOps(this.path, this.name);
     repositoryInstance.createrepository(this.path, this.name);
-    argocdInstance.argoCdProject(this.path, this.name);
-  }
-
-  async createAKS(): Promise<void> {
-    this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/kubernetes/aks/main.tf.liquid`,
-      "/infrastructure/modules/aks",
-      true
-    );
-    this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/kubernetes/aks/variables.tf.liquid`,
-      "/infrastructure/modules/aks",
-      true
-    );
+    //argocdInstance.argoCdProject(this.path, this.name);
   }
 } 

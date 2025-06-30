@@ -3,7 +3,7 @@ import fs from "fs";
 import * as path from "path"; // Correct import
 import { AppLogger } from "../../logger/appLogger.js";
 
-export async function cloneAndCopyTemplates(commandName: string | undefined): Promise<void> {
+export async function cloneAndCopyTemplates(commandName: string | undefined, cloud_provider:string): Promise<void> {
   try {
     const parentPath = commandName === "module" || commandName === "create"  ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const dir_infra = `${parentPath}/infrastructure-templates`;
@@ -27,11 +27,22 @@ export async function cloneAndCopyTemplates(commandName: string | undefined): Pr
     }
 
     // Copy infrastructure templates to the 'dist' folder
-    await executeCommandWithRetry(
-      `rsync -av ${dir_infra}/aws/* ${distFolder}/templates/aws/ --prune-empty-dirs > /dev/null 2>&1`,
-      { cwd: parentPath },
-      1
-    );
+    if (cloud_provider === "aws"){
+      await executeCommandWithRetry(
+        `rsync -av ${dir_infra}/aws/* ${distFolder}/templates/aws/ --prune-empty-dirs > /dev/null 2>&1`,
+        { cwd: parentPath },
+        1
+      );
+    }
+
+    if (cloud_provider === "azure"){
+      await executeCommandWithRetry(
+        `rsync -av ${dir_infra}/azure/* ${distFolder}/templates/azure/ --prune-empty-dirs > /dev/null 2>&1`,
+        { cwd: parentPath },
+        1
+      );
+    }
+
     await executeCommandWithRetry(
       `rsync -av ${dir_infra}/common-modules/* ${distFolder}/templates/ --prune-empty-dirs > /dev/null 2>&1`,
       { cwd: parentPath },

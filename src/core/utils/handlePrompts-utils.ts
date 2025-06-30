@@ -15,13 +15,6 @@ export async function handlePrompts(
   moduleType?: string,
   serviceName?:string
 ): Promise<Answers> {
-
-  AppLogger.info(`Command name: ${commandName}`, true);
-  AppLogger.info(`Template: ${template}`, true);
-  AppLogger.info(`Module type: ${moduleType}`, true);
-  AppLogger.info(`Service name: ${serviceName}`, true);
-  AppLogger.info(`Args: ${JSON.stringify(args)}`, true);
-
   let responses: any =
     commandName === "module" || commandName === "create"
       ? ""
@@ -177,23 +170,6 @@ export async function handlePrompts(
           responses = { ...responses, ...credentialResp };
         }
         credentialsPrompts.saveCredentials(responses);
-      }
-
-      // Azure login after credential collection
-      if (resp["cloud_provider"] === "azure") {
-        AppLogger.info("Attempting Azure login...", true);
-        try {
-          const loginResp = await AzurePolicies.getAzureLogin();
-          
-          if (loginResp === false) {
-            AppLogger.error("Azure login failed!", true);
-          } else {
-            AppLogger.info("Azure login successful!", true);
-            responses = { ...responses, ...loginResp };
-          }
-        } catch (error) {
-          AppLogger.error(`Azure login error: ${error}`, true);
-        }
       }
 
       for (const vcPrompt of promptGenerator.getVersionControlPrompts(

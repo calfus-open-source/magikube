@@ -39,6 +39,8 @@ import {
   AZURE_SPECIFIC_CONFIG,
 } from "../../core/constants/systemDefaults.js";
 import { FullConfigObject } from "../../core/interface.js";
+import AzurePolicies from "../../core/azure/azure-iam.js";
+
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -122,10 +124,10 @@ export default class CreateProject extends BaseCommand {
         await handleTemplateFlag(args, this.id, flags.template);
         process.exit(0);
       }
-
+      
+      //default project creation
       const responses: Answers = await handlePrompts(args, this.id);
       responses.command = this.id;
-
       const systemConfig = {
         ...(responses.cloud_provider === "aws" ? AWS_SPECIFIC_CONFIG : {}),
         ...(responses.cloud_provider === "azure" ? AZURE_SPECIFIC_CONFIG : {}),
@@ -141,13 +143,24 @@ export default class CreateProject extends BaseCommand {
       };
 
       if (!fs.existsSync(`${process.cwd()}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
       }
 
       AppLogger.info(
         `Creating new Magikube project named '${args.name}' in the current directory`,
         true
       );
+
+      // Azure login after credential collection
+      if (responses["cloud_provider"] === "azure") {
+        AppLogger.info("Attempting Azure login...", true);
+        try {
+          await AzurePolicies.getAzureLogin();
+          AppLogger.info("Azure login successful!", true);
+        } catch (error) {
+          AppLogger.error(`Azure login error: ${error}`, true);
+        }
+      }
 
       const combinedConfig = { ...systemConfig, ...responses };
       SystemConfig.getInstance().mergeConfigs(combinedConfig);
