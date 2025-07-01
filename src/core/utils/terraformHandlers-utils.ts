@@ -109,3 +109,25 @@ export const handleK8s = async (
   );
   terraform?.stopSSHProcess();
 };
+
+export const handleAKS = async (
+  projectName: string,
+  responses: any,
+  terraform: any,
+) => {
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 15000));
+    await terraform?.runTerraformInit(
+      process.cwd() + "/" + projectName + "/infrastructure",
+      `${responses["environment"]}-config.tfvars`,
+      projectName
+    );
+    execSync("terraform apply -auto-approve", {
+      cwd: `${process.cwd()}/${projectName}/infrastructure`, 
+      stdio: "inherit", 
+    });
+    AppLogger.info("Terraform apply executed successfully");
+  } catch (error: any) {
+    AppLogger.error("Error during terraform apply:", error.message);
+  }
+};

@@ -19,6 +19,7 @@ import {
   supportedTemplates,
 } from "../../core/constants/constants.js";
 import {
+  handleAKS,
   handleEKS,
   handleK8s,
 } from "../../core/utils/terraformHandlers-utils.js";
@@ -233,8 +234,7 @@ export default class CreateProject extends BaseCommand {
 
         if (
           responses.cluster_type === "eks-fargate" ||
-          responses.cluster_type === "eks-nodegroup" ||
-          responses.cluster_type === "aks"
+          responses.cluster_type === "eks-nodegroup"
         ) {
           await handleEKS(
             projectName,
@@ -245,15 +245,18 @@ export default class CreateProject extends BaseCommand {
           );
         }
 
-        if (responses.cluster_type === "k8s") {
-          await handleK8s(
-            projectName,
-            responses,
-            terraform,
-            setupGitopsServiceStatus,
-            configObject
-          );
+        if (responses.cluster_type === "aks"){
+          await handleAKS(projectName, responses, terraform, );
         }
+          if (responses.cluster_type === "k8s") {
+            await handleK8s(
+              projectName,
+              responses,
+              terraform,
+              setupGitopsServiceStatus,
+              configObject
+            );
+          }
 
         await setupAndPushServices(projectConfig, configObject);
       }

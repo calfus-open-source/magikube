@@ -124,6 +124,18 @@ export default class AzureProject extends BaseProject implements CloudProject {
       "/infrastructure/modules/vnet",
       true
     );
+    this.createFile(
+      "subnet.tf",
+      `${path}/dist/templates/azure/modules/vnet/subnets.tf.liquid`,
+      "/infrastructure/modules/vnet",
+      true
+    );
+    this.createFile(
+      "outputs.tf",
+      `${path}/dist/templates/azure/modules/vnet/outputs.tf.liquid`,
+      "/infrastructure/modules/vnet",
+      true
+    );
   }
 
   async createACR(): Promise<void> {
@@ -136,6 +148,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
     this.createFile(
       "variables.tf",
       `${process.cwd()}/dist/templates/azure/modules/acr/variables.tf.liquid`,
+      "/infrastructure/modules/acr",
+      true
+    );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/acr/outputs.tf.liquid`,
       "/infrastructure/modules/acr",
       true
     );
@@ -154,6 +172,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
       "/infrastructure/modules/ai_foundry",
       true
     );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/ai_foundry/outputs.tf.liquid`,
+      "/infrastructure/modules/ai_foundry",
+      true
+    );
   }
 
   async createApplicationGateway(): Promise<void> {
@@ -166,6 +190,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
     this.createFile(
       "variables.tf",
       `${process.cwd()}/dist/templates/azure/modules/application_gateway/variables.tf.liquid`,
+      "/infrastructure/modules/application_gateway",
+      true
+    );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/application_gateway/outputs.tf.liquid`,
       "/infrastructure/modules/application_gateway",
       true
     );
@@ -185,8 +215,14 @@ export default class AzureProject extends BaseProject implements CloudProject {
       true
     );
     this.createFile(
-      "variables.tf",
+      "ssh.tf",
       `${process.cwd()}/dist/templates/azure/modules/bastion/ssh.tf.liquid`,
+      "/infrastructure/modules/bastion",
+      true
+    );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/bastion/outputs.tf.liquid`,
       "/infrastructure/modules/bastion",
       true
     );
@@ -205,6 +241,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
       "/infrastructure/modules/key_vault",
       true
     );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/key_vault/outputs.tf.liquid`,
+      "/infrastructure/modules/key_vault",
+      true
+    );
   }
 
   async createSecurityGroups(): Promise<void> {
@@ -217,6 +259,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
     this.createFile(
       "variables.tf",
       `${process.cwd()}/dist/templates/azure/modules/security_groups/variables.tf.liquid`,
+      "/infrastructure/modules/security_groups",
+      true
+    );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/security_groups/outputs.tf.liquid`,
       "/infrastructure/modules/security_groups",
       true
     );
@@ -235,6 +283,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
       "/infrastructure/modules/sql_server",
       true
     );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/sql_server/outputs.tf.liquid`,
+      "/infrastructure/modules/sql_server",
+      true
+    );
   }
 
   async createVpnGateway(): Promise<void> {
@@ -247,6 +301,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
     this.createFile(
       "variables.tf",
       `${process.cwd()}/dist/templates/azure/modules/vpn_gateway/variables.tf.liquid`,
+      "/infrastructure/modules/vpn_gateway",
+      true
+    );
+    this.createFile(
+      "outputs.tf",
+      `${process.cwd()}/dist/templates/azure/modules/vpn_gateway/outputs.tf.liquid`,
       "/infrastructure/modules/vpn_gateway",
       true
     );
@@ -271,7 +331,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
     this.createFile(
       "main.tf",
       `${path}/dist/templates/azure/modules/kubernetes/aks/main.tf.liquid`,
-      "/infrastructure/kubernetes/modules/aks",
+      "/infrastructure/modules/kubernetes/aks",
       true
     );
     this.createFile(
@@ -524,7 +584,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
       await executeCommandWithRetry(
         command,
         { cwd: projectPath, stdio: "inherit" },
-        3
+        0
       );
 
       progressBar.update(100, { message: "Terraform apply completed." });
