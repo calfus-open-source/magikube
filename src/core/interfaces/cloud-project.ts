@@ -1,7 +1,6 @@
 export interface CloudProject {
     // Profile activation methods
     AWSProfileActivate?(profileName: string): Promise<void>;
-    AzureProfileActivate?(profileName: string): Promise<void>;
     
     // Terraform operations
     runTerraformInit(projectPath: string, backend: string, projectName: string): Promise<void>;

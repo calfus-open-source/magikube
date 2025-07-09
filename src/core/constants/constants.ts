@@ -1,4 +1,4 @@
-export const modules = [
+export const aws_modules = [
     "module.vpc",
     "module.eks",
     "module.acm",
@@ -10,7 +10,20 @@ export const modules = [
     "module.environment"
 ];
 
-export const awsDestroyModules = [
+export const azure_modules = [
+  "module.vnet",
+  "module.nsg",
+  "module.bastion",
+  "module.agw",
+  "module.kv",
+  "module.k8s_common",
+  "module.aks",
+  "module.sql_server",
+  "module.gitops",
+  "module.repository",
+];
+
+export const aws_destroy_modules = [
   "module.rds",
   "module.environment",
   "module.argo",
@@ -23,7 +36,19 @@ export const awsDestroyModules = [
   "module.vpc",
 ];
 
-export const azureDestroyModules = []
+export const azure_destroy_modules = [
+  "module.repository",
+  "module.gitops",
+  "module.sql_server",
+  "module.aks",
+  "module.k8s_common",
+  "module.agw",
+  "module.bastion",
+  "module.kv",
+  "module.nsg",
+  "module.vnet",
+];
+
 
 export const singleModules = ["module.vpc", "module.eks", "module.rds", "module.acm"];
 

@@ -105,22 +105,22 @@ export default class AzurePolicies {
           }
         }
       } else {
-        AppLogger.info("Already logged in to Azure CLI", true);
+        AppLogger.info("Already logged in to Azure CLI");
       }
 
       // Use JSON output for easier parsing
-      AppLogger.info("Getting account information...", true);
-      AppLogger.info("Executing command: az account show --output json", true);
+      AppLogger.info("Getting account information...");
+      AppLogger.info("Executing command: az account show --output json");
       const loginOutput = execSync("az account show --output json", {
         encoding: "utf8",
       });
       const accountData = JSON.parse(loginOutput);
 
-      AppLogger.info("Account data retrieved successfully:", true);
-      AppLogger.info(`Name: ${accountData.name}`, true);
-      AppLogger.info(`Subscription ID: ${accountData.id}`, true);
-      AppLogger.info(`Tenant ID: ${accountData.tenantId}`, true);
-      AppLogger.info(`User: ${accountData.user?.name || "N/A"}`, true);
+      AppLogger.info("Account data retrieved successfully:");
+      AppLogger.info(`Name: ${accountData.name}`);
+      AppLogger.info(`Subscription ID: ${accountData.id}`);
+      AppLogger.info(`Tenant ID: ${accountData.tenantId}`);
+      AppLogger.info(`User: ${accountData.user?.name || "N/A"}`);
 
       // Return properly parsed account info
       const result = {
@@ -146,7 +146,7 @@ export default class AzurePolicies {
   static checkAzureLogin(): boolean {
     try {
       execSync("az account show", { stdio: "pipe" });
-      AppLogger.info("Already logged in to Azure", true);
+      AppLogger.info("Already logged in to Azure");
       return true;
     } catch (error) {
       return false;
@@ -156,17 +156,16 @@ export default class AzurePolicies {
   static displayCurrentAccount(): void {
     try {
       AppLogger.info(
-        'Executing command: az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table',
-        true
+        'Executing command: az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table'
       );
       const accountInfo = execSync(
         'az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table',
         { encoding: "utf8" }
       );
-      AppLogger.info("Currently logged in account details:", true);
+      AppLogger.info("Currently logged in account details:");
       AppLogger.info(accountInfo, true);
     } catch (error) {
-      AppLogger.error("Failed to get current account details", true);
+      AppLogger.error("Failed to get current account details");
     }
   }
 
@@ -231,7 +230,7 @@ export default class AzurePolicies {
       AppLogger.info(`Custom role ${roleName} created successfully.`, true);
       return true;
     } catch (error) {
-      AppLogger.error(`Error creating custom role: ${error}`, true);
+      AppLogger.error(`Error creating custom role: ${error}`);
       return false;
     }
   }

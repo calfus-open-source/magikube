@@ -15,7 +15,7 @@ import {
   initializeStatusFile,
   updateStatusFile,
 } from "./statusUpdater-utils.js";
-import { modules } from "../constants/constants.js";
+import { aws_modules } from "../constants/constants.js";
 import { dotMagikubeConfig } from "./projectConfigReader-utils.js";
 import { handlePrompts } from "./handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "./copyTemplates-utils.js";
@@ -84,7 +84,7 @@ export async function handleTemplateFlag(
   const projectConfig = SystemConfig.getInstance().getConfig();
   AppLogger.info(`Setting up Infrastructure using template :'${template}'.`, true);
   const terraform = await TemplateTerraformProject.getProject(commandName);
-  initializeStatusFile(projectName, modules);
+  initializeStatusFile(projectName, aws_modules);
   const {
     aws_region: region,
     aws_access_key_id: awsAccessKey,

@@ -9,23 +9,15 @@ export async function cloneAndCopyTemplates(commandName: string | undefined, clo
     const dir_infra = `${parentPath}/infrastructure-templates`;
     const dir_templates = `${parentPath}/magikube-templates`;
     const distFolder = `${parentPath}/dist`; // Dist folder path
-    if (!fs.existsSync(distFolder)) {
-      await executeCommandWithRetry(
-        `mkdir -p ${distFolder}/templates/aws`, // Create the required subfolders in dist
-        { cwd: parentPath },
-        1
-      );
-    }
 
     // Clone infrastructure templates repository if not already cloned
     if (!fs.existsSync(dir_infra)) {
       await executeCommandWithRetry(
-        "git clone -b mpd/azure-templates https://github.com/calfus-open-source/infrastructure-templates.git",
+        "git clone https://github.com/calfus-open-source/infrastructure-templates.git",
         { cwd: parentPath },
         1
       );
     }
-
     // Copy infrastructure templates to the 'dist' folder
     if (cloud_provider === "aws"){
       await executeCommandWithRetry(

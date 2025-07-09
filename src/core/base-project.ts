@@ -7,7 +7,7 @@ import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
 import { appendUniqueLines } from "./utils/appendUniqueLines-utils.js";
-import { awsDestroyModules, azureDestroyModules } from "./constants/constants.js";
+import { aws_destroy_modules, azure_destroy_modules } from "./constants/constants.js";
 
 export default abstract class BaseProject {
   protected config: any = {};
@@ -25,8 +25,12 @@ export default abstract class BaseProject {
     this.projectPath = join(path, projectName);
     // Run terraform destroy
     AppLogger.debug(`Destroying project '${projectName}' in the path`, true);
-    await this.terraformDestroy(projectName);
-    await this.deleteFolder();
+    try {
+      await this.terraformDestroy(projectName);
+      await this.deleteFolder(this.projectPath);
+    } catch (err) {
+      AppLogger.error(`Project destroy failed, skipping deleteFolder :${err}`, true);
+    }
   }
 
   async terraformDestroy(projectName: string): Promise<void> {
@@ -35,13 +39,12 @@ export default abstract class BaseProject {
     const terraform = await TerraformProject.getProject(this.command);
 
     // Initialize modules with a default value
-   let  modules =
-      this.config.cluster_type === "eks-fargate"
-        ? awsDestroyModules
-        : this.config.cluster_type === "aks"
-        ? azureDestroyModules
-        : [];
-
+   let modules =
+     this.config.cluster_type === "eks-fargate"
+       ? aws_destroy_modules
+       : this.config.cluster_type === "aks"
+       ? azure_destroy_modules
+       : [];
     if (
       this.config.cluster_type === "eks-fargate" ||
       this.config.cluster_type === "eks-nodegroup"
@@ -111,10 +114,12 @@ export default abstract class BaseProject {
     }
   }
 
-  async deleteFolder(): Promise<void> {
-    if (fs.existsSync(this.projectPath)) {
+  async deleteFolder(projectName:string): Promise<void> {
+    const projectPath = `${process.cwd()}/${projectName}`
+    if (fs.existsSync(projectPath)) {
+
       AppLogger.debug(`Removing folder '${this.projectPath}'`, true);
-      fs.rmSync(this.projectPath, { recursive: true });
+      fs.rmSync(projectPath, { recursive: true });
     } else {
       AppLogger.debug(
         `Folder '${this.projectPath}' does not exist in the path`,
