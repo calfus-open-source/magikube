@@ -115,7 +115,7 @@ export default class AzureTerraformBackend {
         { encoding: "utf8" }
       );
       AppLogger.info("Currently logged in account details:", true);
-      AppLogger.info(accountInfo, true);
+      AppLogger.info(accountInfo);
     } catch (error) {
       AppLogger.error("Failed to get current account details", true);
     }

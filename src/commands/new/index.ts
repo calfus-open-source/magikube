@@ -20,7 +20,7 @@ import {
   azure_modules,
 } from "../../core/constants/constants.js";
 import {
-  handleEKS,
+  handleEKSandAKS,
   handleK8s,
 } from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
@@ -248,19 +248,10 @@ export default class CreateProject extends BaseCommand {
 
         if (
           responses.cluster_type === "eks-fargate" ||
-          responses.cluster_type === "eks-nodegroup"
+          responses.cluster_type === "eks-nodegroup" ||
+          responses.cluster_type === "aks"
         ) {
-          await handleEKS(
-            projectName,
-            responses,
-            terraform,
-            setupGitopsServiceStatus,
-            configObject
-          );
-        }
-
-        if (responses.cluster_type === "aks") {
-          await handleEKS(
+          await handleEKSandAKS(
             projectName,
             responses,
             terraform,

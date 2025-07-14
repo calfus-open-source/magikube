@@ -118,11 +118,11 @@ export default abstract class BaseProject {
     const projectPath = `${process.cwd()}/${projectName}`
     if (fs.existsSync(projectPath)) {
 
-      AppLogger.debug(`Removing folder '${this.projectPath}'`, true);
+      AppLogger.debug(`Removing project '${projectPath}'`, true);
       fs.rmSync(projectPath, { recursive: true });
     } else {
       AppLogger.debug(
-        `Folder '${this.projectPath}' does not exist in the path`,
+        `Project '${this.projectPath}' does not exist in the path`,
         true
       );
     }

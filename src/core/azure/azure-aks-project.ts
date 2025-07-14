@@ -34,7 +34,7 @@ export default class AzureAKSProject extends AzureProject implements CloudProjec
     this.createCommon(path);
     gitOpsInstance.createGitOps(this.path, this.name);
     repositoryInstance.createrepository(this.path, this.name);
-    //argocdInstance.argoCdProject(this.path, this.name);
+    argocdInstance.argoCdProject(this.path, this.name);
   }
 
   async createProviderFileAzure(path?: string): Promise<void> {
