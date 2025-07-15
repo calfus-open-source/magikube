@@ -14,12 +14,13 @@ import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
 import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
 import {
   services,
-  modules,
+  aws_modules,
   InvalidProjectNames,
   supportedTemplates,
+  azure_modules,
 } from "../../core/constants/constants.js";
 import {
-  handleEKS,
+  handleEKSandAKS,
   handleK8s,
 } from "../../core/utils/terraformHandlers-utils.js";
 import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
@@ -39,6 +40,7 @@ import {
   AZURE_SPECIFIC_CONFIG,
 } from "../../core/constants/systemDefaults.js";
 import { FullConfigObject } from "../../core/interface.js";
+import AzurePolicies from "../../core/azure/azure-iam.js";
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -94,6 +96,7 @@ export default class CreateProject extends BaseCommand {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CreateProject);
     const projectName = args.name;
+
     validateUserInput(args.name);
     validateRestrictedInputs(args.name);
     AppLogger.configureLogger(args.name, this.id);
@@ -123,7 +126,24 @@ export default class CreateProject extends BaseCommand {
         process.exit(0);
       }
 
-      const responses: Answers = await handlePrompts(args, this.id);
+      // default project creation
+      let responses: Answers = await handlePrompts(args, this.id);
+
+      if (responses["cloud_provider"] === "azure") {
+        AppLogger.info("Attempting Azure login...", true);
+        try {
+          const loginResp = await AzurePolicies.getAzureLogin();
+          if (loginResp === false) {
+            AppLogger.error("Azure login failed!");
+          } else {
+            AppLogger.info("Azure login successful!", true);
+            responses = { ...responses, ...loginResp };
+          }
+        } catch (error) {
+          AppLogger.error(`Azure login error: ${error}`, true);
+        }
+      }
+
       responses.command = this.id;
 
       const systemConfig = {
@@ -141,7 +161,7 @@ export default class CreateProject extends BaseCommand {
       };
 
       if (!fs.existsSync(`${process.cwd()}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
       }
 
       AppLogger.info(
@@ -151,9 +171,13 @@ export default class CreateProject extends BaseCommand {
 
       const combinedConfig = { ...systemConfig, ...responses };
       SystemConfig.getInstance().mergeConfigs(combinedConfig);
+
       const terraform = await TerraformProject.getProject(this);
       const projectConfig = SystemConfig.getInstance().getConfig();
       const createApp = new CreateApplication(this, projectConfig);
+
+      const modules = projectConfig.cloud_provider === "aws" ? aws_modules : azure_modules;
+
       initializeStatusFile(projectName, modules, services);
 
       const {
@@ -195,6 +219,7 @@ export default class CreateProject extends BaseCommand {
           awsSecretKey,
           region
         );
+
         configObject.aws.accountId = accountId;
         SystemConfig.getInstance().mergeConfigs({ accountId });
       } else if (projectConfig.cloud_provider === "azure") {
@@ -205,6 +230,9 @@ export default class CreateProject extends BaseCommand {
           tenantId: azureTenantId,
           subscriptionId: azureSubscriptionId,
         };
+
+        const resource_group_name = `${projectName}-rg`;
+        SystemConfig.getInstance().mergeConfigs({ resource_group_name });
       }
 
       const setupGitopsServiceStatus = await createApp.setupGitops(
@@ -223,7 +251,7 @@ export default class CreateProject extends BaseCommand {
           responses.cluster_type === "eks-nodegroup" ||
           responses.cluster_type === "aks"
         ) {
-          await handleEKS(
+          await handleEKSandAKS(
             projectName,
             responses,
             terraform,

@@ -1,38 +1,21 @@
 import BaseProject from "../base-project.js";
 import { AppLogger } from "../../logger/appLogger.js";
 import { execSync } from "child_process";
+import SystemConfig from "../../config/system.js";
 
 export default class AzurePolicies {
   static async getAzureLogin(): Promise<any> {
     try {
-      AppLogger.info("=== Azure Login Process Started ===", true);
+      AppLogger.info("Azure Login processing...", true);
 
       // Check if already logged in first
-      AppLogger.info("Checking if Azure CLI is already logged in...", true);
+      AppLogger.info("Checking if Azure CLI is already logged in...");
       if (!AzurePolicies.checkAzureLogin()) {
-        AppLogger.info("Not logged in. Attempting authentication...", true);
-
+        AppLogger.info("Not logged in. Attempting authentication...");
         // Try service principal login first with environment variables or SystemConfig
         let clientId = process.env.AZURE_CLIENT_ID;
         let clientSecret = process.env.AZURE_CLIENT_SECRET;
         let tenantId = process.env.AZURE_TENANT_ID;
-
-        AppLogger.info(
-          "Checking environment variables for Azure credentials...",
-          true
-        );
-        AppLogger.info(
-          `- AZURE_CLIENT_ID from env: ${clientId ? "SET" : "NOT SET"}`,
-          true
-        );
-        AppLogger.info(
-          `- AZURE_CLIENT_SECRET from env: ${clientSecret ? "SET" : "NOT SET"}`,
-          true
-        );
-        AppLogger.info(
-          `- AZURE_TENANT_ID from env: ${tenantId ? "SET" : "NOT SET"}`,
-          true
-        );
 
         // If not in environment variables, try to get from SystemConfig
         if (!clientId || !clientSecret || !tenantId) {
@@ -40,9 +23,7 @@ export default class AzurePolicies {
             "Environment variables not complete. Checking SystemConfig...",
             true
           );
-          const SystemConfig = (await import("../../config/system.js")).default;
           const config = SystemConfig.getInstance().getConfig();
-
           const configClientId = config.azure_client_id;
           const configClientSecret = config.azure_client_secret;
           const configTenantId = config.azure_tenant_id;
@@ -124,22 +105,22 @@ export default class AzurePolicies {
           }
         }
       } else {
-        AppLogger.info("Already logged in to Azure CLI", true);
+        AppLogger.info("Already logged in to Azure CLI");
       }
 
       // Use JSON output for easier parsing
-      AppLogger.info("Getting account information...", true);
-      AppLogger.info("Executing command: az account show --output json", true);
+      AppLogger.info("Getting account information...");
+      AppLogger.info("Executing command: az account show --output json");
       const loginOutput = execSync("az account show --output json", {
         encoding: "utf8",
       });
       const accountData = JSON.parse(loginOutput);
 
-      AppLogger.info("Account data retrieved successfully:", true);
-      AppLogger.info(`Name: ${accountData.name}`, true);
-      AppLogger.info(`Subscription ID: ${accountData.id}`, true);
-      AppLogger.info(`Tenant ID: ${accountData.tenantId}`, true);
-      AppLogger.info(`User: ${accountData.user?.name || "N/A"}`, true);
+      AppLogger.info("Account data retrieved successfully:");
+      AppLogger.info(`Name: ${accountData.name}`);
+      AppLogger.info(`Subscription ID: ${accountData.id}`);
+      AppLogger.info(`Tenant ID: ${accountData.tenantId}`);
+      AppLogger.info(`User: ${accountData.user?.name || "N/A"}`);
 
       // Return properly parsed account info
       const result = {
@@ -151,25 +132,21 @@ export default class AzurePolicies {
       };
 
       AppLogger.info(
-        "=== Azure Login Process Completed Successfully ===",
+        "Azure Login Completed Successfully",
         true
       );
       return result;
     } catch (error) {
-      AppLogger.error(`=== Azure Login Process Failed ===`, true);
-      AppLogger.error(`Error details: ${error}`, true);
-      if (error instanceof Error) {
-        AppLogger.error(`Error message: ${error.message}`, true);
-        AppLogger.error(`Error stack: ${error.stack}`, true);
-      }
+      AppLogger.error(`Azure Login Process Failed`, true);
+      AppLogger.error(`Error details: ${error}`);
       return false;
     }
   }
 
   static checkAzureLogin(): boolean {
     try {
-      AppLogger.debug("Executing command: az account show", true);
       execSync("az account show", { stdio: "pipe" });
+      AppLogger.info("Already logged in to Azure");
       return true;
     } catch (error) {
       return false;
@@ -179,17 +156,16 @@ export default class AzurePolicies {
   static displayCurrentAccount(): void {
     try {
       AppLogger.info(
-        'Executing command: az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table',
-        true
+        'Executing command: az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table'
       );
       const accountInfo = execSync(
         'az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table',
         { encoding: "utf8" }
       );
-      AppLogger.info("Currently logged in account details:", true);
+      AppLogger.info("Currently logged in account details:");
       AppLogger.info(accountInfo, true);
     } catch (error) {
-      AppLogger.error("Failed to get current account details", true);
+      AppLogger.error("Failed to get current account details");
     }
   }
 
@@ -254,7 +230,7 @@ export default class AzurePolicies {
       AppLogger.info(`Custom role ${roleName} created successfully.`, true);
       return true;
     } catch (error) {
-      AppLogger.error(`Error creating custom role: ${error}`, true);
+      AppLogger.error(`Error creating custom role: ${error}`);
       return false;
     }
   }
@@ -497,19 +473,7 @@ export default class AzurePolicies {
     }
   }
 
-  // Helper method to get current subscription ID
-  static getCurrentSubscriptionId(): string | null {
-    try {
-      const subscriptionId = execSync(
-        'az account show --query "id" --output tsv',
-        { encoding: "utf8" }
-      ).trim();
-      return subscriptionId;
-    } catch (error) {
-      AppLogger.error("Failed to get current subscription ID", true);
-      return null;
-    }
-  }
+
 
   // Helper method to get current tenant ID
   static getCurrentTenantId(): string | null {

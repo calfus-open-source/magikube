@@ -85,7 +85,7 @@ export default class AzureProfile {
     try {
       const accountInfo = execSync('az account show --query "{Name:name, SubscriptionId:id, TenantId:tenantId}" --output table', { encoding: 'utf8' });
       AppLogger.info("Currently logged in account details:", true);
-      AppLogger.info(accountInfo, true);
+      AppLogger.info(accountInfo);
     } catch (error) {
       AppLogger.error("Failed to get current account details", true);
     }
@@ -115,10 +115,8 @@ export default class AzureProfile {
 
   static async setDefaultLocation(location: string): Promise<boolean> {
     try {
-      AppLogger.info(`Setting default location to ${location}...`, true);
-      
-      execSync(`az configure --defaults location="${location}"`, { encoding: 'utf8' });
-      
+      AppLogger.info(`Setting default location to ${location}...`, true);  
+      execSync(`az configure --defaults location="${location}"`, { encoding: 'utf8' });  
       AppLogger.info(`Successfully set default location to ${location}`, true);
       return true;
     } catch (error) {
@@ -130,9 +128,7 @@ export default class AzureProfile {
   static async loginInteractive(): Promise<boolean> {
     try {
       AppLogger.info("Starting interactive Azure login...", true);
-      
       execSync('az login', { stdio: 'inherit' });
-      
       AppLogger.info("Successfully logged in to Azure", true);
       return true;
     } catch (error) {

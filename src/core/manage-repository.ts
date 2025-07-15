@@ -7,11 +7,9 @@ import fs from "fs-extra";
 import sodium from "libsodium-wrappers";
 import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
 
-let encryptedAwsAccessKeyId: string;
-let encryptedAwsSecretAccessKey: string;
-let encryptedGithubToken: string;
 let publicKey: string;
 let publicKeyId: string;
+
 export class ManageRepository {
   static async pushCode(configObject: FullConfigObject) {
     const {
@@ -24,38 +22,43 @@ export class ManageRepository {
       appName,
       appType,
     } = configObject.common;
-    const region = configObject.aws?.region || "";
-    const awsAccessKey = configObject.aws?.awsAccessKey || "";
-    const awsSecretKey = configObject.aws?.awsSecretKey || "";
+
     const projectConfig = SystemConfig.getInstance().getConfig();
-    let repoSetupError: boolean = false;
+    const {
+      region,
+      cloud_provider,
+      awsAccessKey,
+      awsSecretKey,
+      azureTenantId,
+      azureSubscriptionId,
+      azureClientId,
+      azureClientSecret,
+    } = projectConfig;
+
+    let repoSetupError = false;
+
     const execCommand = (command: string, projectPath: string) =>
       executeCommandWithRetry(command, { cwd: projectPath, stdio: "pipe" }, 1);
+
     const gitopsRepo = `${projectName}-${environment}-gitops`;
-    let projectPath;
-    let repoName: string;
-    if (projectConfig.command === "create") {
-      projectPath =
-        appType === "gitops"
+
+    let projectPath =
+      projectConfig.command === "create"
+        ? appType === "gitops"
           ? `${process.cwd()}/${appType}`
-          : `${process.cwd()}/${projectConfig.service_name}`;
-    } else {
-      projectPath =
-        appType === "gitops"
-          ? `${process.cwd()}/${projectName}/${appType}`
-          : `${process.cwd()}/${projectName}/${appName}`;
-    }
-    if (projectConfig.command === "create") {
-      repoName =
-        appType === "gitops"
+          : `${process.cwd()}/${projectConfig.service_name}`
+        : appType === "gitops"
+        ? `${process.cwd()}/${projectName}/${appType}`
+        : `${process.cwd()}/${projectName}/${appName}`;
+
+    let repoName =
+      projectConfig.command === "create"
+        ? appType === "gitops"
           ? `${projectName}-${appName}-gitops`
-          : `${projectName}-${projectConfig.service_name}-app`;
-    } else {
-      repoName =
-        appType === "gitops"
-          ? `${projectName}-${appName}-gitops`
-          : `${projectName}-${appType}-app`;
-    }
+          : `${projectName}-${projectConfig.service_name}-app`
+        : appType === "gitops"
+        ? `${projectName}-${appName}-gitops`
+        : `${projectName}-${appType}-app`;
 
     const execAndLog = (command: string, description: string): string => {
       try {
@@ -74,91 +77,53 @@ export class ManageRepository {
       }
     };
 
-    let remoteRepoUrl;
-    if (sourceCodeRepo == "github") {
-      remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
+    const remoteRepoUrl =
+      sourceCodeRepo === "github"
+        ? `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`
+        : "";
+
+    async function fetchPublicKey(token: string, org: string, repo: string) {
+      const response = await axios.get(
+        `https://api.github.com/repos/${org}/${repo}/actions/secrets/public-key`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github.v3+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+      return {
+        key: response.data.key,
+        keyId: response.data.key_id,
+      };
     }
 
-    async function fetchPublicKey(
+    async function fetchPublicKeyWithRetry(
       token: string,
-      orgName: string,
-      repoName: string
+      org: string,
+      repo: string,
+      retries = 3
     ): Promise<{ key: string; keyId: string }> {
-      try {
-        const response = await axios.get(
-          `https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/public-key`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "X-GitHub-Api-Version": "2022-11-28",
-              Accept: "application/vnd.github.v3+json",
-            },
-            timeout: 10000,
-          }
-        );
-        return {
-          key: response.data.key,
-          keyId: response.data.key_id,
-        };
-      } catch (error) {
-        AppLogger.error(`Error fetching public key:${error}`, true);
-        throw error; // Re-throw the error after logging it
-      }
-    }
-
-    let fetchkey = async () => {
-      const mytoken = `${token}`;
-      const myorgName = `${orgName}`;
-      const myrepoName = `${repoName}`;
-      // const { key, keyId } = await fetchPublicKey(mytoken, myorgName, myrepoName);
-      async function fetchPublicKeyWithRetry(
-        mytoken: string,
-        myorgName: string,
-        myrepoName: string,
-        maxRetries: number = 3
-      ): Promise<{ key: string; keyId: string }> {
-        let attempts = 0;
-        let result = { key: "", keyId: "" };
-
-        while (attempts < maxRetries) {
-          try {
-            attempts++;
-            result = await fetchPublicKey(mytoken, myorgName, myrepoName);
-            return result;
-          } catch (error) {
-            if (attempts >= maxRetries) {
-              AppLogger.error(
-                "Max retry attempts reached for fetching public key and keyId",
-                true
-              );
-              throw error;
-            } else {
-              AppLogger.error(
-                `Attempt ${attempts} failed to fetch public key and keyId. Retrying...`,
-                true
-              );
-            }
+      for (let i = 0; i < retries; i++) {
+        try {
+          return await fetchPublicKey(token, org, repo);
+        } catch (err) {
+          AppLogger.error(
+            `Retrying public key fetch... Attempt ${i + 1}`,
+            true
+          );
+          if (i === retries - 1) {
+            AppLogger.error("Max retries reached for public key fetch", true);
           }
         }
-
-        return result;
       }
 
-      try {
-        const { key, keyId } = await fetchPublicKeyWithRetry(
-          mytoken,
-          myorgName,
-          myrepoName
-        );
-        publicKey = key;
-        publicKeyId = keyId;
-      } catch (error) {
-        AppLogger.error(`Failed to fetch public key and keyId ${error}`, true);
-      }
-    };
+      // Ensures function always returns or throws — this satisfies TypeScript
+      throw new Error("Failed to fetch GitHub public key after retries");
+    }
+    
 
-    await fetchkey();
-    AppLogger.info("Starting encryption process...", true);
     async function encryptSecret(
       secret: string,
       publicKey: string
@@ -170,70 +135,80 @@ export class ManageRepository {
       );
       const binsec = sodium.from_string(secret);
       const encBytes = sodium.crypto_box_seal(binsec, binkey);
-
       return sodium.to_base64(encBytes, sodium.base64_variants.ORIGINAL);
     }
 
-    async function encryptSecrets() {
-      const mytoken = `${token}`;
-      const myorgName = `${orgName}`;
-      const myrepoName = `${repoName}`;
+    const { key, keyId } = await fetchPublicKeyWithRetry(
+      token,
+      orgName,
+      repoName
+    );
+    publicKey = key;
+    publicKeyId = keyId;
 
-      const { key: publicKey } = await fetchPublicKey(
-        mytoken,
-        myorgName,
-        myrepoName
-      );
+    AppLogger.info("Starting encryption process...", true);
 
-      const awsAccessKeyId = `${awsAccessKey}`;
-      const awsSecretAccessKey = `${awsSecretKey}`;
-      const githubToken = `${token}`;
+    const encryptedSecrets: Record<string, string> = {};
 
-      encryptedAwsAccessKeyId = await encryptSecret(awsAccessKeyId, publicKey);
-      encryptedAwsSecretAccessKey = await encryptSecret(
-        awsSecretAccessKey,
+    if (cloud_provider === "aws") {
+      encryptedSecrets["AWS_ACCESS_KEY_ID"] = await encryptSecret(
+        awsAccessKey,
         publicKey
       );
-      encryptedGithubToken = await encryptSecret(githubToken, publicKey);
-
-      return {
-        encryptedAwsAccessKeyId,
-        encryptedAwsSecretAccessKey,
-        encryptedGithubToken,
-      };
+      encryptedSecrets["AWS_SECRET_ACCESS_KEY"] = await encryptSecret(
+        awsSecretKey,
+        publicKey
+      );
+    } else if (cloud_provider === "azure") {
+      encryptedSecrets["AZURE_TENANT_ID"] = await encryptSecret(
+        azureTenantId,
+        publicKey
+      );
+      encryptedSecrets["AZURE_SUBSCRIPTION_ID"] = await encryptSecret(
+        azureSubscriptionId,
+        publicKey
+      );
+      encryptedSecrets["AZURE_CLIENT_ID"] = await encryptSecret(
+        azureClientId,
+        publicKey
+      );
+      encryptedSecrets["AZURE_CLIENT_SECRET"] = await encryptSecret(
+        azureClientSecret,
+        publicKey
+      );
     }
 
-    let data = await encryptSecrets();
+    encryptedSecrets["REPO_TOKEN"] = await encryptSecret(token, publicKey);
 
-    const commands = [
+    // Create curl commands for secrets
+    const cloudSecretsCmds = Object.entries(encryptedSecrets).map(
+      ([key, value]) => ({
+        cmd: `curl -L -X PUT -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/${key} -d '{"encrypted_value":"${value}","key_id":"${publicKeyId}"}'`,
+        message: `Setting secret: ${key}`,
+      })
+    );
+
+    // Common GitHub environment variable setup
+    const envVariablesCmds = [
       {
-        cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"AWS_REGION","value":"${region}"}'`,
-        message: "Creating environment variables",
+        cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"AWS_REGION","value":"${region}"}'`,
+        message: "Creating AWS_REGION variable",
       },
       {
-        cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"ECR_REPOSITORY","value":"${repoName}"}'`,
-        message: "Creating environment variables",
+        cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"ECR_REPOSITORY","value":"${repoName}"}'`,
+        message: "Creating ECR_REPOSITORY variable",
       },
       {
-        cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"GITOPS_REPO","value":"${gitopsRepo}"}'`,
-        message: "Creating environment variables",
+        cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"GITOPS_REPO","value":"${gitopsRepo}"}'`,
+        message: "Creating GITOPS_REPO variable",
       },
       {
-        cmd: `curl -L -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"USERNAME","value":"${orgName}"}'`,
-        message: "Creating environment variables",
+        cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"USERNAME","value":"${orgName}"}'`,
+        message: "Creating USERNAME variable",
       },
-      {
-        cmd: `curl -L -X PUT -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/AWS_ACCESS_KEY_ID -d '{"encrypted_value":"${data.encryptedAwsAccessKeyId}","key_id":"${publicKeyId}"}'`,
-        message: "adding aws access key ...",
-      },
-      {
-        cmd: `curl -L -X PUT -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/AWS_SECRET_ACCESS_KEY -d '{"encrypted_value":"${data.encryptedAwsSecretAccessKey}","key_id":"${publicKeyId}"}'`,
-        message: "adding aws access key ...",
-      },
-      {
-        cmd: `curl -L -X PUT -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/REPO_TOKEN -d '{"encrypted_value":"${data.encryptedGithubToken}","key_id":"${publicKeyId}"}'`,
-        message: "adding aws access key ...",
-      },
+    ];
+
+    const gitCommands = [
       { cmd: "git init", message: "Initializing Git repository..." },
       { cmd: "git add .", message: "Adding files to Git..." },
       { cmd: 'git commit -m "Initial commit"', message: "Committing files..." },
@@ -244,28 +219,37 @@ export class ManageRepository {
       },
       {
         cmd: "git push -u origin main",
-        message: `${appName} - Setup Completed, Pushing to remote repository...${repoName}`,
+        message: `${appName} - Setup Completed, Pushing to remote repository...`,
       },
     ];
 
-    // Create a new progress bar instance
+    const allCommands = [
+      ...cloudSecretsCmds,
+      ...envVariablesCmds,
+      ...gitCommands,
+    ];
+
     const progressBar = ProgressBar.createProgressBar();
-    progressBar.start(100, 0, { message: "Starting Repo Setup..." });
-    const progressUpdateValue = 100 / commands.length;
-    let chunk = progressUpdateValue;
+    const progressStep = 100 / allCommands.length;
+    let currentProgress = 0;
+
+    progressBar.start(100, 0, { message: "Starting Repository Setup..." });
+
     try {
-      // Execute Git commands with progress bar
-      commands.forEach((command, index) => {
-        progressBar.update(chunk, { message: command.message });
-        execAndLog(command.cmd, command.message);
-        chunk += progressUpdateValue;
-      });
+      for (const { cmd, message } of allCommands) {
+        progressBar.update(currentProgress, { message });
+        execAndLog(cmd, message);
+        currentProgress += progressStep;
+      }
+      progressBar.update(100, { message: "Repository setup completed." });
       progressBar.stop();
-      return repoSetupError;
     } catch (error) {
       AppLogger.error(`Error during Git repository setup: ${error}`, true);
+      progressBar.stop();
       repoSetupError = true;
-      return repoSetupError;
     }
+
+    return repoSetupError;
   }
 }
+

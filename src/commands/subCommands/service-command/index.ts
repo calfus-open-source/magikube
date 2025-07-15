@@ -41,7 +41,7 @@ export default class Microservice extends BaseCommand {
   async run(): Promise<void> {
     // Extract the argument
     const { args } = await this.parse(Microservice);
-
+    AppLogger.configureLogger(args.name, this.id);
     // Check if the argument is "microservice"
     if (args.name !== "microservice") {
       AppLogger.error(
@@ -86,7 +86,7 @@ export default class Microservice extends BaseCommand {
 
       // Create dist folder if not exist
       if (!fs.existsSync(`${distFolderPath}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+        await cloneAndCopyTemplates(this.id, resp.cloud_provider);
       }
 
       AppLogger.debug(
@@ -124,14 +124,14 @@ export default class Microservice extends BaseCommand {
         aws_secret_access_key: awsSecretKey,
         environment,
       } = projectConfig;
-
+       
       const configObject: FullConfigObject = {
         common: {
           token,
           userName,
           orgName,
           sourceCodeRepo,
-          projectName: args.name,
+          projectName: projectConfig.project_name,
           environment,
         },
       };

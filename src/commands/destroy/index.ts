@@ -19,6 +19,7 @@ import { Liquid } from "liquidjs";
 
 export default class DestroyProject extends BaseCommand {
   protected engine = new Liquid();
+
   static args = {
     name: Args.string({
       description: "Project name to be destroyed",
@@ -38,7 +39,7 @@ export default class DestroyProject extends BaseCommand {
 
   static examples = [
     `<%= config.bin %> <%= command.id %> sample
-Destroying magikube project named 'sample' in the current directory`,
+    Destroying magikube project named 'sample' in the current directory`,
   ];
 
   async run(): Promise<void> {
@@ -62,37 +63,53 @@ Destroying magikube project named 'sample' in the current directory`,
           config,
           createdServiceResp
         );
+
         // Write updated config to .magikube file
         const dotMagikubeFile = join(process.cwd(), ".magikube");
-        fs.writeFileSync(dotMagikubeFile, JSON.stringify(deletionResult, null, 2));
+        fs.writeFileSync(
+          dotMagikubeFile,
+          JSON.stringify(deletionResult, null, 2)
+        );
+
         // Render and write terraform template
         const parentPath = resolve(process.cwd(), "..");
-        const templateFilePath = join( parentPath, "dist/templates/aws/predefined/submodule/github-module/terraform.tfvars.liquid");
-        // write terraform.tfvars file again
+        const templateFilePath = join(
+          parentPath,
+          "dist/templates/aws/predefined/submodule/github-module/terraform.tfvars.liquid"
+        );
         const templateFile = fs.readFileSync(templateFilePath, "utf8");
         const output = await this.engine.parseAndRender(templateFile, config);
+
         const folderPath = join(process.cwd(), "infrastructure");
         fs.writeFileSync(`${folderPath}/terraform.tfvars`, output, "utf8");
-        //remove service folder from project
+
+        // Remove service folder from project
         await executeCommandWithRetry(
           `rm -rf ${createdServiceResp.service_Name}`,
           { cwd: process.cwd() },
           1
         );
-        AppLogger.info(`${createdServiceResp.service_Name} service deleted successfully`, true);
-        process.exit(0); // Successful exit
+
+        AppLogger.info(
+          `${createdServiceResp.service_Name} service deleted successfully`,
+          true
+        );
+
+        process.exit(0);
       } catch (error) {
-        AppLogger.error(`Error in deleting microservice: ${error}`, true );
-        process.exit(1); // Exit with error$
+        AppLogger.error(`Error in deleting microservice: ${error}`, true);
+        process.exit(1);
       }
     }
 
     const projectPath = path.join(process.cwd(), args.name);
     AppLogger.configureLogger(args.name, this.id, false);
+
     const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, "infrastructure");
     responses.dryrun = flags.dryrun || false;
+
     SystemConfig.getInstance().mergeConfigs(responses);
     const project_config = SystemConfig.getInstance().getConfig();
 
@@ -100,6 +117,7 @@ Destroying magikube project named 'sample' in the current directory`,
       `Destroying magikube project named '${args.name}' in the current directory`,
       true
     );
+
     // Default behavior for other project types
     let terraform;
     if (project_config.command === "new" && !("template" in project_config)) {
@@ -113,7 +131,8 @@ Destroying magikube project named 'sample' in the current directory`,
     }
 
     if (terraform && responses.cloud_provider === "aws") {
-      await(terraform as any).AWSProfileActivate(responses["aws_profile"]);
+      
+        await (terraform as any).AWSProfileActivate(responses["aws_profile"]);
 
       if (
         readFile.services["terraform-apply"] === "fail" ||
@@ -128,6 +147,7 @@ Destroying magikube project named 'sample' in the current directory`,
         project_config.command === "create"
       ) {
         await runTerraformUnlockCommands(projectPath, responses);
+
         await terraform?.runTerraformDestroyTemplate(
           infrastructurePath,
           "terraform.tfvars"
@@ -138,6 +158,7 @@ Destroying magikube project named 'sample' in the current directory`,
             `Removing folder ${process.cwd()}/${args.name}`,
             true
           );
+
           await executeCommandWithRetry(
             `rm -rf ${process.cwd()}/${args.name}`,
             { cwd: `${process.cwd()}/${args.name}` },
@@ -152,6 +173,14 @@ Destroying magikube project named 'sample' in the current directory`,
       } else {
         await terraform.destroyProject(args.name, process.cwd());
       }
+    } else if (
+      responses.cloud_provider === "azure" &&
+      project_config.command === "new"
+    ) {
+      await terraform?.runTerraformDestroyTemplate(
+        infrastructurePath,
+        "terraform.tfvars"
+      );
     } else {
       AppLogger.error(
         "Terraform project initialization failed or unsupported cloud provider.",
