@@ -50,7 +50,6 @@ export const azure_destroy_modules = [
   "module.vnet",
 ];
 
-
 export const singleModules = ["module.vpc", "module.eks", "module.rds", "module.acm"];
 
 export const InvalidProjectNames = ["vpc", "rds", "eks", "acm", "ecr"]

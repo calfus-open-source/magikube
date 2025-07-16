@@ -42,6 +42,7 @@ import {
 import { FullConfigObject } from "../../core/interface.js";
 import AzurePolicies from "../../core/azure/azure-iam.js";
 
+// Validates the project name input using regex rules
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
   if (!pattern.test(input)) {
@@ -55,6 +56,7 @@ function validateUserInput(input: string): void {
   }
 }
 
+// Prevents usage of restricted or reserved project names
 function validateRestrictedInputs(input: string): void {
   const restrictedCommands = [...InvalidProjectNames];
   if (restrictedCommands.includes(input)) {
@@ -67,6 +69,7 @@ function validateRestrictedInputs(input: string): void {
   }
 }
 
+// Main class for creating a new project using Magikube CLI
 export default class CreateProject extends BaseCommand {
   static description =
     "Create new Magikube project with a specific template or as an empty project.";
@@ -76,6 +79,7 @@ export default class CreateProject extends BaseCommand {
     `<%= config.bin %> <%= command.id %> sample -t eks-fargate-vpc`,
   ];
 
+  // Accepts a required project name as argument
   static args = {
     name: Args.string({
       description: "Project name to be created",
@@ -83,6 +87,7 @@ export default class CreateProject extends BaseCommand {
     }),
   };
 
+  // Accepts an optional template flag for project creation
   static flags = {
     template: Flags.string({
       char: "t",
@@ -91,18 +96,24 @@ export default class CreateProject extends BaseCommand {
     }),
   };
 
+  // List of predefined templates supported by Magikube
   private predefinedTemplates = [...supportedTemplates];
 
+  // Main execution logic for the command
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CreateProject);
     const projectName = args.name;
 
+    // Validate project name format and ensure it’s not restricted
     validateUserInput(args.name);
     validateRestrictedInputs(args.name);
+
+    // Initialize logging for the CLI command
     AppLogger.configureLogger(args.name, this.id);
     AppLogger.info("Logger Started ...");
 
     try {
+      // If template is 'empty', generate a skeleton project with config only
       if (flags.template === "empty") {
         const responses: Answers = await handlePrompts(
           args,
@@ -118,6 +129,7 @@ export default class CreateProject extends BaseCommand {
         process.exit(0);
       }
 
+      // Handle other predefined template-based project generation
       if (
         flags.template &&
         this.predefinedTemplates.includes(flags.template.trim())
@@ -126,9 +138,10 @@ export default class CreateProject extends BaseCommand {
         process.exit(0);
       }
 
-      // default project creation
+      // Default flow (no template): Prompt for user inputs interactively
       let responses: Answers = await handlePrompts(args, this.id);
 
+      // Special handling for Azure login if selected as provider
       if (responses["cloud_provider"] === "azure") {
         AppLogger.info("Attempting Azure login...", true);
         try {
@@ -144,8 +157,10 @@ export default class CreateProject extends BaseCommand {
         }
       }
 
+      // Inject CLI command ID into responses
       responses.command = this.id;
 
+      // Merge system-level configuration with user responses
       const systemConfig = {
         ...(responses.cloud_provider === "aws" ? AWS_SPECIFIC_CONFIG : {}),
         ...(responses.cloud_provider === "azure" ? AZURE_SPECIFIC_CONFIG : {}),
@@ -160,26 +175,31 @@ export default class CreateProject extends BaseCommand {
         ...GEN_AI_CONFIG,
       };
 
-      if (!fs.existsSync(`${process.cwd()}/dist`)) {
-        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
-      }
+      // Clone base templates locally for customization
+      await cloneAndCopyTemplates(this.id, responses.cloud_provider);
 
       AppLogger.info(
         `Creating new Magikube project named '${args.name}' in the current directory`,
         true
       );
 
+      // Combine user input and default configurations
       const combinedConfig = { ...systemConfig, ...responses };
       SystemConfig.getInstance().mergeConfigs(combinedConfig);
 
+      // Terraform and application setup logic
       const terraform = await TerraformProject.getProject(this);
       const projectConfig = SystemConfig.getInstance().getConfig();
       const createApp = new CreateApplication(this, projectConfig);
 
-      const modules = projectConfig.cloud_provider === "aws" ? aws_modules : azure_modules;
+      // Choose modules based on cloud provider
+      const modules =
+        projectConfig.cloud_provider === "aws" ? aws_modules : azure_modules;
 
+      // Initialize a status file to track provisioning progress
       initializeStatusFile(projectName, modules, services);
 
+      // Extracting required config values
       const {
         github_access_token: token,
         git_user_name: userName,
@@ -196,6 +216,7 @@ export default class CreateProject extends BaseCommand {
         environment,
       } = projectConfig;
 
+      // Building a structured config object
       const configObject: FullConfigObject = {
         common: {
           token,
@@ -207,6 +228,7 @@ export default class CreateProject extends BaseCommand {
         },
       };
 
+      // Populate cloud-specific configuration
       if (projectConfig.cloud_provider === "aws") {
         configObject.aws = {
           region,
@@ -214,6 +236,7 @@ export default class CreateProject extends BaseCommand {
           awsSecretKey,
         };
 
+        // Fetch AWS account ID and store in config
         const accountId = await AWSAccount.getAccountId(
           awsAccessKey,
           awsSecretKey,
@@ -235,17 +258,21 @@ export default class CreateProject extends BaseCommand {
         SystemConfig.getInstance().mergeConfigs({ resource_group_name });
       }
 
+      // Setup GitOps repository/service
       const setupGitopsServiceStatus = await createApp.setupGitops(
         projectConfig
       );
 
       if (terraform) {
+        // Run Terraform project generation
         await terraform.createProject(projectName, process.cwd());
 
+        // Activate AWS profile if applicable
         if (responses.cloud_provider === "aws") {
           await (terraform as any).AWSProfileActivate(responses.aws_profile);
         }
 
+        // Conditional handling for Kubernetes cluster setup
         if (
           responses.cluster_type === "eks-fargate" ||
           responses.cluster_type === "eks-nodegroup" ||
@@ -260,6 +287,7 @@ export default class CreateProject extends BaseCommand {
           );
         }
 
+        // Conditional setup for generic Kubernetes clusters
         if (responses.cluster_type === "k8s") {
           await handleK8s(
             projectName,
@@ -270,9 +298,11 @@ export default class CreateProject extends BaseCommand {
           );
         }
 
+        // Final step to setup and push application services (frontend/backend/auth etc.)
         await setupAndPushServices(projectConfig, configObject);
       }
 
+      // Perform health check to ensure services are live
       await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
     } catch (error) {

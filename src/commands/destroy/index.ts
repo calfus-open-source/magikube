@@ -131,8 +131,7 @@ export default class DestroyProject extends BaseCommand {
     }
 
     if (terraform && responses.cloud_provider === "aws") {
-      
-        await (terraform as any).AWSProfileActivate(responses["aws_profile"]);
+      await (terraform as any).AWSProfileActivate(responses["aws_profile"]);
 
       if (
         readFile.services["terraform-apply"] === "fail" ||
@@ -177,9 +176,15 @@ export default class DestroyProject extends BaseCommand {
       responses.cloud_provider === "azure" &&
       project_config.command === "new"
     ) {
+      await terraform?.runTerraformInit(
+        infrastructurePath,
+        `${project_config["environment"]}-config.tfvars`,
+        project_config.project_name
+      );
       await terraform?.runTerraformDestroyTemplate(
         infrastructurePath,
-        "terraform.tfvars"
+        "terraform.tfvars",
+        readFile
       );
     } else {
       AppLogger.error(

@@ -156,7 +156,7 @@ export default class AzureTerraformBackend {
           `Resource group ${resourceGroupName} created successfully`,
           true
         );
-        AppLogger.debug(result, true);
+        AppLogger.debug(result);
         return true;
       }
     } catch (err) {
@@ -181,7 +181,6 @@ export default class AzureTerraformBackend {
     try {
       AppLogger.info(
         `Checking if storage account ${storageAccountName} exists...`,
-        true
       );
 
       // Check if storage account exists
@@ -199,7 +198,6 @@ export default class AzureTerraformBackend {
         // Storage account doesn't exist, create it
         AppLogger.info(
           `Storage account ${storageAccountName} does not exist. Creating...`,
-          true
         );
 
         const createCommand = `az storage account create --name "${storageAccountName}" --resource-group "${resourceGroupName}" --location "${location}" --sku Standard_LRS --output table`;

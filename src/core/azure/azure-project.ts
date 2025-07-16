@@ -9,10 +9,14 @@ import { ProgressBar } from "../../logger/progressLogger.js";
 import CreateApplication from "../setup-application.js";
 import BaseCommand from "../../commands/base.js";
 import { executeCommandWithRetry } from "../utils/executeCommandWithRetry-utils.js";
-import { updateStatusFile } from "../utils/statusUpdater-utils.js";
+import {
+  readStatusFile,
+  updateStatusFile,
+} from "../utils/statusUpdater-utils.js";
 import { join } from "path";
 import SystemConfig from "../../config/system.js";
 import { CloudProject } from "../interfaces/cloud-project.js";
+import { azure_destroy_modules } from "../constants/constants.js";
 
 let sshProcess: any;
 
@@ -651,33 +655,151 @@ export default class AzureProject extends BaseProject implements CloudProject {
     }
   }
 
+  // async runTerraformDestroyTemplate(
+  //   infrastructureFilePath: string,
+  //   varFile?: string
+  // ): Promise<void> {
+  //   AppLogger.info(
+  //     `Running terraform destroy... in ${infrastructureFilePath}`
+  //   );
+  //   let awsStatus = false;
+  //   if (this.config.cloud_provider === "aws") {
+  //     awsStatus = true;
+  //   }
+  //   try {
+  //     let command = `terraform destroy  -auto-approve`;
+  //     if (varFile) {
+  //       command += ` -var-file=${varFile}`;
+  //     }
+  //     await executeCommandWithRetry(
+  //       command,
+  //       { cwd: infrastructureFilePath, stdio: "inherit" },
+  //       3
+  //     );
+  //     AppLogger.info("Terraform destroy completed successfully.", true);
+  //   } catch (error) {
+  //     AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
+  //     process.exit(1);
+  //   }
+  //   const deleted = await AzureTerraformBackend.delete(
+  //     this,
+  //     this.config.project_name,
+  //     this.config.azure_location,
+  //     this.config.azure_client_id,
+  //     this.config.azure_client_secret,
+  //     this.config.azure_tenant_id,
+  //     this.config.azure_subscription_id
+  //   );
+  //   if (deleted) {
+  //     await this.deleteFolder(this.config.project_name);
+  //   }
+  // }
+
   async runTerraformDestroyTemplate(
     infrastructureFilePath: string,
-    varFile?: string
+    varFile?: string,
+    status?: any
   ): Promise<void> {
-    AppLogger.info(
-      `Running terraform destroy... in ${infrastructureFilePath}`,
-      true
-    );
-    let awsStatus = false;
-    if (this.config.cloud_provider === "aws") {
-      awsStatus = true;
-    }
     try {
-      let command = `terraform destroy  -auto-approve`;
-      if (varFile) {
-        command += ` -var-file=${varFile}`;
+      if (azure_destroy_modules && azure_destroy_modules.length > 0) {
+        for (const module of azure_destroy_modules) {
+          if (
+            status.modules[module] === "fail" ||
+            status.modules[module] === "success"
+          ) {
+            const args = [
+              "destroy",
+              "-no-color",
+              "-auto-approve",
+              `-target=${module}`,
+            ];
+            if (varFile) {
+              args.push(`-var-file=${varFile}`);
+            }
+
+            AppLogger.info(`Destroying module: ${module}`, true);
+
+            const terraformProcess = spawn("terraform", args, {
+              cwd: infrastructureFilePath,
+              env: process.env,
+              stdio: ["inherit", "pipe", "pipe"],
+            });
+
+            const progressBar = ProgressBar.createProgressBar();
+            progressBar.start(100, 0, {
+              message: `Destroying module: ${module}...`,
+            });
+
+            let deletedResources = 0;
+            let totalExpectedDeletes = 10; // Default fallback, can be tuned dynamically if needed
+
+            terraformProcess.stdout.on("data", (data) => {
+              const output = data.toString();
+              AppLogger.info(`stdout: ${output}`);
+
+              // Optional: dynamically adjust expected total based on actual output (advanced tuning)
+              const totalMatch = output.match(/Plan: (\d+) to destroy/);
+              if (totalMatch && totalMatch[1]) {
+                totalExpectedDeletes = parseInt(totalMatch[1], 10);
+              }
+
+              const destructionRegex = /Destruction complete after \d+s/g;
+              const matches = output.match(destructionRegex) || [];
+
+              deletedResources += matches.length;
+
+              const progress = Math.min(
+                Math.floor((deletedResources / totalExpectedDeletes) * 100),
+                100
+              );
+
+              progressBar.update(progress);
+            });
+
+            terraformProcess.stderr.on("data", (data) => {
+              progressBar.stop();
+              AppLogger.error(`stderr: ${data.toString()}`);
+            });
+
+            await new Promise<void>((resolve, reject) => {
+              terraformProcess.on("close", (code) => {
+                if (code === 0) {
+                  progressBar.update(100, {
+                    message: `Module ${module} destroyed.`,
+                  });
+                  progressBar.stop();
+                  resolve();
+                } else {
+                  progressBar.stop();
+                  AppLogger.error(
+                    `Terraform destroy failed for module ${module} with code ${code}`
+                  );
+                  reject(
+                    new Error(
+                      `Terraform destroy failed for module ${module} with code ${code}`
+                    )
+                  );
+                }
+              });
+
+              terraformProcess.on("error", (err) => {
+                progressBar.stop();
+                AppLogger.error(
+                  `Failed to run Terraform destroy for ${module}: ${err}`
+                );
+                reject(err);
+              });
+            });
+          }
+        }
+
+        AppLogger.info("All modules destroyed successfully.", true);
       }
-      await executeCommandWithRetry(
-        command,
-        { cwd: infrastructureFilePath, stdio: "inherit" },
-        3
-      );
-      AppLogger.info("Terraform destroy completed successfully.", true);
     } catch (error) {
-      AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
-      process.exit(1);
+      AppLogger.error(`Error during Terraform destroy: ${error}`, true);
+      throw error;
     }
+
     const deleted = await AzureTerraformBackend.delete(
       this,
       this.config.project_name,

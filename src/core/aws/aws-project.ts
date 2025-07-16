@@ -491,7 +491,7 @@ export default class AWSProject extends BaseProject implements CloudProject {
     module?: string,
     varFile?: string
   ): Promise<void> {
-    AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
+    AppLogger.info(`Running terraform destroy... in ${projectPath}`);
     try {
       const moduleInfo = module
         ? `Destroying module ${module}...`
@@ -524,7 +524,7 @@ export default class AWSProject extends BaseProject implements CloudProject {
     projectPath: string,
     varFile?: string
   ): Promise<void> {
-    AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
+    AppLogger.info(`Running terraform destroy... in ${projectPath}`);
     let awsStatus = false;
     if (this.config.cloud_provider === "aws") {
       awsStatus = true;
