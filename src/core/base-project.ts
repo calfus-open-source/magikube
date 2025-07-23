@@ -7,7 +7,10 @@ import TerraformProject from "./terraform-project.js";
 import { AppLogger } from "../logger/appLogger.js";
 import { readStatusFile } from "./utils/statusUpdater-utils.js";
 import { appendUniqueLines } from "./utils/appendUniqueLines-utils.js";
-import { aws_destroy_modules, azure_destroy_modules } from "./constants/constants.js";
+import {
+  aws_destroy_modules,
+  azure_destroy_modules,
+} from "./constants/constants.js";
 
 export default abstract class BaseProject {
   protected config: any = {};
@@ -24,27 +27,30 @@ export default abstract class BaseProject {
     //initialize terraform in the path
     this.projectPath = join(path, projectName);
     // Run terraform destroy
-    AppLogger.debug(`Destroying project '${projectName}' in the path`, true);
+    AppLogger.debug(`Destroying project '${projectName}'`, true);
     try {
       await this.terraformDestroy(projectName);
-      await this.deleteFolder(this.projectPath);
+      // await this.deleteFolder(projectName);
     } catch (err) {
-      AppLogger.error(`Project destroy failed, skipping deleteFolder :${err}`, true);
+      AppLogger.error(
+        `Project destroy failed, skipping deleteFolder :${err}`,
+        true
+      );
     }
   }
 
   async terraformDestroy(projectName: string): Promise<void> {
     // Run terraform destroy
-    AppLogger.info(`Running terraform destroy in the path`, true);
+    AppLogger.info(`Running terraform destroy...`);
     const terraform = await TerraformProject.getProject(this.command);
 
     // Initialize modules with a default value
-   let modules =
-     this.config.cluster_type === "eks-fargate"
-       ? aws_destroy_modules
-       : this.config.cluster_type === "aks"
-       ? azure_destroy_modules
-       : [];
+    let modules =
+      this.config.cluster_type === "eks-fargate"
+        ? aws_destroy_modules
+        : this.config.cluster_type === "aks"
+        ? azure_destroy_modules
+        : [];
     if (
       this.config.cluster_type === "eks-fargate" ||
       this.config.cluster_type === "eks-nodegroup"
@@ -60,7 +66,10 @@ export default abstract class BaseProject {
 
       // Destroy modules one by one
       for (const module of modules) {
-        if (readFile.modules[module] == "success") {
+        if (
+          readFile.modules[module] == "success" ||
+          readFile.modules[module] == "fail"
+        ) {
           try {
             AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
             await terraform?.runTerraformDestroy(
@@ -114,12 +123,11 @@ export default abstract class BaseProject {
     }
   }
 
-  async deleteFolder(projectName:string): Promise<void> {
-    const projectPath = `${process.cwd()}/${projectName}`
+  async deleteFolder(projectName: string): Promise<void> {
+    const projectPath = `${process.cwd()}/${projectName}`;
     if (fs.existsSync(projectPath)) {
-
-      AppLogger.debug(`Removing project '${projectPath}'`, true);
       fs.rmSync(projectPath, { recursive: true });
+      AppLogger.info(`${projectName} project Destroyed successfully`, true);
     } else {
       AppLogger.debug(
         `Project '${this.projectPath}' does not exist in the path`,
@@ -145,16 +153,7 @@ export default abstract class BaseProject {
 
   async createFolder(): Promise<void> {
     //create a folder with the name in the path
-
-    if (fs.existsSync(this.projectPath)) {
-      AppLogger.debug(
-        `Folder '${this.projectPath}' already exists in the path`
-      );
-      AppLogger.error(
-        `Folder '${this.projectPath}' already exists in the path`
-      );
-    } else {
-      AppLogger.debug(`Creating folder '${this.projectPath}' in the path`);
+    if (!fs.existsSync(this.projectPath)) {
       fs.mkdirSync(this.projectPath);
     }
   }

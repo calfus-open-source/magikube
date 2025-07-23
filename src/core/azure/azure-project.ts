@@ -9,10 +9,14 @@ import { ProgressBar } from "../../logger/progressLogger.js";
 import CreateApplication from "../setup-application.js";
 import BaseCommand from "../../commands/base.js";
 import { executeCommandWithRetry } from "../utils/executeCommandWithRetry-utils.js";
-import { updateStatusFile } from "../utils/statusUpdater-utils.js";
+import {
+  readStatusFile,
+  updateStatusFile,
+} from "../utils/statusUpdater-utils.js";
 import { join } from "path";
 import SystemConfig from "../../config/system.js";
 import { CloudProject } from "../interfaces/cloud-project.js";
+import { azure_destroy_modules } from "../constants/constants.js";
 
 let sshProcess: any;
 
@@ -37,51 +41,51 @@ export default class AzureProject extends BaseProject implements CloudProject {
     );
   }
 
-  async destroyProject(name: string, path: string): Promise<void> {
-    let azureStatus = false;
-    if (this.config.cloud_provider === "azure") {
-      azureStatus = true;
-    }
-    let command: BaseCommand | undefined;
-    const createApplication = new CreateApplication(
-      command as BaseCommand,
-      this.config
-    );
-    if (!this.config.dryrun) {
-      // Once the prompts are accepted at the start, these parameters will be accessible
-      if (this.config.command === "new" || this.config.command === "resume") {
-        const {
-          git_user_name,
-          github_access_token,
-          github_owner,
-          project_name,
-        } = this.config;
-        let frontend_app_name;
-        let backend_app_name;
-        if (this.config.frontend_app_type == "react") {
-          frontend_app_name = this.config.react_app_name;
-        }
-        if (this.config.frontend_app_type == "next") {
-          frontend_app_name = this.config.next_app_name;
-        }
-        if (this.config.backend_app_type == "node-express") {
-          backend_app_name = this.config.node_app_name;
-        }
-        await createApplication.destroyApp(
-          git_user_name,
-          github_access_token,
-          github_owner,
-          frontend_app_name,
-          backend_app_name,
-          project_name
-        );
+  // async destroyProject(name: string, path: string): Promise<void> {
+  //   let azureStatus = false;
+  //   if (this.config.cloud_provider === "azure") {
+  //     azureStatus = true;
+  //   }
+  //   let command: BaseCommand | undefined;
+  //   const createApplication = new CreateApplication(
+  //     command as BaseCommand,
+  //     this.config
+  //   );
+  //   if (!this.config.dryrun) {
+  //     // Once the prompts are accepted at the start, these parameters will be accessible
+  //     if (this.config.command === "new" || this.config.command === "resume") {
+  //       const {
+  //         git_user_name,
+  //         github_access_token,
+  //         github_owner,
+  //         project_name,
+  //       } = this.config;
+  //       let frontend_app_name;
+  //       let backend_app_name;
+  //       if (this.config.frontend_app_type == "react") {
+  //         frontend_app_name = this.config.react_app_name;
+  //       }
+  //       if (this.config.frontend_app_type == "next") {
+  //         frontend_app_name = this.config.next_app_name;
+  //       }
+  //       if (this.config.backend_app_type == "node-express") {
+  //         backend_app_name = this.config.node_app_name;
+  //       }
+  //       await createApplication.destroyApp(
+  //         git_user_name,
+  //         github_access_token,
+  //         github_owner,
+  //         frontend_app_name,
+  //         backend_app_name,
+  //         project_name
+  //       );
 
-        if (azureStatus) {
-          await super.destroyProject(name, path);
-        }
-      }
-    }
-  }
+  //       if (azureStatus) {
+  //         await super.destroyProject(name, path);
+  //       }
+  //     }
+  //   }
+  // }
 
   async createCommon(path?: string): Promise<void> {
     this.createVNet(path);
@@ -502,10 +506,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
         terraform.on("close", (code) => {
           progressBar.stop();
           if (code === 0) {
-            AppLogger.info(
-              "Terraform initialization completed successfully",
-              true
-            );
+            AppLogger.info("Terraform initialization completed successfully");
             resolve();
           } else {
             AppLogger.error(
@@ -619,31 +620,76 @@ export default class AzureProject extends BaseProject implements CloudProject {
     varFile?: string
   ): Promise<void> {
     const progressBar = ProgressBar.createProgressBar();
+
     try {
-      let command = "terraform destroy -auto-approve";
-
-      if (module) {
-        command += ` -target=${module}`;
-      }
-
-      if (varFile) {
-        command += ` -var-file=${varFile}`;
-      }
+      const args = ["destroy", "-no-color", "-auto-approve"];
+      if (module) args.push(`-target=${module}`);
+      if (varFile) args.push(`-var-file=${varFile}`);
 
       AppLogger.info(`Running Terraform destroy in ${projectPath}`, true);
+
+      const terraformProcess = spawn("terraform", args, {
+        cwd: projectPath,
+        env: process.env,
+        stdio: ["inherit", "pipe", "pipe"],
+      });
+
       progressBar.start(100, 0, {
         message: "Destroying Terraform resources in Azure...",
       });
 
-      await executeCommandWithRetry(
-        command,
-        { cwd: projectPath, stdio: "inherit" },
-        3
-      );
+      let deletedResources = 0;
+      let totalExpectedDeletes = 10; // Default fallback
 
-      progressBar.update(100, { message: "Terraform destroy completed." });
-      progressBar.stop();
-      AppLogger.info("Terraform destroy completed successfully", true);
+      terraformProcess.stdout.on("data", (data) => {
+        const output = data.toString();
+        AppLogger.info(`stdout: ${output}`);
+
+        const totalMatch = output.match(/Plan: (\d+) to destroy/);
+        if (totalMatch && totalMatch[1]) {
+          totalExpectedDeletes = parseInt(totalMatch[1], 10);
+        }
+
+        const destructionRegex = /Destruction complete after \d+s/g;
+        const matches = output.match(destructionRegex) || [];
+        deletedResources += matches.length;
+
+        const progress = Math.min(
+          Math.floor((deletedResources / totalExpectedDeletes) * 100),
+          100
+        );
+
+        progressBar.update(progress);
+      });
+
+      terraformProcess.stderr.on("data", (data) => {
+        progressBar.stop();
+        AppLogger.error(`stderr: ${data.toString()}`);
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        terraformProcess.on("close", (code) => {
+          if (code === 0) {
+            progressBar.update(100, {
+              message: "Terraform destroy completed.",
+            });
+            progressBar.stop();
+            AppLogger.info("Terraform destroy completed successfully", true);
+            resolve();
+          } else {
+            progressBar.stop();
+            const msg = `Terraform destroy failed with exit code ${code}`;
+            AppLogger.error(msg);
+            reject(new Error(msg));
+          }
+        });
+
+        terraformProcess.on("error", (err) => {
+          progressBar.stop();
+          AppLogger.error(`Failed to run Terraform destroy: ${err}`);
+          reject(err);
+        });
+      });
     } catch (error) {
       progressBar.stop();
       AppLogger.error(`Error during Terraform destroy: ${error}`, true);
@@ -653,32 +699,110 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
   async runTerraformDestroyTemplate(
     infrastructureFilePath: string,
-    varFile?: string
+    varFile?: string,
+    status?: any
   ): Promise<void> {
-    AppLogger.info(
-      `Running terraform destroy... in ${infrastructureFilePath}`,
-      true
-    );
-    let awsStatus = false;
-    if (this.config.cloud_provider === "aws") {
-      awsStatus = true;
-    }
     try {
-      let command = `terraform destroy  -auto-approve`;
-      if (varFile) {
-        command += ` -var-file=${varFile}`;
+      if (azure_destroy_modules && azure_destroy_modules.length > 0) {
+        for (const module of azure_destroy_modules) {
+          if (
+            status.modules[module] === "fail" ||
+            status.modules[module] === "success"
+          ) {
+            const args = [
+              "destroy",
+              "-no-color",
+              "-auto-approve",
+              `-target=${module}`,
+            ];
+            if (varFile) {
+              args.push(`-var-file=${varFile}`);
+            }
+
+            AppLogger.info(`Destroying module: ${module}`, true);
+
+            const terraformProcess = spawn("terraform", args, {
+              cwd: infrastructureFilePath,
+              env: process.env,
+              stdio: ["inherit", "pipe", "pipe"],
+            });
+
+            const progressBar = ProgressBar.createProgressBar();
+            progressBar.start(100, 0, {
+              message: `Destroying module: ${module}...`,
+            });
+
+            let deletedResources = 0;
+            let totalExpectedDeletes = 10; // Default fallback, can be tuned dynamically if needed
+
+            terraformProcess.stdout.on("data", (data) => {
+              const output = data.toString();
+              AppLogger.info(`stdout: ${output}`);
+
+              // Optional: dynamically adjust expected total based on actual output (advanced tuning)
+              const totalMatch = output.match(/Plan: (\d+) to destroy/);
+              if (totalMatch && totalMatch[1]) {
+                totalExpectedDeletes = parseInt(totalMatch[1], 10);
+              }
+
+              const destructionRegex = /Destruction complete after \d+s/g;
+              const matches = output.match(destructionRegex) || [];
+
+              deletedResources += matches.length;
+
+              const progress = Math.min(
+                Math.floor((deletedResources / totalExpectedDeletes) * 100),
+                100
+              );
+
+              progressBar.update(progress);
+            });
+
+            terraformProcess.stderr.on("data", (data) => {
+              progressBar.stop();
+              AppLogger.error(`stderr: ${data.toString()}`);
+            });
+
+            await new Promise<void>((resolve, reject) => {
+              terraformProcess.on("close", (code) => {
+                if (code === 0) {
+                  progressBar.update(100, {
+                    message: `Module ${module} destroyed.`,
+                  });
+                  progressBar.stop();
+                  resolve();
+                } else {
+                  progressBar.stop();
+                  AppLogger.error(
+                    `Terraform destroy failed for module ${module} with code ${code}`
+                  );
+                  reject(
+                    new Error(
+                      `Terraform destroy failed for module ${module} with code ${code}`
+                    )
+                  );
+                }
+              });
+
+              terraformProcess.on("error", (err) => {
+                progressBar.stop();
+                AppLogger.error(
+                  `Failed to run Terraform destroy for ${module}: ${err}`
+                );
+                reject(err);
+              });
+            });
+          }
+        }
+
+        AppLogger.info("All modules destroyed successfully.", true);
       }
-      await executeCommandWithRetry(
-        command,
-        { cwd: infrastructureFilePath, stdio: "inherit" },
-        3
-      );
-      AppLogger.info("Terraform destroy completed successfully.", true);
     } catch (error) {
-      AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
-      process.exit(1);
+      AppLogger.error(`Error during Terraform destroy: ${error}`, true);
+      throw error;
     }
-    const deleted = await AzureTerraformBackend.delete(
+
+    const azureBackendStatus = await AzureTerraformBackend.delete(
       this,
       this.config.project_name,
       this.config.azure_location,
@@ -687,7 +811,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
       this.config.azure_tenant_id,
       this.config.azure_subscription_id
     );
-    if (deleted) {
+    if (azureBackendStatus) {
       await this.deleteFolder(this.config.project_name);
     }
   }

@@ -408,7 +408,7 @@ export default class CreateApplication extends BaseProject {
                     const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
                     try{
                        executeCommandWithRetry(command, { stdio: 'pipe' },3)
-                       AppLogger.info(`Repository deleted successfully : ${url}`, true)
+                       AppLogger.info(`Repository deleted successfully : ${url}`)
                     }catch(error){
                             AppLogger.error(`Failed to delete repository: ${error}`, true);
                     }
