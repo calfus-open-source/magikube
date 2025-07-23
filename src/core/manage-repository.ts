@@ -25,14 +25,14 @@ export class ManageRepository {
 
     const projectConfig = SystemConfig.getInstance().getConfig();
     const {
-      region,
+      aws_region,
       cloud_provider,
-      awsAccessKey,
-      awsSecretKey,
-      azureTenantId,
-      azureSubscriptionId,
-      azureClientId,
-      azureClientSecret,
+      aws_access_key_id,
+      aws_secret_access_key,
+      azure_tenant_id,
+      azure_subscription_id,
+      azure_client_id,
+      azure_client_secret,
     } = projectConfig;
 
     let repoSetupError = false;
@@ -152,28 +152,28 @@ export class ManageRepository {
 
     if (cloud_provider === "aws") {
       encryptedSecrets["AWS_ACCESS_KEY_ID"] = await encryptSecret(
-        awsAccessKey,
+        aws_access_key_id,
         publicKey
       );
       encryptedSecrets["AWS_SECRET_ACCESS_KEY"] = await encryptSecret(
-        awsSecretKey,
+        aws_secret_access_key,
         publicKey
       );
     } else if (cloud_provider === "azure") {
       encryptedSecrets["AZURE_TENANT_ID"] = await encryptSecret(
-        azureTenantId,
+        azure_tenant_id,
         publicKey
       );
       encryptedSecrets["AZURE_SUBSCRIPTION_ID"] = await encryptSecret(
-        azureSubscriptionId,
+        azure_subscription_id,
         publicKey
       );
       encryptedSecrets["AZURE_CLIENT_ID"] = await encryptSecret(
-        azureClientId,
+        azure_client_id,
         publicKey
       );
       encryptedSecrets["AZURE_CLIENT_SECRET"] = await encryptSecret(
-        azureClientSecret,
+        azure_client_secret,
         publicKey
       );
     }
@@ -191,7 +191,7 @@ export class ManageRepository {
     // Common GitHub environment variable setup
     const envVariablesCmds = [
       {
-        cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"AWS_REGION","value":"${region}"}'`,
+        cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"AWS_REGION","value":"${aws_region}"}'`,
         message: "Creating AWS_REGION variable",
       },
       {
