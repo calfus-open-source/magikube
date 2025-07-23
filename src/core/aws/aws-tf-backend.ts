@@ -228,7 +228,7 @@ export default class AWSTerraformBackend {
       const data = await s3Client.send(
         new DeleteBucketCommand({ Bucket: bucketName })
       );
-      AppLogger.info(`Bucket ${bucketName} deleted ${data}`, true);
+      AppLogger.info(`Bucket ${bucketName} deleted`, true);
     } catch (err) {
       AppLogger.error(`Error deleting bucket ${bucketName}, ${err}`, true);
     }

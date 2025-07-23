@@ -108,6 +108,8 @@ export default class AWSProject extends BaseProject implements CloudProject {
           this.config.aws_access_key_id,
           this.config.aws_secret_access_key
         );
+
+        await this.deleteFolder(this.config.project_name);
       }
     }
   }
@@ -278,7 +280,7 @@ export default class AWSProject extends BaseProject implements CloudProject {
     backend: string,
     projectName: string
   ): Promise<void> {
-    AppLogger.debug(`Running terraform init...`, true);
+    AppLogger.info(`Running terraform init...`, true);
     const progressBar = ProgressBar.createProgressBar();
     progressBar.start(100, 0, { message: "Terraform Init in progress..." });
 
@@ -491,29 +493,79 @@ export default class AWSProject extends BaseProject implements CloudProject {
     module?: string,
     varFile?: string
   ): Promise<void> {
-    AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
+    AppLogger.info(`Running terraform destroy... in ${projectPath}`);
+
     try {
       const moduleInfo = module
         ? `Destroying module ${module}...`
         : "Destroying entire project...";
       AppLogger.info(moduleInfo, true);
 
-      let command = module
-        ? `terraform destroy -target=${module} -auto-approve`
-        : "terraform destroy -auto-approve";
+      const args = ["destroy", "-no-color", "-auto-approve"];
+      if (module) args.push(`-target=${module}`);
+      if (varFile) args.push(`-var-file=${varFile}`);
 
-      if (varFile) {
-        command += ` -var-file=${varFile}`;
-      }
+      const terraformProcess = spawn("terraform", args, {
+        cwd: projectPath,
+        env: process.env,
+        stdio: ["inherit", "pipe", "pipe"],
+      });
 
-      // Make sure to pass correct environment variables
-      await executeCommandWithRetry(
-        command,
-        { cwd: projectPath, stdio: "inherit" },
-        3
-      );
+      const progressBar = ProgressBar.createProgressBar();
+      progressBar.start(100, 0, {
+        message: moduleInfo,
+      });
 
-      AppLogger.info("Terraform destroy completed successfully.", true);
+      let deletedResources = 0;
+      let totalExpectedDeletes = 10; // Default fallback
+
+      terraformProcess.stdout.on("data", (data) => {
+        const output = data.toString();
+        AppLogger.info(`stdout: ${output}`);
+
+        const totalMatch = output.match(/Plan: (\d+) to destroy/);
+        if (totalMatch && totalMatch[1]) {
+          totalExpectedDeletes = parseInt(totalMatch[1], 10);
+        }
+
+        const destructionRegex = /Destruction complete after \d+s/g;
+        const matches = output.match(destructionRegex) || [];
+
+        deletedResources += matches.length;
+
+        const progress = Math.min(
+          Math.floor((deletedResources / totalExpectedDeletes) * 100),
+          100
+        );
+
+        progressBar.update(progress);
+      });
+
+      terraformProcess.stderr.on("data", (data) => {
+        AppLogger.error(`stderr: ${data.toString()}`);
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        terraformProcess.on("close", (code) => {
+          if (code === 0) {
+            progressBar.update(100, {
+              message: `Terraform destroy completed.`,
+            });
+            progressBar.stop();
+            resolve();
+          } else {
+            progressBar.stop();
+            AppLogger.error(`Terraform destroy failed with code ${code}`);
+            reject(new Error(`Terraform destroy failed with code ${code}`));
+          }
+        });
+
+        terraformProcess.on("error", (err) => {
+          progressBar.stop();
+          AppLogger.error(`Failed to run Terraform destroy: ${err}`);
+          reject(err);
+        });
+      });
     } catch (error) {
       AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
       process.exit(1);
@@ -524,7 +576,7 @@ export default class AWSProject extends BaseProject implements CloudProject {
     projectPath: string,
     varFile?: string
   ): Promise<void> {
-    AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
+    AppLogger.info(`Running terraform destroy... in ${projectPath}`);
     let awsStatus = false;
     if (this.config.cloud_provider === "aws") {
       awsStatus = true;

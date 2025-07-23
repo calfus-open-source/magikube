@@ -388,7 +388,7 @@ export default class AzurePolicies {
         const result = execSync(createCommand, { encoding: "utf8" });
 
         AppLogger.info(`Key Vault ${keyVaultName} created successfully`, true);
-        AppLogger.debug(result, true);
+        AppLogger.debug(result);
         return true;
       }
     } catch (error) {
@@ -472,8 +472,6 @@ export default class AzurePolicies {
       return false;
     }
   }
-
-
 
   // Helper method to get current tenant ID
   static getCurrentTenantId(): string | null {
