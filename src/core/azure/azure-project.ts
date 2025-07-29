@@ -727,35 +727,22 @@ export default class AzureProject extends BaseProject implements CloudProject {
               stdio: ["inherit", "pipe", "pipe"],
             });
 
+            const totalSteps = 100;
             const progressBar = ProgressBar.createProgressBar();
-            progressBar.start(100, 0, {
+            progressBar.start(totalSteps, 0, {
               message: `Destroying module: ${module}...`,
             });
-
-            let deletedResources = 0;
-            let totalExpectedDeletes = 10; // Default fallback, can be tuned dynamically if needed
 
             terraformProcess.stdout.on("data", (data) => {
               const output = data.toString();
               AppLogger.info(`stdout: ${output}`);
 
-              // Optional: dynamically adjust expected total based on actual output (advanced tuning)
-              const totalMatch = output.match(/Plan: (\d+) to destroy/);
-              if (totalMatch && totalMatch[1]) {
-                totalExpectedDeletes = parseInt(totalMatch[1], 10);
-              }
-
+              // Increment the progress bar when a destruction completes
               const destructionRegex = /Destruction complete after \d+s/g;
-              const matches = output.match(destructionRegex) || [];
-
-              deletedResources += matches.length;
-
-              const progress = Math.min(
-                Math.floor((deletedResources / totalExpectedDeletes) * 100),
-                100
-              );
-
-              progressBar.update(progress);
+              let match;
+              while ((match = destructionRegex.exec(output)) !== null) {
+                progressBar.increment(totalSteps / totalSteps); // Increment step
+              }
             });
 
             terraformProcess.stderr.on("data", (data) => {

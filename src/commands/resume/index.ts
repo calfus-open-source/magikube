@@ -35,7 +35,6 @@ export default class RestartProject extends BaseCommand {
 
   async run(): Promise<void> {
     const { args } = await this.parse(RestartProject);
-
     // Initialize the logger
     AppLogger.configureLogger(args.name, this.id);
     AppLogger.info("Logger Started ...");
@@ -56,6 +55,7 @@ export default class RestartProject extends BaseCommand {
       };
 
       const projectName = args.name;
+      const distFolderPath = `${process.cwd()}/dist`;
       const status = await readStatusFile(project_config);
       const terraform = await RestartTerraformProject.getProject(
         this,
@@ -69,19 +69,22 @@ export default class RestartProject extends BaseCommand {
 
         // Activate the AWS profile
         if (project_config.cloud_provider === "aws") {
-          await terraform.AWSProfileActivate(project_config["aws_profile"]);
+          await (terraform as any).AWSProfileActivate(
+            project_config.aws_profile
+          );
         }
 
         // Setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
         if (
           project_config.cluster_type === "eks-fargate" ||
-          project_config.cluster_type === "eks-nodegroup"
+          project_config.cluster_type === "eks-nodegroup" ||
+          project_config.cluster_type === "aks"
         ) {
           // Delay of 15 seconds to allow the user to review the terraform files
           await new Promise((resolve) => setTimeout(resolve, 15000));
 
           // Initialize terraform
-          await terraform.runTerraformInit(
+          await (terraform as any).runTerraformInit(
             `${process.cwd()}/${projectName}/infrastructure`,
             `${project_config["environment"]}-config.tfvars`,
             projectName
@@ -100,17 +103,10 @@ export default class RestartProject extends BaseCommand {
               unlockCommandsExecuted = true;
             }
 
-            const modules =
-              responses.cloud_provider === "aws" ? aws_modules : azure_modules;
+            const modules = project_config.cloud_provider === "aws" ? aws_modules : azure_modules;
 
             for (const module of modules) {
               if (status.modules[module] === "fail") {
-                await executeCommandWithRetry(
-                  `export AWS_PROFILE=${responses.aws_profile}`,
-                  { cwd: infrastructurePath },
-                  1
-                );
-
                 await executeCommandWithRetry(
                   `terraform destroy -target=${module} `,
                   { cwd: infrastructurePath },
@@ -130,7 +126,7 @@ export default class RestartProject extends BaseCommand {
 
                   updateStatusFile(projectName, module, "fail");
 
-                  await terraform.runTerraformApply(
+                  await (terraform as any).runTerraformApply(
                     `${process.cwd()}/${projectName}/infrastructure`,
                     module,
                     "terraform.tfvars"
@@ -186,6 +182,13 @@ export default class RestartProject extends BaseCommand {
         // Create microservices
         await setupAndPushServices(project_config, configObject);
       }
+
+      //remove dist folder
+      await executeCommandWithRetry(
+        `rm -rf ${distFolderPath}`,
+        { cwd: `${process.cwd()}` },
+        1
+      );
 
       // Check the status of microservice
       await serviceHealthCheck(args, responses, project_config);
