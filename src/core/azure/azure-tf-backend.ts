@@ -397,25 +397,3 @@ export default class AzureTerraformBackend {
       return null;
     }
   }
-
-  // Helper method to generate backend configuration
-  static generateBackendConfig(projectId: string, location: string): string {
-    const storageAccountName = `${projectId.replace(
-      /-/g,
-      ""
-    )}tfstate`.toLowerCase();
-    const resourceGroupName = `${projectId}-rg`;
-    const containerName = "tfstate";
-
-    return `
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "${resourceGroupName}"
-    storage_account_name = "${storageAccountName}"
-    container_name       = "${containerName}"
-    key                  = "terraform.tfstate"
-  }
-}
-`;
-  }
-} 

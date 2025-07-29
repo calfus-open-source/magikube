@@ -495,81 +495,79 @@ export default class AWSProject extends BaseProject implements CloudProject {
   ): Promise<void> {
     AppLogger.info(`Running terraform destroy... in ${projectPath}`);
 
-    try {
-      const moduleInfo = module
-        ? `Destroying module ${module}...`
-        : "Destroying entire project...";
-      AppLogger.info(moduleInfo, true);
+    return new Promise((resolve, reject) => {
+      try {
+        const moduleInfo = module
+          ? `Destroying module ${module}...`
+          : "Destroying entire project...";
+        AppLogger.info(moduleInfo, true);
 
-      const args = ["destroy", "-no-color", "-auto-approve"];
-      if (module) args.push(`-target=${module}`);
-      if (varFile) args.push(`-var-file=${varFile}`);
+        const args = ["destroy", "-no-color", "-auto-approve"];
+        if (module) args.push(`-target=${module}`);
+        if (varFile) args.push(`-var-file=${varFile}`);
 
-      const terraformProcess = spawn("terraform", args, {
-        cwd: projectPath,
-        env: process.env,
-        stdio: ["inherit", "pipe", "pipe"],
-      });
+        const terraformProcess = spawn("terraform", args, {
+          cwd: projectPath,
+          env: process.env,
+          stdio: ["inherit", "pipe", "pipe"],
+        });
 
-      const progressBar = ProgressBar.createProgressBar();
-      progressBar.start(100, 0, {
-        message: moduleInfo,
-      });
+        const totalSteps = 100;
+        const progressBar = ProgressBar.createProgressBar();
+        progressBar.start(totalSteps, 0, {
+          message: "Terraform destroy in progress...",
+        });
 
-      let deletedResources = 0;
-      let totalExpectedDeletes = 10; // Default fallback
+        terraformProcess.stdout.on("data", (data) => {
+          const output = data.toString();
+          AppLogger.info(`stdout: ${output}`);
 
-      terraformProcess.stdout.on("data", (data) => {
-        const output = data.toString();
-        AppLogger.info(`stdout: ${output}`);
+          // Increment the progress bar when a destruction completes
+          const destructionCompleteRegex = /Destruction complete after \d+s/g;
+          let match;
+          while ((match = destructionCompleteRegex.exec(output)) !== null) {
+            progressBar.increment(totalSteps / totalSteps);
+          }
+        });
 
-        const totalMatch = output.match(/Plan: (\d+) to destroy/);
-        if (totalMatch && totalMatch[1]) {
-          totalExpectedDeletes = parseInt(totalMatch[1], 10);
-        }
+        terraformProcess.stderr.on("data", (data) => {
+          const errorOutput = data.toString();
+          progressBar.stop();
+          AppLogger.error(`stderr: ${errorOutput}`);
+          reject(new Error(`Terraform destroy error: ${errorOutput}`));
+        });
 
-        const destructionRegex = /Destruction complete after \d+s/g;
-        const matches = output.match(destructionRegex) || [];
-
-        deletedResources += matches.length;
-
-        const progress = Math.min(
-          Math.floor((deletedResources / totalExpectedDeletes) * 100),
-          100
-        );
-
-        progressBar.update(progress);
-      });
-
-      terraformProcess.stderr.on("data", (data) => {
-        AppLogger.error(`stderr: ${data.toString()}`);
-      });
-
-      await new Promise<void>((resolve, reject) => {
         terraformProcess.on("close", (code) => {
           if (code === 0) {
             progressBar.update(100, {
-              message: `Terraform destroy completed.`,
+              message: "Terraform destroy completed.",
             });
             progressBar.stop();
+            AppLogger.debug("Terraform destroy completed successfully.", true);
             resolve();
           } else {
             progressBar.stop();
-            AppLogger.error(`Terraform destroy failed with code ${code}`);
-            reject(new Error(`Terraform destroy failed with code ${code}`));
+            AppLogger.error(
+              `Terraform destroy process exited with code ${code}`,
+              true
+            );
+            reject(
+              new Error(`Terraform destroy process exited with code ${code}`)
+            );
+            setImmediate(() => process.exit(1));
           }
         });
 
         terraformProcess.on("error", (err) => {
           progressBar.stop();
-          AppLogger.error(`Failed to run Terraform destroy: ${err}`);
+          AppLogger.error(`Failed to run Terraform destroy: ${err}`, true);
           reject(err);
         });
-      });
-    } catch (error) {
-      AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
-      process.exit(1);
-    }
+      } catch (error) {
+        AppLogger.error(`Failed to destroy terraform process: ${error}`, true);
+        reject(error);
+      }
+    });
   }
 
   async runTerraformDestroyTemplate(

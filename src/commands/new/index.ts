@@ -41,6 +41,7 @@ import {
 } from "../../core/constants/systemDefaults.js";
 import { FullConfigObject } from "../../core/interface.js";
 import AzurePolicies from "../../core/azure/azure-iam.js";
+import { executeCommandWithRetry } from "../../core/utils/executeCommandWithRetry-utils.js";
 
 // Validates the project name input using regex rules
 function validateUserInput(input: string): void {
@@ -177,10 +178,11 @@ export default class CreateProject extends BaseCommand {
 
       // Clone base templates locally for customization
       responses.command = this.id;
-      if (!fs.existsSync(`${process.cwd()}/dist`)) {
-      await cloneAndCopyTemplates(this.id, responses.cloud_provider);
-      }
-      
+      const distFolderPath = `${process.cwd()}/dist`;
+      //if (!fs.existsSync(distFolderPath)) {
+        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
+     // }
+
       AppLogger.info(
         `Creating new Magikube project named '${args.name}' in the current directory`,
         true
@@ -200,7 +202,6 @@ export default class CreateProject extends BaseCommand {
         projectConfig.cloud_provider === "aws" ? aws_modules : azure_modules;
 
       // Initialize a status file to track provisioning progress
-      // initializeStatusFile(projectName, modules, services);
       initializeStatusFile(
         projectName,
         modules,
@@ -314,7 +315,12 @@ export default class CreateProject extends BaseCommand {
         // Final step to setup and push application services (frontend/backend/auth etc.)
         await setupAndPushServices(projectConfig, configObject);
       }
-
+      //remove dist folder
+      await executeCommandWithRetry(
+        `rm -rf ${distFolderPath}`,
+        { cwd: `${process.cwd()}` },
+        1
+      );
       // Perform health check to ensure services are live
       await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
