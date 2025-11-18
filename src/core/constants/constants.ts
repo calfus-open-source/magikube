@@ -42,6 +42,7 @@ export const azure_destroy_modules = [
   "module.gitops",
   "module.sql_server",
   "module.aks",
+  "module.acr",
   "module.k8s_common",
   "module.agw",
   "module.bastion",

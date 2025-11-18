@@ -397,3 +397,4 @@ export default class AzureTerraformBackend {
       return null;
     }
   }
+}

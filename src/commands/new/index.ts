@@ -179,9 +179,9 @@ export default class CreateProject extends BaseCommand {
       // Clone base templates locally for customization
       responses.command = this.id;
       const distFolderPath = `${process.cwd()}/dist`;
-      //if (!fs.existsSync(distFolderPath)) {
+      if (!fs.existsSync(distFolderPath)) {
         await cloneAndCopyTemplates(this.id, responses.cloud_provider);
-     // }
+     }
 
       AppLogger.info(
         `Creating new Magikube project named '${args.name}' in the current directory`,

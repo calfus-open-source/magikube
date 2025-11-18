@@ -211,7 +211,7 @@ export class ManageRepository {
     const gitCommands = [
       { cmd: "git init", message: "Initializing Git repository..." },
       { cmd: "git add .", message: "Adding files to Git..." },
-      { cmd: 'git commit -m "Initial commit"', message: "Committing files..." },
+      { cmd: 'git -c commit.gpgSign=false commit -m "Initial commit"', message: "Committing files..." },
       { cmd: "git branch -M main", message: "Creating main branch..." },
       {
         cmd: `git remote add origin ${remoteRepoUrl}`,
