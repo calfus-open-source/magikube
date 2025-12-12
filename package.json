@@ -35,6 +35,8 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^3",
     "@types/chai": "^4",
@@ -42,19 +44,22 @@
     "@types/figlet": "^1.5.8",
     "@types/follow-redirects": "^1.14.4",
     "@types/inquirer": "^9.0.7",
+    "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/libsodium-wrappers": "^0.7.14",
     "@types/mocha": "^10",
     "@types/node": "^18",
+    "babel-jest": "^30.2.0",
     "chai": "^4",
     "copyfiles": "^2.4.1",
     "eslint": "^9.9.0",
     "eslint-config-oclif": "^5",
     "eslint-config-oclif-typescript": "^3",
     "eslint-config-prettier": "^9",
-    "mocha": "^10",
+    "jest": "^30.2.0",
     "oclif": "^4",
     "shx": "^0.3.3",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10",
     "typescript": "^5",
     "typescript-eslint": "^8.0.1"
@@ -98,7 +103,8 @@
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
     "prepack": "oclif manifest && oclif readme",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "jest --coverage --passWithNoTests",
+    "test:coverage": "jest --coverage",
     "version": "oclif readme && git add README.md"
   },
   "types": "dist/index.d.ts"
