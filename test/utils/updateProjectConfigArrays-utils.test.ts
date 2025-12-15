@@ -1,23 +1,30 @@
-import { expect } from "chai";
-import sinon from "sinon";
 import { updateProjectConfigArrays, deleteArrayProperty } from "../../src/core/utils/updateDotMagikube-utils.js";
 import { AppLogger } from "../../src/logger/appLogger.js";
+
+// Mock AppLogger
+jest.mock("../../src/logger/appLogger.js", () => ({
+    AppLogger: {
+        info: jest.fn(),
+        warn: jest.fn(),
+    },
+}));
 
 describe("updateProjectConfigArrays", () => {
     let config: any;
 
     beforeEach(() => {
         config = {};
+        jest.clearAllMocks();
     });
 
     it("adds a new VPC with cidr_block and syncs vpcNames/cidr_blocks", () => {
         updateProjectConfigArrays(config, "vpc", "vpc1", "10.0.0.0/16");
 
-        expect(config.modules.vpc).to.deep.equal([
+        expect(config.modules.vpc).toEqual([
             { name: "vpc1", cidr_blocks: ["10.0.0.0/16"] },
         ]);
-        expect(config.vpcNames).to.deep.equal(["vpc1"]);
-        expect(config.cidr_blocks).to.deep.equal(["10.0.0.0/16"]);
+        expect(config.vpcNames).toEqual(["vpc1"]);
+        expect(config.cidr_blocks).toEqual(["10.0.0.0/16"]);
     });
 
     it("adds cidr_block to existing VPC if not present", () => {
@@ -29,11 +36,11 @@ describe("updateProjectConfigArrays", () => {
 
         updateProjectConfigArrays(config, "vpc", "vpc1", "10.0.1.0/16");
 
-        expect(config.modules.vpc[0].cidr_blocks).to.deep.equal([
+        expect(config.modules.vpc[0].cidr_blocks).toEqual([
             "10.0.0.0/16",
             "10.0.1.0/16",
         ]);
-        expect(config.cidr_blocks).to.include("10.0.1.0/16");
+        expect(config.cidr_blocks).toContain("10.0.1.0/16");
     });
 
     it("does not duplicate moduleName in vpcNames", () => {
@@ -45,7 +52,7 @@ describe("updateProjectConfigArrays", () => {
 
         updateProjectConfigArrays(config, "vpc", "vpc1");
 
-        expect(config.vpcNames).to.deep.equal(["vpc1"]);
+        expect(config.vpcNames).toEqual(["vpc1"]);
     });
 
     it("ensures config.modules.vpc exists if not array", () => {
@@ -55,8 +62,8 @@ describe("updateProjectConfigArrays", () => {
 
         updateProjectConfigArrays(config, "vpc", "vpc2");
 
-        expect(Array.isArray(config.modules.vpc)).to.be.true;
-        expect(config.modules.vpc[0].name).to.equal("vpc2");
+        expect(Array.isArray(config.modules.vpc)).toBe(true);
+        expect(config.modules.vpc[0].name).toEqual("vpc2");
     });
 
     it("adds a non-vpc module and removes root-level duplicate array", () => {
@@ -67,8 +74,8 @@ describe("updateProjectConfigArrays", () => {
 
         updateProjectConfigArrays(config, "eks", "eks1");
 
-        expect(config.modules.eks).to.deep.equal([{ name: "eks1" }]);
-        expect(config.eks).to.be.undefined;
+        expect(config.modules.eks).toEqual([{ name: "eks1" }]);
+        expect(config.eks).toBeUndefined();
     });
 
     it("does not duplicate non-vpc module", () => {
@@ -78,21 +85,13 @@ describe("updateProjectConfigArrays", () => {
 
         updateProjectConfigArrays(config, "eks", "eks1");
 
-        expect(config.modules.eks).to.deep.equal([{ name: "eks1" }]);
+        expect(config.modules.eks).toEqual([{ name: "eks1" }]);
     });
 });
 
 describe("deleteArrayProperty", () => {
-    let infoStub: sinon.SinonStub;
-    let warnStub: sinon.SinonStub;
-
     beforeEach(() => {
-        infoStub = sinon.stub(AppLogger, "info");
-        warnStub = sinon.stub(AppLogger, "warn");
-    });
-
-    afterEach(() => {
-        sinon.restore();
+        jest.clearAllMocks();
     });
 
     it("removes the service when found and logs success", () => {
@@ -100,10 +99,11 @@ describe("deleteArrayProperty", () => {
 
         deleteArrayProperty(arr, "svc1");
 
-        expect(arr).to.deep.equal(["svc2"]);
-        expect(infoStub.calledOnce).to.be.true;
-        expect(infoStub.firstCall.args[0]).to.equal(
-            "Removed svc1 from service_names array."
+        expect(arr).toEqual(["svc2"]);
+        expect(AppLogger.info).toHaveBeenCalledTimes(1);
+        expect(AppLogger.info).toHaveBeenCalledWith(
+            "Removed svc1 from service_names array.",
+            true
         );
     });
 
@@ -112,22 +112,21 @@ describe("deleteArrayProperty", () => {
 
         deleteArrayProperty(arr, "svc2");
 
-        expect(arr).to.deep.equal(["svc1"]);
-        expect(infoStub.calledOnce).to.be.true;
-        expect(infoStub.firstCall.args[0]).to.equal(
-            "svc2 not found in service_names array."
+        expect(arr).toEqual(["svc1"]);
+        expect(AppLogger.info).toHaveBeenCalledTimes(1);
+        expect(AppLogger.info).toHaveBeenCalledWith(
+            "svc2 not found in service_names array.",
+            true
         );
     });
 
     it("warns when invalid array or serviceName missing", () => {
         deleteArrayProperty(null as any, "");
 
-        expect(warnStub.calledOnce).to.be.true;
-        expect(
-            warnStub.firstCall.args[0]
-        ).to.equal(
-            "service_names array is missing or invalid, or service_Name is not provided."
+        expect(AppLogger.warn).toHaveBeenCalledTimes(1);
+        expect(AppLogger.warn).toHaveBeenCalledWith(
+            "service_names array is missing or invalid, or service_Name is not provided.",
+            true
         );
     });
 });
-
