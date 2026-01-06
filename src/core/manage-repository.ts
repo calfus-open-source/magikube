@@ -38,8 +38,7 @@ export class ManageRepository {
     let repoSetupError = false;
 
     const execCommand = (command: string, projectPath: string) =>
-      executeCommandWithRetry(command, { cwd: projectPath, stdio: "pipe" }, 1);
-
+     executeCommandWithRetry(command, { cwd: projectPath, stdio: "pipe" }, 1);
     const gitopsRepo = `${projectName}-${environment}-gitops`;
 
     let projectPath =
@@ -77,10 +76,10 @@ export class ManageRepository {
       }
     };
 
-    const remoteRepoUrl =
-      sourceCodeRepo === "github"
-        ? `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`
-        : "";
+    let remoteRepoUrl;
+    if(sourceCodeRepo == "github") {
+      remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
+    }
 
     async function fetchPublicKey(token: string, org: string, repo: string) {
       const response = await axios.get(

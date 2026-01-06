@@ -46,7 +46,7 @@ const awsProfile: any[] = [
     message: "Enter AWS profile to use: ",
     name: "aws_profile",
     type: "input",
-    default: "sample",
+    default: "",
   },
 ];
 const awsPrompts: any[] = [
@@ -76,7 +76,7 @@ const awsPrompts: any[] = [
     message: "Enter AWS profile to use: ",
     name: "aws_profile",
     type: "input",
-    default: "sample",
+    default: "",
   },
   {
     message: "Source code repository: ",
