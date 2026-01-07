@@ -315,11 +315,22 @@ export default class CreateApplication extends BaseProject {
             AppLogger.info("creating gen AI app...", true);
             const genAIserviceFiles = ["main.py", "requirements.txt", "Dockerfile"];
             const dotFiles = ["env.local", "gitignore"];
+            // Add CI workflow and buildspec so images get built and CD works like other services
+            const githubActionFiles = ['ci-build.yml'];
+            const commonFiles = ['buildspec.yml'];
+
             for(const file of genAIserviceFiles){
               await this.createFile(file, `${copyFilePath}/dist/genAI/${file}.liquid`, `${createFilePath}`,true) 
             }
             for(const file of dotFiles){
               await this.createFile(`.${file}`, `${copyFilePath}/dist/genAI/${file}.liquid`, `${createFilePath}`,true)
+            }
+
+            for (const file of commonFiles) {
+                await this.createFile(file, `${copyFilePath}/dist/genAI/${file}.liquid`, `${createFilePath}`, true);
+            }
+            for (const file of githubActionFiles) {
+                await this.createFile(`${file}`, `${copyFilePath}/dist/genAI/${file}.liquid`, `${createFilePath}/.github/workflows`, true);
             }
             updateStatusFile(projectName, genAIAppName, "success");
             AppLogger.info("Gen AI service setup is done.", true);
