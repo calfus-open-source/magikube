@@ -19,12 +19,12 @@ export default class CreateApplication extends BaseProject {
         appTypeKey: 'backend_app_type',
         createAppFunction: this.createNodeExpressApp,
       },
-      'next': {
+      next: {
         appNameKey: 'next_app_name',
         appTypeKey: 'frontend_app_type',
         createAppFunction: this.createNextApp,
       },
-      'react': {
+      react: {
         appNameKey: 'react_app_name',
         appTypeKey: 'frontend_app_type',
         createAppFunction: this.createReactApp,
@@ -524,6 +524,8 @@ export default class CreateApplication extends BaseProject {
       AppLogger.info('creating gen AI app...', true);
       const genAIserviceFiles = ['main.py', 'requirements.txt', 'Dockerfile'];
       const dotFiles = ['env.local', 'gitignore'];
+      const githubActionFiles = ['ci-build.yml'];
+      const commonFiles = ['buildspec.yml'];
       for (const file of genAIserviceFiles) {
         await this.createFile(
           file,
@@ -537,6 +539,22 @@ export default class CreateApplication extends BaseProject {
           `.${file}`,
           `${copyFilePath}/dist/genAI/${file}.liquid`,
           `${createFilePath}`,
+          true,
+        );
+      }
+      for (const file of commonFiles) {
+        await this.createFile(
+          file,
+          `${copyFilePath}/dist/genAI/${file}.liquid`,
+          `${createFilePath}`,
+          true,
+        );
+      }
+      for (const file of githubActionFiles) {
+        await this.createFile(
+          `${file}`,
+          `${copyFilePath}/dist/genAI/${file}.liquid`,
+          `${createFilePath}/.github/workflows`,
           true,
         );
       }
@@ -691,8 +709,8 @@ export default class CreateApplication extends BaseProject {
           orgName && userName
             ? `https://api.github.com/repos/${orgName}/${appName}`
             : !orgName && userName
-              ? `https://api.github.com/repos/${userName}/${appName}`
-              : '';
+            ? `https://api.github.com/repos/${userName}/${appName}`
+            : '';
         if (url) {
           AppLogger.debug(`Deleting repository for..., ${url}`);
           const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
