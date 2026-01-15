@@ -1,4 +1,5 @@
-import inquirer, { Answers } from "inquirer";
+import inquirer from "inquirer";
+import { Answers } from "inquirer";
 import CredentialsPrompts from "../../prompts/credentials-prompts.js";
 import PromptGenerator from "../../prompts/prompt-generator.js";
 import { v4 as uuidv4 } from "uuid";

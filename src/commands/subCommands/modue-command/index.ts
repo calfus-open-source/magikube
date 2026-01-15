@@ -21,8 +21,9 @@ import { updateProjectConfigArrays } from "../../../core/utils/updateDotMagikube
 function validateModuleInput(input: string): void {
   const pattern = /^[a-zA-Z0-9_-]+$/;
   if (!pattern.test(input)) {
-    console.error(
-      `\n\n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} Module Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. It must contain only alphanumeric characters, dashes (-), or underscores (_).\n\n`
+    AppLogger.error(
+      `Module Name "${input}" is invalid. It must contain only alphanumeric characters, dashes (-), or underscores (_).`,
+      true
     );
     process.exit(1);
   }

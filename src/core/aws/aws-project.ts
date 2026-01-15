@@ -6,7 +6,7 @@ import fs from 'fs';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
 import { AppLogger } from '../../logger/appLogger.js';
-import { ProgressBar } from '../../logger/progressLogger.js';
+import ProgressBar from '../../logger/progressLogger.js'; 
 import CreateApplication from '../setup-application.js';
 import BaseCommand from '../../commands/base.js';
 import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
