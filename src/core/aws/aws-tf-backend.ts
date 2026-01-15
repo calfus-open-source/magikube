@@ -8,34 +8,32 @@ import {
   DeleteBucketCommand,
   ListObjectsCommand,
   DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+} from '@aws-sdk/client-s3';
 
 import {
   DynamoDBClient,
   CreateTableCommand,
-  DeleteTableCommand
-} from "@aws-sdk/client-dynamodb";
+  DeleteTableCommand,
+} from '@aws-sdk/client-dynamodb';
 
-import BaseProject from "../base-project.js";
-import { AppLogger } from "../../logger/appLogger.js";
+import BaseProject from '../base-project.js';
+import { AppLogger } from '../../logger/appLogger.js';
 
 export default class AWSTerraformBackend {
-
   static async create(
     project: BaseProject,
     projectId: string,
     region: string,
     accessKeyId: string,
-    secretAccessKey: string
+    secretAccessKey: string,
   ): Promise<boolean> {
-
     const bucketName = `${projectId}-tfstate`;
     await AWSTerraformBackend.createBucket(
       project,
       bucketName,
       region,
       accessKeyId,
-      secretAccessKey
+      secretAccessKey,
     );
 
     const tableName = `${projectId}-tfstate-lock`;
@@ -44,47 +42,46 @@ export default class AWSTerraformBackend {
       tableName,
       region,
       accessKeyId,
-      secretAccessKey
+      secretAccessKey,
     );
 
     return true;
   }
-  
+
   static async delete(
     project: BaseProject,
     projectId: string,
     region: string,
     accessKeyId: string,
-    secretAccessKey: string
+    secretAccessKey: string,
   ): Promise<boolean> {
-      
-      const bucketName = `${projectId}-tfstate`;
-      await AWSTerraformBackend.deleteBucket(
-        project,
-        bucketName,
-        region,
-        accessKeyId,
-        secretAccessKey
-      );
-  
-      const tableName = `${projectId}-tfstate-lock`;
-      await AWSTerraformBackend.deleteDynamoDBTable(
-        project,
-        tableName,
-        region,
-        accessKeyId,
-        secretAccessKey
-      );
+    const bucketName = `${projectId}-tfstate`;
+    await AWSTerraformBackend.deleteBucket(
+      project,
+      bucketName,
+      region,
+      accessKeyId,
+      secretAccessKey,
+    );
 
-      return true;
+    const tableName = `${projectId}-tfstate-lock`;
+    await AWSTerraformBackend.deleteDynamoDBTable(
+      project,
+      tableName,
+      region,
+      accessKeyId,
+      secretAccessKey,
+    );
+
+    return true;
   }
-  
+
   static async createDynamoDBTable(
     project: BaseProject,
     tableName: string,
     region: string,
     accessKeyId: string,
-    secretAccessKey: string
+    secretAccessKey: string,
   ): Promise<boolean> {
     const dynamoDBClient = new DynamoDBClient({
       region: region,
@@ -99,17 +96,15 @@ export default class AWSTerraformBackend {
         await dynamoDBClient.send(
           new CreateTableCommand({
             TableName: tableName,
-            KeySchema: [
-              { AttributeName: "LockID", KeyType: "HASH" },
-            ],
+            KeySchema: [{ AttributeName: 'LockID', KeyType: 'HASH' }],
             AttributeDefinitions: [
-              { AttributeName: "LockID", AttributeType: "S" },
+              { AttributeName: 'LockID', AttributeType: 'S' },
             ],
             ProvisionedThroughput: {
               ReadCapacityUnits: 5,
               WriteCapacityUnits: 5,
             },
-          })
+          }),
         );
         return true;
       } catch (err) {
@@ -134,7 +129,7 @@ export default class AWSTerraformBackend {
     bucketName: string,
     region: string,
     accessKeyId: string,
-    secretAccessKey: string
+    secretAccessKey: string,
   ): Promise<boolean> {
     const s3Client = new S3Client({
       region: region,
@@ -159,7 +154,7 @@ export default class AWSTerraformBackend {
         return false;
       }
       const data = await s3Client.send(
-        new CreateBucketCommand({ Bucket: bucketName })
+        new CreateBucketCommand({ Bucket: bucketName }),
       );
       AppLogger.info(`Bucket ${bucketName} created, ${data}`, true);
     } catch (err) {
@@ -174,7 +169,7 @@ export default class AWSTerraformBackend {
     tableName: string,
     region: string,
     accessKeyId: string,
-    secretAccessKey: string
+    secretAccessKey: string,
   ): Promise<boolean> {
     const dynamoDBClient = new DynamoDBClient({
       region: region,
@@ -186,7 +181,7 @@ export default class AWSTerraformBackend {
 
     try {
       await dynamoDBClient.send(
-        new DeleteTableCommand({ TableName: tableName })
+        new DeleteTableCommand({ TableName: tableName }),
       );
       AppLogger.info(`Table ${tableName} deleted`, true);
     } catch (err) {
@@ -201,9 +196,8 @@ export default class AWSTerraformBackend {
     bucketName: string,
     region: string,
     accessKeyId: string,
-    secretAccessKey: string
+    secretAccessKey: string,
   ): Promise<boolean> {
-
     const s3Client = new S3Client({
       region: region,
       credentials: {
@@ -215,18 +209,18 @@ export default class AWSTerraformBackend {
     try {
       //delete all obejcts in the bucket
       const listObjects = await s3Client.send(
-        new ListObjectsCommand({ Bucket: bucketName })
+        new ListObjectsCommand({ Bucket: bucketName }),
       );
       if (listObjects.Contents) {
         for (const obj of listObjects.Contents) {
           await s3Client.send(
-            new DeleteObjectCommand({ Bucket: bucketName, Key: obj.Key })
+            new DeleteObjectCommand({ Bucket: bucketName, Key: obj.Key }),
           );
         }
       }
 
       const data = await s3Client.send(
-        new DeleteBucketCommand({ Bucket: bucketName })
+        new DeleteBucketCommand({ Bucket: bucketName }),
       );
       AppLogger.info(`Bucket ${bucketName} deleted ${data}`, true);
     } catch (err) {

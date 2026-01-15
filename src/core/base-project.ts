@@ -1,19 +1,19 @@
-import { Liquid } from "liquidjs";
-import fs from "fs-extra";
-import path, { dirname, join } from "path";
-import SystemConfig from "../config/system.js";
-import BaseCommand from "../commands/base.js";
-import TerraformProject from "./terraform-project.js";
-import { AppLogger } from "../logger/appLogger.js";
-import { readStatusFile } from "./utils/statusUpdater-utils.js";
-import { modules } from "./constants/constants.js";
-import { appendUniqueLines } from "./utils/appendUniqueLines-utils.js";
+import { Liquid } from 'liquidjs';
+import fs from 'fs-extra';
+import path, { dirname, join } from 'path';
+import SystemConfig from '../config/system.js';
+import BaseCommand from '../commands/base.js';
+import TerraformProject from './terraform-project.js';
+import { AppLogger } from '../logger/appLogger.js';
+import { readStatusFile } from './utils/statusUpdater-utils.js';
+import { modules } from './constants/constants.js';
+import { appendUniqueLines } from './utils/appendUniqueLines-utils.js';
 
 export default abstract class BaseProject {
   protected config: any = {};
   public command: BaseCommand;
   protected engine = new Liquid();
-  protected projectPath: string = "";
+  protected projectPath: string = '';
 
   constructor(command: BaseCommand, config: any) {
     this.config = config;
@@ -30,84 +30,84 @@ export default abstract class BaseProject {
   }
 
   async terraformDestroy(projectName: string): Promise<void> {
+    const TerraformProject = (await import('./terraform-project.js')).default;
     // Run terraform destroy
     AppLogger.info(`Running terraform destroy in the path`, true);
     const terraform = await TerraformProject.getProject(this.command);
     const modules = [
-      "module.rds",
-      "module.environment",
-      "module.argo",
-      "module.ingress-controller",
-      "module.repository",
-      "module.gitops",
-      "module.ecr-repo",
-      "module.acm",
-      "module.eks",
-      "module.vpc",
+      'module.rds',
+      'module.environment',
+      'module.argo',
+      'module.ingress-controller',
+      'module.repository',
+      'module.gitops',
+      'module.ecr-repo',
+      'module.acm',
+      'module.eks',
+      'module.vpc',
     ];
 
     if (
-      this.config.cluster_type === "eks-fargate" ||
-      this.config.cluster_type === "eks-nodegroup"
+      this.config.cluster_type === 'eks-fargate' ||
+      this.config.cluster_type === 'eks-nodegroup'
     ) {
       // Initialize Terraform once
       await terraform?.runTerraformInit(
         this.projectPath + `/infrastructure`,
         `${this.config.environment}-config.tfvars`,
-        projectName
+        projectName,
       );
       const readFile = readStatusFile(this.config, this.config.command);
       // Destroy modules one by one
       for (const module of modules) {
-        if (readFile.modules[module] == "success") {
+        if (readFile.modules[module] == 'success') {
           try {
             AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
             await terraform?.runTerraformDestroy(
               this.projectPath + `/infrastructure`,
               module,
-              "terraform.tfvars"
+              'terraform.tfvars',
             );
             AppLogger.debug(
-              `Successfully destroyed Terraform for module: ${module}`
+              `Successfully destroyed Terraform for module: ${module}`,
             );
           } catch (error) {
             AppLogger.error(
               `Error destroying Terraform for module: ${module}, ${error}`,
-              true
+              true,
             );
           }
         }
       }
     }
 
-    
     // Check if it has multiple modules
-    if (this.config.cluster_type === "k8s") {
+    if (this.config.cluster_type === 'k8s') {
       // Initialize the terraform
       // await terraform?.runTerraformInit(`${this.projectPath}/infrastructure`, `/infrastructure/${this.config.environment}-config.tfvars`);
       await terraform?.runTerraformInit(
         this.projectPath + `/infrastructure`,
         `${this.config.environment}-config.tfvars`,
-        projectName
+        projectName,
       );
       for (const module of modules) {
         try {
           terraform?.startSSHProcess();
           // Destroy the ingress and other helm modules
           await terraform?.runTerraformDestroy(
-            this.projectPath + "/infrastructure",
+            this.projectPath + '/infrastructure',
             module,
-            `terraform.tfvars`
+            `terraform.tfvars`,
           );
           terraform?.stopSSHProcess();
           AppLogger.debug(
             `Successfully destroyed Terraform for module: ${module}`,
-            true
+            true,
           );
         } catch (error) {
           AppLogger.error(
             `Error destroying Terraform for module: ${module}, ${error}`,
-            true
+            true,
           );
         }
       }
@@ -122,7 +122,7 @@ export default abstract class BaseProject {
     } else {
       AppLogger.debug(
         `Folder '${this.projectPath}' does not exist in the path`,
-        true
+        true,
       );
     }
   }
@@ -132,7 +132,7 @@ export default abstract class BaseProject {
     this.projectPath = join(path, name);
     await this.createFolder();
 
-    const projectConfigFile = join(this.projectPath, ".magikube");
+    const projectConfigFile = join(this.projectPath, '.magikube');
     AppLogger.debug(`Creating project '${name}' in the path`, true);
     fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
 
@@ -143,10 +143,10 @@ export default abstract class BaseProject {
 
     if (fs.existsSync(this.projectPath)) {
       AppLogger.debug(
-        `Folder '${this.projectPath}' already exists in the path`
+        `Folder '${this.projectPath}' already exists in the path`,
       );
       AppLogger.error(
-        `Folder '${this.projectPath}' already exists in the path`
+        `Folder '${this.projectPath}' already exists in the path`,
       );
     } else {
       AppLogger.debug(`Creating folder '${this.projectPath}' in the path`);
@@ -154,12 +154,21 @@ export default abstract class BaseProject {
     }
   }
 
-  async createProviderFile(path?:string): Promise<void> {
-    const providerFilePath = join(this.projectPath, "infrastructure", "providers.tf" );
+  async createProviderFile(path?: string): Promise<void> {
+    const providerFilePath = join(
+      this.projectPath,
+      'infrastructure',
+      'providers.tf',
+    );
     if (!fs.existsSync(providerFilePath)) {
       // Proceed to create the file if it doesn't exist
       AppLogger.debug(`Creating 'providers.tf' at ${providerFilePath}`);
-      await this.createFile( "providers.tf", `${path}/dist/templates/common/providers.tf.liquid`, "/infrastructure", true );
+      await this.createFile(
+        'providers.tf',
+        `${path}/dist/templates/common/providers.tf.liquid`,
+        '/infrastructure',
+        true,
+      );
       AppLogger.debug(`providers.tf create at : ${providerFilePath}`);
     }
   }
@@ -167,22 +176,23 @@ export default abstract class BaseProject {
   async createFile(
     filename: string,
     templateFilename: string,
-    folderName: string = ".",
+    folderName: string = '.',
     CreateProjectFile: boolean = false,
-    command: string = ""
+    command: string = '',
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
+
     const project_config = SystemConfig.getInstance().getConfig();
-    const status =  readStatusFile(project_config,project_config.command)
+    const status = readStatusFile(project_config, project_config.command);
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
-      : project_config.command === "resume"
-      ? join(new URL(".", import.meta.url).pathname, templateFilename)
-      : templateFilename;
+      : project_config.command === 'resume'
+        ? join(new URL('.', import.meta.url).pathname, templateFilename)
+        : templateFilename;
 
     // Read the template file
-    const templateFile = fs.readFileSync(templateFilePath, "utf8");
+    const templateFile = fs.readFileSync(templateFilePath, 'utf8');
     // Render the template using Liquid.js
     const output = await this.engine.parseAndRender(templateFile, {
       ...this.config,
@@ -190,54 +200,59 @@ export default abstract class BaseProject {
 
     let projectPath;
     if (
-      project_config.command === "new" ||
-      project_config.command === "resume"
+      project_config.command === 'new' ||
+      project_config.command === 'resume'
     ) {
       projectPath = `${process.cwd()}/${project_config.project_name}`;
     } else {
       projectPath = process.cwd();
     }
+
     const folderPath = join(projectPath, folderName);
+
     // Ensure the folder exists
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
-    // Define the full path to the file
+
+    // Define full path to the file
     const filePath = join(folderPath, filename);
+
     let lastModule;
-    if(project_config.moduleType !== undefined){
-    lastModule = project_config.moduleType[project_config.moduleType.length - 1];
+    if (project_config.moduleType !== undefined) {
+      lastModule = project_config.moduleType[project_config.moduleType.length - 1];
+
     }
+
     if (
-      project_config.command === "new" ||
-      project_config.command === "resume" 
+      project_config.command === 'new' ||
+      project_config.command === 'resume'
     ) {
-      // Logic for the "resume" command
+      // Logic for "resume" command
       AppLogger.debug(`Creating ${filename} file for resume command.`);
       fs.writeFileSync(filePath, output);
     } else if (
-      project_config.command === "module" ||
-      project_config.command === "create"
+      project_config.command === 'module' ||
+      project_config.command === 'create'
     ) {
-      // Logic for the "module" command
+      // Logic for "module" command
       AppLogger.debug(
-        `Creating or appending to ${filename} file for module command.`
+        `Creating or appending to ${filename} file for module command.`,
       );
 
       await appendUniqueLines(output, templateFilename, filePath);
     }
   }
 
-
   async generateContent(templateFilename: string): Promise<any> {
     AppLogger.debug(`Creating content from ${templateFilename}`);
-    const templateFile = fs.readFileSync(join(templateFilename), "utf8");
+    const templateFile = fs.readFileSync(join(templateFilename), 'utf8');
     return await this.engine.parseAndRender(templateFile, { ...this.config });
   }
 
   async copyFolderAndRender(
     source: string,
-    destination: string
+    destination: string,
   ): Promise<void> {
     const fullPath = source;
     const destFullPath = join(this.projectPath, destination);
@@ -246,7 +261,7 @@ export default abstract class BaseProject {
       return;
     }
 
-    const files = fs.readdirSync(fullPath, "utf8");
+    const files = fs.readdirSync(fullPath, 'utf8');
 
     for (const file of files) {
       const srcPath = join(fullPath, file);
@@ -259,15 +274,15 @@ export default abstract class BaseProject {
         }
         await this.copyFolderAndRender(
           join(source, file),
-          join(destination, file)
+          join(destination, file),
         );
-      } else if (file.endsWith(".liquid")) {
-        const templateFile = fs.readFileSync(srcPath, "utf8");
+      } else if (file.endsWith('.liquid')) {
+        const templateFile = fs.readFileSync(srcPath, 'utf8');
         const output = await this.engine.parseAndRender(templateFile, {
           ...this.config,
         });
 
-        const outputFilePath = destPath.replace(".liquid", "");
+        const outputFilePath = destPath.replace('.liquid', '');
         if (!fs.existsSync(dirname(outputFilePath))) {
           fs.mkdirSync(dirname(outputFilePath), { recursive: true });
         }

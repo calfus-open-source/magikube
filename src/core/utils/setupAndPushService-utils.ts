@@ -1,30 +1,30 @@
-import path from "path";
-import BaseCommand from "../../commands/base.js";
-import { ManageRepository } from "../manage-repository.js";
-import CreateApplication from "../setup-application.js";
-import fs from "fs";
-import { readStatusFile } from "./statusUpdater-utils.js";
-import { AppLogger } from "../../logger/appLogger.js";
+import path from 'path';
+import BaseCommand from '../../commands/base.js';
+import { ManageRepository } from '../manage-repository.js';
+import CreateApplication from '../setup-application.js';
+import fs from 'fs';
+import { readStatusFile } from './statusUpdater-utils.js';
+import { AppLogger } from '../../logger/appLogger.js';
 
 export async function setupAndPushServices(
   projectConfig: any,
-  configObject: any
+  configObject: any,
 ) {
   let command: BaseCommand | undefined;
   const createApp = new CreateApplication(
     command as BaseCommand,
-    projectConfig
+    projectConfig,
   );
   const status = await readStatusFile(projectConfig, projectConfig.command);
   try {
-    if (projectConfig.command === "new" || projectConfig.command === "resume") {
+    if (projectConfig.command === 'new' || projectConfig.command === 'resume') {
       await setupServices(projectConfig, configObject, createApp, status);
-    } else if (projectConfig.command === "create") {
+    } else if (projectConfig.command === 'create') {
       await createService(projectConfig, configObject, createApp);
     }
   } catch (error: any) {
     AppLogger.error(
-      `An error occurred during the setup process:: ${error.message}`
+      `An error occurred during the setup process:: ${error.message}`,
     );
   }
 }
@@ -33,65 +33,65 @@ async function setupServices(
   projectConfig: any,
   configObject: any,
   createApp: CreateApplication,
-  status: any
+  status: any,
 ) {
-  if (status.services["auth-service"] !== "success") {
+  if (status.services['auth-service'] !== 'success') {
     await setupService(
-      "auth-service",
-      "auth-service",
+      'auth-service',
+      'auth-service',
       () => createApp.setupAuthenticationService(projectConfig),
-      configObject
+      configObject,
     );
   }
-  if (status.services["keycloak"] !== "success"){
+  if (status.services['keycloak'] !== 'success') {
     await setupService(
-      "keycloak",
-      "keycloak-service",
+      'keycloak',
+      'keycloak-service',
       () => createApp.setupKeyCloak(projectConfig),
-      configObject
+      configObject,
     );
   }
-  if (status.services["my-genAI-app"] !== "success") {
+  if (status.services['my-genAI-app'] !== 'success') {
     await setupService(
-      "my-genAI-app",
-      "gen-ai-service",
+      'my-genAI-app',
+      'gen-ai-service',
       () => createApp.createGenAIApp(projectConfig),
-      configObject
+      configObject,
     );
   }
 
   if (
-    projectConfig["backend_app_type"] &&
-    status.services["my-node-app"] !== "success"
+    projectConfig['backend_app_type'] &&
+    status.services['my-node-app'] !== 'success'
   ) {
     await handleServiceCreation(
-      projectConfig["backend_app_type"],
-      projectConfig["node_app_name"],
+      projectConfig['backend_app_type'],
+      projectConfig['node_app_name'],
       projectConfig,
       configObject,
-      createApp
+      createApp,
     );
   }
 
-  if (projectConfig["frontend_app_type"]) {
-    const frontendAppType = projectConfig["frontend_app_type"];
-    if (status.services[frontendAppType] !== "success") {
+  if (projectConfig['frontend_app_type']) {
+    const frontendAppType = projectConfig['frontend_app_type'];
+    if (status.services[frontendAppType] !== 'success') {
       await handleServiceCreation(
         frontendAppType,
         frontendAppType,
         projectConfig,
         configObject,
-        createApp
+        createApp,
       );
     }
   }
-  if (status.services["gitops"] !== "success") {
+  if (status.services['gitops'] !== 'success') {
     await setupService(
-      "gitops",
-      "gitops",
+      'gitops',
+      'gitops',
       () => createApp.setupGitops(projectConfig),
       configObject,
-      `${projectConfig.environment}`
+      `${projectConfig.environment}`,
     );
   }
 }
@@ -99,62 +99,62 @@ async function setupServices(
 async function createService(
   projectConfig: any,
   configObject: any,
-  createApp: CreateApplication
+  createApp: CreateApplication,
 ) {
-  if (projectConfig.service_type === "auth-service") {
+  if (projectConfig.service_type === 'auth-service') {
     await setupService(
-      "auth-service",
-      "auth-service",
+      'auth-service',
+      'auth-service',
       () => createApp.setupAuthenticationService(projectConfig),
-      configObject
+      configObject,
     );
   }
 
-  if (projectConfig.service_type === "keycloak") {
+  if (projectConfig.service_type === 'keycloak') {
     await setupService(
-      "keycloak",
-      "keycloak",
+      'keycloak',
+      'keycloak',
       () => createApp.setupKeyCloak(projectConfig),
-      configObject
+      configObject,
     );
   }
 
-
-  if(
-    projectConfig["genAI_app_name"] && 
-    projectConfig.service_type === "gen-ai-service"){
-        await setupService(
-          "my-genAI-app",
-          "my-genAI-app",
-          () => createApp.createGenAIApp(projectConfig),
-          configObject
-        );
+  if (
+    projectConfig['genAI_app_name'] &&
+    projectConfig.service_type === 'gen-ai-service'
+  ) {
+    await setupService(
+      'my-genAI-app',
+      'my-genAI-app',
+      () => createApp.createGenAIApp(projectConfig),
+      configObject,
+    );
   }
 
   if (
-    projectConfig["backend_app_type"] &&
-    projectConfig.service_type === "backend-service"
+    projectConfig['backend_app_type'] &&
+    projectConfig.service_type === 'backend-service'
   ) {
     await handleServiceCreation(
-      projectConfig["backend_app_type"],
-      projectConfig["node_app_name"],
+      projectConfig['backend_app_type'],
+      projectConfig['node_app_name'],
       projectConfig,
       configObject,
-      createApp
+      createApp,
     );
   }
 
   if (
-    projectConfig["frontend_app_type"] &&
-    projectConfig.service_type === "frontend-service"
+    projectConfig['frontend_app_type'] &&
+    projectConfig.service_type === 'frontend-service'
   ) {
-    const frontendAppType = projectConfig["frontend_app_type"];
+    const frontendAppType = projectConfig['frontend_app_type'];
     await handleServiceCreation(
       frontendAppType,
       frontendAppType,
       projectConfig,
       configObject,
-      createApp
+      createApp,
     );
   }
 }
@@ -164,7 +164,7 @@ async function setupService(
   appType: string,
   setupFunction: () => Promise<boolean>,
   configObject: any,
-  appName?: string
+  appName?: string,
 ) {
   try {
     const status = await setupFunction();
@@ -183,7 +183,7 @@ async function handleServiceCreation(
   appName: string,
   projectConfig: any,
   configObject: any,
-  createApp: CreateApplication
+  createApp: CreateApplication,
 ) {
   try {
     configObject.appName = appName;
@@ -193,4 +193,3 @@ async function handleServiceCreation(
     AppLogger.error(`Error setting up ${appType} App: ${error}`);
   }
 }
-
