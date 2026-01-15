@@ -1,35 +1,40 @@
-import path from "path";
-import SystemConfig from "../config/system.js";
-import { AppLogger } from "../logger/appLogger.js";
-import { Environment, CloudProvider, VersionControl, Colours } from './constants.js';
-import fs from "fs"
-import { awsSupportedRegions } from "../core/constants/constants.js";
+import path from 'path';
+import SystemConfig from '../config/system.js';
+import { AppLogger } from '../logger/appLogger.js';
+import {
+  Environment,
+  CloudProvider,
+  VersionControl,
+  Colours,
+} from './constants.js';
+import fs from 'fs';
+import { awsSupportedRegions } from '../core/constants/constants.js';
 
 const productionPrompts: any[] = [
   {
-    choices: ["production", "sandbox"],
-    message: "Select Lifecycle(s):",
-    name: "lifecycle",
-    type: "checkbox",
+    choices: ['production', 'sandbox'],
+    message: 'Select Lifecycle(s):',
+    name: 'lifecycle',
+    type: 'checkbox',
   },
 ];
 
 const nonProductionPrompts: any[] = [
   {
-    choices: ["dev", "test", "uat"],
-    message: "Select Lifecycle(s):",
-    name: "lifecycle",
-    type: "checkbox",
+    choices: ['dev', 'test', 'uat'],
+    message: 'Select Lifecycle(s):',
+    name: 'lifecycle',
+    type: 'checkbox',
   },
 ];
 const awsRegion: any[] = [
   {
-    message: "Select a Region: ",
-    name: "aws_region",
+    message: 'Select a Region: ',
+    name: 'aws_region',
     default:
       process.env.AWS_REGION ||
       SystemConfig.getInstance().getConfig().aws_region,
-    type: "input",
+    type: 'input',
     // Validate the input
     validate: function (input: string) {
       const awsRegions = [...awsSupportedRegions];
@@ -43,45 +48,45 @@ const awsRegion: any[] = [
 
 const awsProfile: any[] = [
   {
-    message: "Enter AWS profile to use: ",
-    name: "aws_profile",
-    type: "input",
-    default: "sample",
+    message: 'Enter AWS profile to use: ',
+    name: 'aws_profile',
+    type: 'input',
+    default: 'sample',
   },
 ];
 const awsPrompts: any[] = [
   {
-    message: "Select a Region: ",
-    name: "aws_region",
+    message: 'Select a Region: ',
+    name: 'aws_region',
     default:
       process.env.AWS_REGION ||
       SystemConfig.getInstance().getConfig().aws_region,
-    type: "input",
+    type: 'input',
     // Validate the input
-    validate: function(input: string) {
+    validate: function (input: string) {
       const awsRegions = [...awsSupportedRegions];
       if (!awsRegions.includes(input)) {
-         return `${Colours.boldText}${Colours.redColor}\n Invalid Region. Please enter existing region.${Colours.colorReset}`;
-      } 
+        return `${Colours.boldText}${Colours.redColor}\n Invalid Region. Please enter existing region.${Colours.colorReset}`;
+      }
       return true;
-  },
-  },
-  {
-    choices: ["eks-fargate", "eks-nodegroup", "k8s"],
-    message: "Select a Cluster Type:",
-    name: "cluster_type",
-    type: "list",
+    },
   },
   {
-    message: "Enter AWS profile to use: ",
-    name: "aws_profile",
-    type: "input",
-    default: "sample",
+    choices: ['eks-fargate', 'eks-nodegroup', 'k8s'],
+    message: 'Select a Cluster Type:',
+    name: 'cluster_type',
+    type: 'list',
   },
   {
-    message: "Source code repository: ",
-    name: "source_code_repository",
-    type: "list",
+    message: 'Enter AWS profile to use: ',
+    name: 'aws_profile',
+    type: 'input',
+    default: 'sample',
+  },
+  {
+    message: 'Source code repository: ',
+    name: 'source_code_repository',
+    type: 'list',
     choices: [
       VersionControl.GITHUB,
       // VersionControl.CODECOMMIT,
@@ -94,9 +99,9 @@ const awsPrompts: any[] = [
 ];
 const sourceCodeRepositories: any[] = [
   {
-    message: "Source code repository: ",
-    name: "source_code_repository",
-    type: "list",
+    message: 'Source code repository: ',
+    name: 'source_code_repository',
+    type: 'list',
     choices: [
       VersionControl.GITHUB,
       // VersionControl.CODECOMMIT,
@@ -110,44 +115,44 @@ const sourceCodeRepositories: any[] = [
 
 const k8sPrompts: any[] = [
   {
-    message: "Enter the type of worker instance: ",
-    name: "instance_type",
-    type: "input",
-    default: "t3.micro",
+    message: 'Enter the type of worker instance: ',
+    name: 'instance_type',
+    type: 'input',
+    default: 't3.micro',
   },
   {
-    message: "Enter the number of master nodes: ",
-    name: "master_nodes_count",
-    type: "input",
+    message: 'Enter the number of master nodes: ',
+    name: 'master_nodes_count',
+    type: 'input',
     default: 1,
   },
   {
-    message: "Enter the type of worker instance: ",
-    name: "instance_type",
-    type: "input",
-    default: "t3.micro",
+    message: 'Enter the type of worker instance: ',
+    name: 'instance_type',
+    type: 'input',
+    default: 't3.micro',
   },
   {
-    message: "Enter the number of worker nodes: ",
-    name: "worker_nodes",
-    type: "input",
+    message: 'Enter the number of worker nodes: ',
+    name: 'worker_nodes',
+    type: 'input',
     default: 1,
   },
 ];
 
 const githubPrompts: any[] = [
   {
-    message: "Enter GitHub Organization Name: ",
-    name: "github_owner",
-    type: "input",
+    message: 'Enter GitHub Organization Name: ',
+    name: 'github_owner',
+    type: 'input',
     default:
       process.env.GITHUB_OWNER ||
       SystemConfig.getInstance().getConfig().github_owner,
   },
   {
-    message: "Enter GitHub Access Token: ",
-    name: "github_access_token",
-    type: "password",
+    message: 'Enter GitHub Access Token: ',
+    name: 'github_access_token',
+    type: 'password',
     default:
       process.env.GITHUB_ACCESS_TOKEN ||
       SystemConfig.getInstance().getConfig().github_access_token,
@@ -159,45 +164,46 @@ const githubPrompts: any[] = [
     default:
       process.env.GIT_USER_NAME ||
       SystemConfig.getInstance().getConfig().git_user_name,
-  }
+  },
 ];
 
 const codeCommitPrompts: any[] = [
   {
-    message: "Enter Name for Frontend Repo: ",
-    name: "frontend_repo_codecommit",
-    type: "input",
-    default: "frontend_app"
+    message: 'Enter Name for Frontend Repo: ',
+    name: 'frontend_repo_codecommit',
+    type: 'input',
+    default: 'frontend_app',
   },
   {
-    message: "Enter Name for Backend Repo: ",
-    name: "backend_repo_codecommit",
-    type: "input",
-    default: "backend_app"
+    message: 'Enter Name for Backend Repo: ',
+    name: 'backend_repo_codecommit',
+    type: 'input',
+    default: 'backend_app',
   },
 ];
 
 const vpcPrompt: any[] = [
   {
     choices: [],
-    message: "Select the Vpc:",
-    name: "VPC",
-    type: "list",
-  }
+    message: 'Select the Vpc:',
+    name: 'VPC',
+    type: 'list',
+  },
 ];
 
 const cidrPrompt: any[] = [
   {
-    message: "Enter the CIDR Block (e.g., 10.0.0.0/16): ",
-    name: "cidrBlock",
-    type: "input",
+    message: 'Enter the CIDR Block (e.g., 10.0.0.0/16): ',
+    name: 'cidrBlock',
+    type: 'input',
     validate: (input: string) => {
       // Regex to validate the CIDR block format
-      const pattern = /^(([0-9]{1,3}\.){3}[0-9]{1,3})\/([0-9]|[1-2][0-9]|3[0-2])$/;
+      const pattern =
+        /^(([0-9]{1,3}\.){3}[0-9]{1,3})\/([0-9]|[1-2][0-9]|3[0-2])$/;
 
       // Helper function to validate IP octets
       const isValidIP = (ip: string) => {
-        return ip.split('.').every(octet => {
+        return ip.split('.').every((octet) => {
           const num = parseInt(octet, 10);
           return num >= 0 && num <= 255;
         });
@@ -212,27 +218,27 @@ const cidrPrompt: any[] = [
       }
 
       // Return error message for invalid input
-      return "Invalid CIDR block format. Please enter a valid CIDR (e.g., 10.0.0.0/16).";
-    }
-  }
+      return 'Invalid CIDR block format. Please enter a valid CIDR (e.g., 10.0.0.0/16).';
+    },
+  },
 ];
 
 const domainPrompt: any[] = [
   {
-    message: "Enter the Domain Name: ",
-    name: "domain",
-    type: "input",
-  }
+    message: 'Enter the Domain Name: ',
+    name: 'domain',
+    type: 'input',
+  },
 ];
 
 const serviceNamePrompt: any[] = [
   {
-    message: "Enter the Service Name: ",
-    name: "service_name",
-    type: "input",
+    message: 'Enter the Service Name: ',
+    name: 'service_name',
+    type: 'input',
     validate: (input: string) => {
-      if (!input || input.trim() === "") {
-        return "Domain name is required.";
+      if (!input || input.trim() === '') {
+        return 'Domain name is required.';
       }
       return true;
     },
@@ -241,27 +247,33 @@ const serviceNamePrompt: any[] = [
 
 const microServicePrompts: any[] = [
   {
-    choices: ["frontend-service","backend-service","auth-service","keycloak","gen-ai-service"],
-    message: "Select a MicroService:",
-    name: "service_type",
-    type: "list",
+    choices: [
+      'frontend-service',
+      'backend-service',
+      'auth-service',
+      'keycloak',
+      'gen-ai-service',
+    ],
+    message: 'Select a MicroService:',
+    name: 'service_type',
+    type: 'list',
   },
 ];
 
 const openAIApiKeyPrompt: any[] = [
   {
-    message: "Enter Open AI API key: ",
-    name: "open_ai_api_key",
-    type: "password",
+    message: 'Enter Open AI API key: ',
+    name: 'open_ai_api_key',
+    type: 'password',
   },
 ];
 
 enum ApplicationType {
-  REACT = "react",
-  NEXT = "next",
-  NEST = "nest",
-  NODE_EXPRESS = "node-express",
-  NODE = "node",
+  REACT = 'react',
+  NEXT = 'next',
+  NEST = 'nest',
+  NODE_EXPRESS = 'node-express',
+  NODE = 'node',
 }
 
 export default class PromptGenerator {
@@ -274,9 +286,9 @@ export default class PromptGenerator {
           CloudProvider.AZURE,
           CloudProvider.ON_PREMISES,
         ],
-        message: "Select a Cloud Provider:",
-        name: "cloud_provider",
-        type: "list",
+        message: 'Select a Cloud Provider:',
+        name: 'cloud_provider',
+        type: 'list',
       },
     ];
   }
@@ -285,9 +297,9 @@ export default class PromptGenerator {
     return [
       {
         choices: [Environment.NON_PRODUCTION, Environment.PRODUCTION],
-        message: "Select an Environment:",
-        name: "environment",
-        type: "list",
+        message: 'Select an Environment:',
+        name: 'environment',
+        type: 'list',
       },
     ];
   }
@@ -313,13 +325,13 @@ export default class PromptGenerator {
   getCreatedServices(services: string[]): any[] {
     return [
       {
-        type: "list",
-        name: "service_Name",
-        message: "Select a service to destroy:",
+        type: 'list',
+        name: 'service_Name',
+        message: 'Select a service to destroy:',
         choices: services,
         validate: (input: string) => {
-          if (!input || input.trim() === "") {
-            return "A valid service must be selected.";
+          if (!input || input.trim() === '') {
+            return 'A valid service must be selected.';
           }
           return true;
         },
@@ -338,7 +350,7 @@ export default class PromptGenerator {
         } ${cloudProvider.toUpperCase()} ${Colours.colorReset}${
           Colours.boldText
         }support is coming soon... \n`,
-        true
+        true,
       );
       process.exit(1);
     }
@@ -349,7 +361,7 @@ export default class PromptGenerator {
   }
 
   getClusterPrompts(clusterType: string): any[] {
-    return clusterType === "k8s" ? k8sPrompts : [];
+    return clusterType === 'k8s' ? k8sPrompts : [];
   }
 
   getVersionControlPrompts(versionControl: string): any[] {
@@ -365,7 +377,7 @@ export default class PromptGenerator {
         } ${versionControl.toUpperCase()} ${Colours.colorReset}${
           Colours.boldText
         }support is coming soon... \n`,
-        true
+        true,
       );
       process.exit(1);
     }
@@ -381,13 +393,13 @@ export default class PromptGenerator {
   getVPCPrompt(vpcChoices: string[]): any[] {
     return [
       {
-        type: "list",
-        name: "VPC",
-        message: "Select a VPC:",
+        type: 'list',
+        name: 'VPC',
+        message: 'Select a VPC:',
         choices: vpcChoices,
         validate: (input: string) => {
-          if (!input || input.trim() === "") {
-            return "A valid VPC must be selected.";
+          if (!input || input.trim() === '') {
+            return 'A valid VPC must be selected.';
           }
           return true;
         },
@@ -403,9 +415,9 @@ export default class PromptGenerator {
     return [
       {
         choices: [ApplicationType.REACT, ApplicationType.NEXT],
-        message: "Select a frontend application type:",
-        name: "frontend_app_type",
-        type: "list",
+        message: 'Select a frontend application type:',
+        name: 'frontend_app_type',
+        type: 'list',
       },
     ];
   }
@@ -418,9 +430,9 @@ export default class PromptGenerator {
           // ApplicationType.NEST,
           // ApplicationType.NODE,
         ],
-        message: "Select a backend application type:",
-        name: "backend_app_type",
-        type: "list",
+        message: 'Select a backend application type:',
+        name: 'backend_app_type',
+        type: 'list',
       },
     ];
   }
@@ -429,8 +441,7 @@ export default class PromptGenerator {
     return openAIApiKeyPrompt;
   }
 
-  getServiceName() : any[] {
+  getServiceName(): any[] {
     return serviceNamePrompt;
   }
-
 }

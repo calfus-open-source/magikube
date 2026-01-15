@@ -1,24 +1,42 @@
-import { Args, Flags } from "@oclif/core";
-import BaseCommand from "../base.js";
-import { Answers } from "inquirer";
-import fs from "fs";
-import TerraformProject from "../../core/terraform-project.js";
-import SystemConfig from "../../config/system.js";
-import { AppLogger } from "../../logger/appLogger.js";
-import CreateApplication from "../../core/setup-application.js";
-import { ConfigObject } from "../../core/interface.js";
-import { Colours } from "../../prompts/constants.js";
-import {initializeStatusFile,} from "../../core/utils/statusUpdater-utils.js";
-import AWSAccount from "../../core/aws/aws-account.js";
-import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
-import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
-import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
-import { services, modules, InvalidProjectNames, supportedTemplates } from "../../core/constants/constants.js";
-import { handleEKS, handleK8s } from "../../core/utils/terraformHandlers-utils.js";
-import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
-import { createEmptyMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
-import { handleTemplateFlag } from "../../core/utils/groupingTemplateProject-utils.js";
-import { BASTION_SYSTEM_CONFIG,MASTER_SYSTEM_CONFIG, WORKER_SYSTEM_CONFIG, KUBERNITIES_SYSTEM_CONFIG, EKSNODEGROUP_SYSTEM_CONFIG, NEXT_APP_CONFIG, REACT_APP_CONFIG, GEN_AI_CONFIG, NODE_APP_CONFIG, } from "../../core/constants/systemDefaults.js";
+import { Args, Flags } from '@oclif/core';
+import BaseCommand from '../base.js';
+import { Answers } from 'inquirer';
+import fs from 'fs';
+import TerraformProject from '../../core/terraform-project.js';
+import SystemConfig from '../../config/system.js';
+import { AppLogger } from '../../logger/appLogger.js';
+import CreateApplication from '../../core/setup-application.js';
+import { ConfigObject } from '../../core/interface.js';
+import { Colours } from '../../prompts/constants.js';
+import { initializeStatusFile } from '../../core/utils/statusUpdater-utils.js';
+import AWSAccount from '../../core/aws/aws-account.js';
+import { serviceHealthCheck } from '../../core/utils/healthCheck-utils.js';
+import { handlePrompts } from '../../core/utils/handlePrompts-utils.js';
+import { cloneAndCopyTemplates } from '../../core/utils/copyTemplates-utils.js';
+import {
+  services,
+  modules,
+  InvalidProjectNames,
+  supportedTemplates,
+} from '../../core/constants/constants.js';
+import {
+  handleEKS,
+  handleK8s,
+} from '../../core/utils/terraformHandlers-utils.js';
+import { setupAndPushServices } from '../../core/utils/setupAndPushService-utils.js';
+import { createEmptyMagikubeProject } from '../../core/utils/createEmptyProject-utils.js';
+import { handleTemplateFlag } from '../../core/utils/groupingTemplateProject-utils.js';
+import {
+  BASTION_SYSTEM_CONFIG,
+  MASTER_SYSTEM_CONFIG,
+  WORKER_SYSTEM_CONFIG,
+  KUBERNITIES_SYSTEM_CONFIG,
+  EKSNODEGROUP_SYSTEM_CONFIG,
+  NEXT_APP_CONFIG,
+  REACT_APP_CONFIG,
+  GEN_AI_CONFIG,
+  NODE_APP_CONFIG,
+} from '../../core/constants/systemDefaults.js';
 
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
@@ -27,7 +45,7 @@ function validateUserInput(input: string): void {
       `\n\n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} ` +
         `Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. ` +
         `It must start with an alphabet, include only lowercase alphabets, numbers, or underscores, ` +
-        `be 3-8 characters long, and must not end with an underscore. \n\n`
+        `be 3-8 characters long, and must not end with an underscore. \n\n`,
     );
     process.exit(1);
   }
@@ -39,7 +57,7 @@ function validateRestrictedInputs(input: string): void {
     console.error(
       `\n\n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} ` +
         `Command "${Colours.boldText}${input}${Colours.colorReset}" is restricted ` +
-        `and cannot be executed using "magikube new". \n\n`
+        `and cannot be executed using "magikube new". \n\n`,
     );
     process.exit(1);
   }
@@ -47,7 +65,7 @@ function validateRestrictedInputs(input: string): void {
 
 export default class CreateProject extends BaseCommand {
   static description =
-    "Create new Magikube project with a specific template or as an empty project.";
+    'Create new Magikube project with a specific template or as an empty project.';
 
   static examples = [
     `<%= config.bin %> <%= command.id %> sample -t empty`,
@@ -56,15 +74,15 @@ export default class CreateProject extends BaseCommand {
 
   static args = {
     name: Args.string({
-      description: "Project name to be created",
+      description: 'Project name to be created',
       required: true,
     }),
   };
 
   static flags = {
     template: Flags.string({
-      char: "t",
-      description: "Template name for the project",
+      char: 't',
+      description: 'Template name for the project',
       required: false,
     }),
   };
@@ -78,26 +96,26 @@ export default class CreateProject extends BaseCommand {
     validateUserInput(args.name);
     validateRestrictedInputs(args.name);
     AppLogger.configureLogger(args.name, this.id);
-    AppLogger.info("Logger Started ...");
+    AppLogger.info('Logger Started ...');
 
     try {
       // Handle empty project creation
-      if (flags.template === "empty") {
+      if (flags.template === 'empty') {
         const responses: Answers = await handlePrompts(
           args,
           this.id,
-          flags.template
+          flags.template,
         );
         // merge the response in system config
         SystemConfig.getInstance().mergeConfigs(responses);
         await createEmptyMagikubeProject(args.name, responses);
         AppLogger.info(
           `Created an empty project named '${args.name}' with .magikube folder populated with configurations.`,
-          true
+          true,
         );
         process.exit(0);
       }
-      
+
       //Create project with valid predefined template
       if (
         flags.template &&
@@ -108,7 +126,7 @@ export default class CreateProject extends BaseCommand {
       }
 
       // Default project creation process
-      
+
       // default system config values
       const systemConfig = {
         ...BASTION_SYSTEM_CONFIG,
@@ -119,7 +137,7 @@ export default class CreateProject extends BaseCommand {
         ...NEXT_APP_CONFIG,
         ...REACT_APP_CONFIG,
         ...NODE_APP_CONFIG,
-        ...GEN_AI_CONFIG
+        ...GEN_AI_CONFIG,
       };
 
       //taking input from user
@@ -129,8 +147,11 @@ export default class CreateProject extends BaseCommand {
       if (!fs.existsSync(`${process.cwd()}/dist`)) {
         await cloneAndCopyTemplates(this.id);
       }
-      
-      AppLogger.debug( `Creating new Magikube project named '${args.name}' in the current directory`, true);
+
+      AppLogger.debug(
+        `Creating new Magikube project named '${args.name}' in the current directory`,
+        true,
+      );
       const combinedConfig = { ...systemConfig, ...responses };
       SystemConfig.getInstance().mergeConfigs(combinedConfig);
       const terraform = await TerraformProject.getProject(this);
@@ -160,55 +181,60 @@ export default class CreateProject extends BaseCommand {
         awsSecretKey,
         environment,
       };
-       
+
       //get Account ID and merge it in systemConfig
-      const accountId = await AWSAccount.getAccountId(awsAccessKey,awsSecretKey,region);
+      const accountId = await AWSAccount.getAccountId(
+        awsAccessKey,
+        awsSecretKey,
+        region,
+      );
       SystemConfig.getInstance().mergeConfigs({ accountId });
-      
+
       //setup Gitops service
-      const setupGitopsServiceStatus = await createApp.setupGitops(projectConfig);
+      const setupGitopsServiceStatus =
+        await createApp.setupGitops(projectConfig);
 
       if (terraform) {
         await terraform.createProject(projectName, process.cwd(), this.id);
-        if (responses.cloud_provider === "aws") {
+        if (responses.cloud_provider === 'aws') {
           await terraform.AWSProfileActivate(responses.aws_profile);
         }
 
         // setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
         if (
-          responses.cluster_type === "eks-fargate" ||
-          responses.cluster_type === "eks-nodegroup"
+          responses.cluster_type === 'eks-fargate' ||
+          responses.cluster_type === 'eks-nodegroup'
         ) {
           await handleEKS(
             projectName,
             responses,
             terraform,
             setupGitopsServiceStatus,
-            configObject
+            configObject,
           );
         }
 
         // setup infrastructure if cluster type is K8S
-        if (responses.cluster_type === "k8s") {
+        if (responses.cluster_type === 'k8s') {
           await handleK8s(
             projectName,
             responses,
             terraform,
             setupGitopsServiceStatus,
-            configObject
+            configObject,
           );
         }
         // create microservices
         await setupAndPushServices(projectConfig, configObject);
       }
-      
+
       // check the status of microservice
       await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
     } catch (error) {
       AppLogger.error(
         `An error occurred during the setup process: ${error}`,
-        true
+        true,
       );
       process.exit(1);
     }

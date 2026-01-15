@@ -1,7 +1,7 @@
-import path, { join } from "path";
-import AWSProject from "./aws-project.js";
-import SystemConfig from "../../config/system.js";
-import { readStatusFile } from "../utils/statusUpdater-utils.js";
+import path, { join } from 'path';
+import AWSProject from './aws-project.js';
+import SystemConfig from '../../config/system.js';
+import { readStatusFile } from '../utils/statusUpdater-utils.js';
 
 export default class CommonSubModuleProject extends AWSProject {
   private path: string | undefined;
@@ -22,70 +22,70 @@ export default class CommonSubModuleProject extends AWSProject {
 
     // Normalize for logic purposes, but keep original for accessing files/status
     if (
-      lastModuleType === "eks-fargate" ||
-      lastModuleType === "eks-nodegroup"
+      lastModuleType === 'eks-fargate' ||
+      lastModuleType === 'eks-nodegroup'
     ) {
-      lastModuleType = "eks";
+      lastModuleType = 'eks';
     }
 
-    const parentPath = path.resolve(process.cwd(), "..");
+    const parentPath = path.resolve(process.cwd(), '..');
     const distPath = path.resolve(
       parentPath,
-      "dist/templates/aws/predefined/submodule"
+      'dist/templates/aws/predefined/submodule',
     );
     const status = await readStatusFile(this.config, this.config.command);
 
     await this.createProviderFile(parentPath);
     const moduleStatus = status.modules[originalLastModule];
 
-    if (moduleStatus === "pending") {
+    if (moduleStatus === 'pending') {
       this.createFile(
-        "main.tf",
+        'main.tf',
         `${distPath}/${originalLastModule}-module/main.tf.liquid`,
-        "/infrastructure",
-        true
+        '/infrastructure',
+        true,
       );
       this.createFile(
-        "variables.tf",
+        'variables.tf',
         `${distPath}/${originalLastModule}-module/variables.tf.liquid`,
-        "/infrastructure",
-        true
+        '/infrastructure',
+        true,
       );
     }
 
     this.createFile(
-      "terraform.tfvars",
+      'terraform.tfvars',
       `${distPath}/${originalLastModule}-module/terraform.tfvars.liquid`,
-      "/infrastructure",
-      true
+      '/infrastructure',
+      true,
     );
 
-    if (originalLastModule === "vpc" && moduleStatus === "pending") {
+    if (originalLastModule === 'vpc' && moduleStatus === 'pending') {
       this.createFile(
         `${this.config.environment}-config.tfvars`,
         `${distPath}/backend-config.tfvars.liquid`,
-        "/infrastructure",
-        true
+        '/infrastructure',
+        true,
       );
       this.createVpc(parentPath);
     } else if (
-      originalLastModule === "eks-fargate" &&
-      moduleStatus === "pending"
+      originalLastModule === 'eks-fargate' &&
+      moduleStatus === 'pending'
     ) {
       this.createEKS(parentPath);
     } else if (
-      originalLastModule === "eks-nodegroup" &&
-      moduleStatus === "pending"
+      originalLastModule === 'eks-nodegroup' &&
+      moduleStatus === 'pending'
     ) {
       this.createEKSng(parentPath);
-    } else if (originalLastModule === "rds" && moduleStatus === "pending") {
+    } else if (originalLastModule === 'rds' && moduleStatus === 'pending') {
       this.createRdsmodule(parentPath);
-    } else if (originalLastModule === "acm" && moduleStatus === "pending") {
+    } else if (originalLastModule === 'acm' && moduleStatus === 'pending') {
       this.createFile(
         `${this.config.environment}-config.tfvars`,
         `${distPath}/backend-config.tfvars.liquid`,
-        "/infrastructure",
-        true
+        '/infrastructure',
+        true,
       );
       this.createACM(parentPath);
     }
@@ -93,31 +93,31 @@ export default class CommonSubModuleProject extends AWSProject {
 
   async createRdsmodule(path: string): Promise<void> {
     this.createFile(
-      "main.tf",
+      'main.tf',
       `${path}/dist/templates/aws/modules-single/rds/main.tf.liquid`,
-      "/infrastructure/modules/rds",
-      true
+      '/infrastructure/modules/rds',
+      true,
     );
     this.createFile(
-      "variables.tf",
+      'variables.tf',
       `${path}/dist/templates/aws/modules-single/rds/variables.tf.liquid`,
-      "/infrastructure/modules/rds",
-      true
+      '/infrastructure/modules/rds',
+      true,
     );
   }
 
   async createEKSng(path: string): Promise<void> {
     this.createFile(
-      "main.tf",
+      'main.tf',
       `${path}/dist/templates/aws/modules/eks-nodegroup/main.tf.liquid`,
-      "/infrastructure/modules/eks-nodegroup",
-      true
+      '/infrastructure/modules/eks-nodegroup',
+      true,
     );
     this.createFile(
-      "variables.tf",
+      'variables.tf',
       `${path}/dist/templates/aws/modules/eks-nodegroup/variables.tf.liquid`,
-      "/infrastructure/modules/eks-nodegroup",
-      true
+      '/infrastructure/modules/eks-nodegroup',
+      true,
     );
   }
 }

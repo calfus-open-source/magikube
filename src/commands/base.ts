@@ -1,4 +1,3 @@
-import {Command} from '@oclif/core'
+import { Command } from '@oclif/core';
 
-export default abstract class BaseCommand extends Command {
-}
+export default abstract class BaseCommand extends Command {}
