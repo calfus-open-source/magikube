@@ -16,14 +16,14 @@ export class AppLogger {
 
   public static configureLogger(
     projectName?: string,
-    command ?: string,
-    shouldCreateLogFile: boolean = true
+    command?: string,
+    shouldCreateLogFile: boolean = true,
   ) {
     // Set log directory based on command type
-    if (command === "new" || command === "resume" || command === "destroy") {
-      this.logDirectory = path.join(process.cwd(), "logs");
-    } else if (command === "create" || command === "module") {
-      this.logDirectory = path.join(process.cwd(), "..", "logs"); // Parent directory
+    if (command === 'new' || command === 'resume' || command === 'destroy') {
+      this.logDirectory = path.join(process.cwd(), 'logs');
+    } else if (command === 'create' || command === 'module') {
+      this.logDirectory = path.join(process.cwd(), '..', 'logs'); // Parent directory
     } else {
       throw new Error(`Unknown command type: ${command}`);
     }
@@ -31,18 +31,23 @@ export class AppLogger {
     this.createLogFolderIfNotExists();
 
     const filepath = path.join(this.logDirectory, '.');
-    const oldFilePath = path.join(this.logDirectory, `${projectName}-${new Date().toISOString().split('T')[0]}.log`);
+    const oldFilePath = path.join(
+      this.logDirectory,
+      `${projectName}-${new Date().toISOString().split('T')[0]}.log`,
+    );
 
     // Log directory and file paths for troubleshooting
-
 
     if (shouldCreateLogFile) {
       try {
         const files = fs.readdirSync(filepath);
         const prefix = `${projectName}-${new Date().toISOString().split('T')[0]}`;
-        const count = files.filter(file => file.startsWith(prefix)).length;
+        const count = files.filter((file) => file.startsWith(prefix)).length;
         if (count >= 1) {
-          const newPath = path.join(this.logDirectory, `${projectName}-${new Date().toISOString().split('T')[0]}-${count}.log`);
+          const newPath = path.join(
+            this.logDirectory,
+            `${projectName}-${new Date().toISOString().split('T')[0]}-${count}.log`,
+          );
 
           // Check if `oldFilePath` exists before renaming
           if (fs.existsSync(oldFilePath)) {
@@ -52,7 +57,9 @@ export class AppLogger {
               AppLogger.error(`Failed to rename log file: ${renameError}`);
             }
           } else {
-            AppLogger.warn(`Old log file does not exist at path: ${oldFilePath}`);
+            AppLogger.warn(
+              `Old log file does not exist at path: ${oldFilePath}`,
+            );
           }
         }
       } catch (err) {
@@ -70,7 +77,7 @@ export class AppLogger {
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.printf((info) => {
               return `${info.level.toUpperCase()}${info.level.length < 5 ? '  ' : ' '}: ${info.message}`;
-            })
+            }),
           ),
         },
       },
@@ -82,7 +89,7 @@ export class AppLogger {
             winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss' }),
             winston.format.printf((info) => {
               return `${info.timestamp}: ${info.level.toUpperCase()}${info.level.length < 5 ? '  ' : ' '}: ${info.message}`;
-            })
+            }),
           ),
           filename: path.join(this.logDirectory, `${projectName}-%DATE%.log`),
           datePattern: 'YYYY-MM-DD',
@@ -93,13 +100,17 @@ export class AppLogger {
 
     this.consoleLogger = createLogger({
       level: process.env.DROP_LOGS === 'true' ? 'info' : 'debug',
-      transports: LoggerGenerator.createConsoleTransport(loggerTransports[0].options),
+      transports: LoggerGenerator.createConsoleTransport(
+        loggerTransports[0].options,
+      ),
       exitOnError: false,
     });
 
     this.fileLogger = createLogger({
       level: process.env.DROP_LOGS === 'true' ? 'info' : 'debug',
-      transports: LoggerGenerator.createFileRotateTransport(loggerTransports[1].options),
+      transports: LoggerGenerator.createFileRotateTransport(
+        loggerTransports[1].options,
+      ),
       exitOnError: false,
     });
   }
