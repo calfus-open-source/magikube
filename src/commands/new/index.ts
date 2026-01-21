@@ -30,7 +30,7 @@ import {
   BASTION_SYSTEM_CONFIG,
   MASTER_SYSTEM_CONFIG,
   WORKER_SYSTEM_CONFIG,
-  KUBERNETES_SYSTEM_CONFIG,
+  KUBERNITIES_SYSTEM_CONFIG,
   EKSNODEGROUP_SYSTEM_CONFIG,
   NEXT_APP_CONFIG,
   REACT_APP_CONFIG,
@@ -51,7 +51,7 @@ function validateUserInput(input: string): void {
       `\n\n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} ` +
         `Project Name "${Colours.boldText}${input}${Colours.colorReset}" is invalid. ` +
         `It must start with an alphabet, include only lowercase alphabets, numbers, or underscores, ` +
-        `be 3-8 characters long, and must not end with an underscore. \n\n`
+        `be 3-8 characters long, and must not end with an underscore. \n\n`,
     );
     process.exit(1);
   }
@@ -64,7 +64,7 @@ function validateRestrictedInputs(input: string): void {
     console.error(
       `\n\n  ${Colours.boldText}${Colours.redColor} ERROR: ${Colours.colorReset} ` +
         `Command "${Colours.boldText}${input}${Colours.colorReset}" is restricted ` +
-        `and cannot be executed using "magikube new". \n\n`
+        `and cannot be executed using "magikube new". \n\n`,
     );
     process.exit(1);
   }
@@ -73,7 +73,7 @@ function validateRestrictedInputs(input: string): void {
 // Main class for creating a new project using Magikube CLI
 export default class CreateProject extends BaseCommand {
   static description =
-    "Create new Magikube project with a specific template or as an empty project.";
+    'Create new Magikube project with a specific template or as an empty project.';
 
   static examples = [
     `<%= config.bin %> <%= command.id %> sample -t empty`,
@@ -83,7 +83,7 @@ export default class CreateProject extends BaseCommand {
   // Accepts a required project name as argument
   static args = {
     name: Args.string({
-      description: "Project name to be created",
+      description: 'Project name to be created',
       required: true,
     }),
   };
@@ -91,8 +91,8 @@ export default class CreateProject extends BaseCommand {
   // Accepts an optional template flag for project creation
   static flags = {
     template: Flags.string({
-      char: "t",
-      description: "Template name for the project",
+      char: 't',
+      description: 'Template name for the project',
       required: false,
     }),
   };
@@ -111,7 +111,7 @@ export default class CreateProject extends BaseCommand {
 
     // Initialize logging for the CLI command
     AppLogger.configureLogger(args.name, this.id);
-    AppLogger.info("Logger Started ...");
+    AppLogger.info('Logger Started ...');
 
     try {
       // If template is 'empty', generate a skeleton project with config only
@@ -119,18 +119,17 @@ export default class CreateProject extends BaseCommand {
         const responses: Answers = await handlePrompts(
           args,
           this.id,
-          flags.template
+          flags.template,
         );
         SystemConfig.getInstance().mergeConfigs(responses);
         await createBlankMagikubeProject(args.name, responses);
         AppLogger.info(
           `Created an empty project named '${args.name}' with .magikube folder populated with configurations.`,
-          true
+          true,
         );
         process.exit(0);
       }
-
-      // Handle other predefined template-based project generation
+      
       if (
         flags.template &&
         this.predefinedTemplates.includes(flags.template.trim())
@@ -162,13 +161,16 @@ export default class CreateProject extends BaseCommand {
       responses.command = this.id;
 
       // Merge system-level configuration with user responses
+      // Default project creation process
+
+      // default system config values
       const systemConfig = {
         ...(responses.cloud_provider === "aws" ? AWS_SPECIFIC_CONFIG : {}),
         ...(responses.cloud_provider === "azure" ? AZURE_SPECIFIC_CONFIG : {}),
         ...BASTION_SYSTEM_CONFIG,
         ...MASTER_SYSTEM_CONFIG,
         ...WORKER_SYSTEM_CONFIG,
-        ...KUBERNETES_SYSTEM_CONFIG,
+        ...KUBERNITIES_SYSTEM_CONFIG,
         ...EKSNODEGROUP_SYSTEM_CONFIG,
         ...NEXT_APP_CONFIG,
         ...REACT_APP_CONFIG,
@@ -297,7 +299,7 @@ export default class CreateProject extends BaseCommand {
             responses,
             terraform,
             setupGitopsServiceStatus,
-            configObject
+            configObject,
           );
         }
 
@@ -308,7 +310,7 @@ export default class CreateProject extends BaseCommand {
             responses,
             terraform,
             setupGitopsServiceStatus,
-            configObject
+            configObject,
           );
         }
 
@@ -327,7 +329,7 @@ export default class CreateProject extends BaseCommand {
     } catch (error) {
       AppLogger.error(
         `An error occurred during the setup process: ${error}`,
-        true
+        true,
       );
       process.exit(1);
     }

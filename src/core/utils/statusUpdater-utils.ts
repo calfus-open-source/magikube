@@ -1,67 +1,71 @@
-import * as fs from "fs";
-import path from "path";
-import { AppLogger } from "../../logger/appLogger.js";
-import SystemConfig from "../../config/system.js";
+import * as fs from 'fs';
+import path from 'path';
+import { AppLogger } from '../../logger/appLogger.js';
+import SystemConfig from '../../config/system.js';
 
 export function initializeStatusFile(
   projectName: string,
   modules: string[],
-  services?: string[]
+  services?: string[],
 ) {
   const projectPath = path.join(process.cwd(), projectName);
-  const statusFilePath = path.join(projectPath, "status.json");
+  const statusFilePath = path.join(projectPath, 'status.json');
 
   if (!fs.existsSync(projectPath)) {
     fs.mkdirSync(projectPath, { recursive: true });
   }
 
-  let statusData: { modules: { [key: string]: any }; services: { [key: string]: any } } = {
+  let statusData: {
+    modules: { [key: string]: any };
+    services: { [key: string]: any };
+  } = {
     modules: {},
     services: {},
   };
 
   if (fs.existsSync(statusFilePath)) {
-    statusData = JSON.parse(fs.readFileSync(statusFilePath, "utf8"));
+    statusData = JSON.parse(fs.readFileSync(statusFilePath, 'utf8'));
   }
 
   // Initialize modules with "pending" status if not already present
   modules.forEach((module) => {
     if (!statusData.modules[module]) {
-      statusData.modules[module] = "pending";
+      statusData.modules[module] = 'pending';
     }
   });
 
   // Initialize services with "pending" status if not already present
- if(services){
-   services.forEach((service) => {
-     if (!statusData.services[service]) {
-       statusData.services[service] = "pending";
-     }
-   });
- }
+  if (services) {
+    services.forEach((service) => {
+      if (!statusData.services[service]) {
+        statusData.services[service] = 'pending';
+      }
+    });
+  }
 
-  fs.writeFileSync(statusFilePath, JSON.stringify(statusData, null, 2), "utf8");
+  fs.writeFileSync(statusFilePath, JSON.stringify(statusData, null, 2), 'utf8');
 }
 
-
-
 export function updateStatusFile(
-  projectName: string ,
+  projectName: string,
   serviceOrModule: string,
-  status: "success" | "fail"
+  status: 'success' | 'fail',
 ) {
   // const statusFilePath = path.join(process.cwd(), projectName, "status.json");
   const projectConfig = SystemConfig.getInstance().getConfig();
-   let statusFilePath;
-   if (projectConfig.command === "module" || projectConfig.command === "create") {
-     statusFilePath = path.join(process.cwd(), "status.json");
-   } else {
-     statusFilePath = path.join(
-       process.cwd(),
-       projectConfig.project_name,
-       "status.json"
-     );
-   }
+  let statusFilePath;
+  if (
+    projectConfig.command === 'module' ||
+    projectConfig.command === 'create'
+  ) {
+    statusFilePath = path.join(process.cwd(), 'status.json');
+  } else {
+    statusFilePath = path.join(
+      process.cwd(),
+      projectConfig.project_name,
+      'status.json',
+    );
+  }
   let statusData: {
     modules: { [key: string]: string };
     services: { [key: string]: string };
@@ -72,39 +76,44 @@ export function updateStatusFile(
 
   // Check if the status file exists and read its content
   if (fs.existsSync(statusFilePath)) {
-    statusData = JSON.parse(fs.readFileSync(statusFilePath, "utf8"));
+    statusData = JSON.parse(fs.readFileSync(statusFilePath, 'utf8'));
   }
   // Check if the service or module exists in the respective object
   if (statusData.modules && statusData.modules[serviceOrModule] !== undefined) {
     statusData.modules[serviceOrModule] = status;
-  } else if (statusData.services && statusData.services[serviceOrModule] !== undefined) {
+  } else if (
+    statusData.services &&
+    statusData.services[serviceOrModule] !== undefined
+  ) {
     statusData.services[serviceOrModule] = status;
   } else {
-    AppLogger.error(`Service or module "${serviceOrModule}" not found in the status file.`, true);
+    AppLogger.error(
+      `Service or module "${serviceOrModule}" not found in the status file.`,
+      true,
+    );
     return; // Exit if the service or module does not exist
   }
 
   // Write the updated status back to the status.json file
-  fs.writeFileSync(statusFilePath, JSON.stringify(statusData, null, 2), "utf8");
+  fs.writeFileSync(statusFilePath, JSON.stringify(statusData, null, 2), 'utf8');
 }
 
-
 // To reade the status.json file
-export function readStatusFile(projectConfig:any, command?:any){
+export function readStatusFile(projectConfig: any, command?: any) {
   let statusFilePath;
-  if (command === "module" || command === "create") {
-    statusFilePath = path.join(process.cwd(), "status.json");
+  if (command === 'module' || command === 'create') {
+    statusFilePath = path.join(process.cwd(), 'status.json');
   } else {
     statusFilePath = path.join(
       process.cwd(),
       projectConfig.project_name,
-      "status.json"
+      'status.json',
     );
   }
   if (!fs.existsSync(statusFilePath)) {
-  return null;
+    return null;
   }
-  const fileContent = fs.readFileSync(statusFilePath, "utf8");
+  const fileContent = fs.readFileSync(statusFilePath, 'utf8');
   const statusData = JSON.parse(fileContent);
   return statusData;
-};
+}

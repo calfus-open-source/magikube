@@ -17,4 +17,6 @@ export default abstract class SubmoduleTerraformProject {
           `Cloud provider '${config.cloud_provider}' not supported`
         );
     }
-}
+
+  }
+

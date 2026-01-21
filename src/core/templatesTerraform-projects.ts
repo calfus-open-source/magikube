@@ -11,7 +11,7 @@ export default abstract class TemplateTerraformProject {
   static async getProject(command: BaseCommand): Promise<(BaseProject & CloudProject) | null> {
     const config = SystemConfig.getInstance().getConfig();
 
-    if (config.cloud_provider === "aws") {
+    if (config.cloud_provider === 'aws') {
       if (supportedTemplates.includes(config.template)) {
         return new AWSTemplateProject(command, config) as BaseProject & CloudProject;
       }

@@ -1,11 +1,11 @@
-import { AppLogger } from "../logger/appLogger.js";
-import { ProgressBar } from "../logger/progressLogger.js";
-import { FullConfigObject } from "./interface.js";
-import axios from "axios";
-import SystemConfig from "../config/system.js";
-import fs from "fs-extra";
-import sodium from "libsodium-wrappers";
-import { executeCommandWithRetry } from "./utils/executeCommandWithRetry-utils.js";
+import { AppLogger } from '../logger/appLogger.js';
+import { ProgressBar } from '../logger/progressLogger.js';
+import { FullConfigObject } from './interface.js';
+import axios from 'axios';
+import SystemConfig from '../config/system.js';
+import fs from 'fs-extra';
+import sodium from 'libsodium-wrappers';
+import { executeCommandWithRetry } from './utils/executeCommandWithRetry-utils.js';
 
 let publicKey: string;
 let publicKeyId: string;
@@ -38,46 +38,51 @@ export class ManageRepository {
     let repoSetupError = false;
 
     const execCommand = (command: string, projectPath: string) =>
-     executeCommandWithRetry(command, { cwd: projectPath, stdio: "pipe" }, 1);
+      executeCommandWithRetry(command, { cwd: projectPath, stdio: 'pipe' }, 1);
     const gitopsRepo = `${projectName}-${environment}-gitops`;
-
-    let projectPath =
-      projectConfig.command === "create"
-        ? appType === "gitops"
+    let projectPath;
+    let repoName: string;
+    if (projectConfig.command === 'create') {
+      projectPath =
+        appType === 'gitops'
           ? `${process.cwd()}/${appType}`
-          : `${process.cwd()}/${projectConfig.service_name}`
-        : appType === "gitops"
-        ? `${process.cwd()}/${projectName}/${appType}`
-        : `${process.cwd()}/${projectName}/${appName}`;
-
-    let repoName =
-      projectConfig.command === "create"
-        ? appType === "gitops"
+          : `${process.cwd()}/${projectConfig.service_name}`;
+    } else {
+      projectPath =
+        appType === 'gitops'
+          ? `${process.cwd()}/${projectName}/${appType}`
+          : `${process.cwd()}/${projectName}/${appName}`;
+    }
+    if (projectConfig.command === 'create') {
+      repoName =
+        appType === 'gitops'
           ? `${projectName}-${appName}-gitops`
-          : `${projectName}-${projectConfig.service_name}-app`
-        : appType === "gitops"
-        ? `${projectName}-${appName}-gitops`
-        : `${projectName}-${appType}-app`;
-
+          : `${projectName}-${projectConfig.service_name}-app`;
+    } else {
+      repoName =
+        appType === 'gitops'
+          ? `${projectName}-${appName}-gitops`
+          : `${projectName}-${appType}-app`;
+    }
     const execAndLog = (command: string, description: string): string => {
       try {
         AppLogger.debug(`${command} this Command Executed`);
         const result = execCommand(command, projectPath);
         AppLogger.debug(
-          `${description} Command Executed: ${result.toString()}`
+          `${description} Command Executed: ${result.toString()}`,
         );
         return result.toString();
       } catch (error) {
         AppLogger.error(
           `Error executing command (${description}): ${error}`,
-          true
+          true,
         );
         throw error;
       }
     };
 
     let remoteRepoUrl;
-    if(sourceCodeRepo == "github") {
+    if (sourceCodeRepo == 'github') {
       remoteRepoUrl = `https://${userName}:${token}@github.com/${orgName}/${repoName}.git`;
     }
 
@@ -125,12 +130,12 @@ export class ManageRepository {
 
     async function encryptSecret(
       secret: string,
-      publicKey: string
+      publicKey: string,
     ): Promise<string> {
       await sodium.ready;
       const binkey = sodium.from_base64(
         publicKey,
-        sodium.base64_variants.ORIGINAL
+        sodium.base64_variants.ORIGINAL,
       );
       const binsec = sodium.from_string(secret);
       const encBytes = sodium.crypto_box_seal(binsec, binkey);
@@ -214,7 +219,7 @@ export class ManageRepository {
       { cmd: "git branch -M main", message: "Creating main branch..." },
       {
         cmd: `git remote add origin ${remoteRepoUrl}`,
-        message: "Adding remote repository...",
+        message: 'Adding remote repository...',
       },
       {
         cmd: "git push -u origin main",

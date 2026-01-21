@@ -1,8 +1,8 @@
-import SystemConfig from "../config/system.js";
-import AWSProfile from "../core/aws/aws-profile.js";
-import AzureProfile from "../core/azure/azure-profile.js";
+import SystemConfig from '../config/system.js';
+import AWSProfile from '../core/aws/aws-profile.js';
 import { CloudProvider } from './constants.js';
 import { AppLogger } from '../logger/appLogger.js';
+import AzureProfile from '../core/azure/azure-profile.js';
 
 const awsCreds: any[] = [
     {
@@ -95,4 +95,5 @@ export default class CredentialsPrompts {
             AzureProfile.addProfile(responses['azure_profile'], responses['azure_client_id'], responses['azure_client_secret'], responses['azure_tenant_id'], responses['azure_subscription_id']);
         }
     }
-}
+  }
+

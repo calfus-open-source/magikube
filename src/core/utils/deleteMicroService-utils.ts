@@ -1,6 +1,6 @@
-import { AppLogger } from "../../logger/appLogger.js";
-import { executeCommandWithRetry } from "./executeCommandWithRetry-utils.js";
-import { deleteArrayProperty } from "./updateDotMagikube-utils.js";
+import { AppLogger } from '../../logger/appLogger.js';
+import { executeCommandWithRetry } from './executeCommandWithRetry-utils.js';
+import { deleteArrayProperty } from './updateDotMagikube-utils.js';
 
 export async function deleteMicroservice(resp: any, createdServiceResp: any) {
   try {
@@ -17,7 +17,7 @@ export async function deleteMicroservice(resp: any, createdServiceResp: any) {
 
     AppLogger.info(
       `Removing team association: ${team} from repo: ${repoName}`,
-      true
+      true,
     );
     await executeCommandWithRetry(deleteTeamCommand, { cwd: process.cwd() }, 1);
     AppLogger.info(`Team ${team} removed from ${repoName}.`, true);
@@ -32,12 +32,12 @@ export async function deleteMicroservice(resp: any, createdServiceResp: any) {
     AppLogger.info(`Deleting repository: ${repoName}`, true);
     await executeCommandWithRetry(deleteRepoCommand, { cwd: process.cwd() }, 1);
     AppLogger.info(`Repository ${repoName} deleted successfully.`, true);
-    deleteArrayProperty( resp.service_names, createdServiceResp.service_Name);
+    deleteArrayProperty(resp.service_names, createdServiceResp.service_Name);
     return resp;
   } catch (error) {
     AppLogger.error(
       `An error occurred while deleting ${createdServiceResp.service_Name} service: ${error}`,
-      true
+      true,
     );
   }
 }
