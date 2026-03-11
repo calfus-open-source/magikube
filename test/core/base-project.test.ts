@@ -7,6 +7,7 @@ import SystemConfig from "../../src/config/system.js";
 
 // -------------------- MOCKS --------------------
 jest.mock("fs");
+const mockFs = fs as jest.Mocked<typeof fs>;
 
 jest.mock("../../src/logger/appLogger.js", () => ({
     AppLogger: {
@@ -66,7 +67,7 @@ let project: BaseProject;
 
 beforeEach(() => {
     jest.clearAllMocks();
-    project = new (class extends BaseProject { })(mockCommand, mockConfig);
+    project = new (class extends BaseProject { })(mockCommand as any, mockConfig);
 });
 
 // -------------------- TESTS --------------------
@@ -76,16 +77,16 @@ beforeEach(() => {
 // ------------------------------------
 describe("BaseProject.createFolder()", () => {
     test("creates a folder when it does not exist", async () => {
-        fs.existsSync.mockReturnValue(false);
+        mockFs.existsSync.mockReturnValue(false);
 
         await project.createFolder();
 
-        expect(fs.mkdirSync).toHaveBeenCalledWith(project.projectPath);
+        expect(fs.mkdirSync).toHaveBeenCalledWith((project as any).projectPath);
         expect(AppLogger.debug).toHaveBeenCalled();
     });
 
     test("logs error when folder already exists", async () => {
-        fs.existsSync.mockReturnValue(true);
+        mockFs.existsSync.mockReturnValue(true);
 
         await project.createFolder();
 
@@ -98,17 +99,17 @@ describe("BaseProject.createFolder()", () => {
 // ------------------------------------
 describe("BaseProject.deleteFolder()", () => {
     test("deletes folder when it exists", async () => {
-        fs.existsSync.mockReturnValue(true);
+        mockFs.existsSync.mockReturnValue(true);
 
-        await project.deleteFolder();
+        await project.deleteFolder("demo");
 
-        expect(fs.rmSync).toHaveBeenCalledWith(project.projectPath, { recursive: true });
+        expect(fs.rmSync).toHaveBeenCalledWith(`${process.cwd()}/demo`, { recursive: true });
     });
 
     test("logs message if folder does not exist", async () => {
-        fs.existsSync.mockReturnValue(false);
+        mockFs.existsSync.mockReturnValue(false);
 
-        await project.deleteFolder();
+        await project.deleteFolder("demo");
 
         expect(AppLogger.debug).toHaveBeenCalled();
     });
@@ -119,7 +120,7 @@ describe("BaseProject.deleteFolder()", () => {
 // ------------------------------------
 describe("BaseProject.createProject()", () => {
     test("creates project and writes .magikube", async () => {
-        fs.existsSync.mockReturnValue(false);
+        mockFs.existsSync.mockReturnValue(false);
 
         await project.createProject("demo", "/root");
 
@@ -133,7 +134,7 @@ describe("BaseProject.createProject()", () => {
 // ------------------------------------
 describe("BaseProject.createProviderFile()", () => {
     test("creates providers.tf when it does not exist", async () => {
-        fs.existsSync.mockReturnValue(false);
+        mockFs.existsSync.mockReturnValue(false);
 
         project.createFile = jest.fn();
 
@@ -143,7 +144,7 @@ describe("BaseProject.createProviderFile()", () => {
     });
 
     test("skips if providers.tf already exists", async () => {
-        fs.existsSync.mockReturnValue(true);
+        mockFs.existsSync.mockReturnValue(true);
 
         project.createFile = jest.fn();
 
@@ -158,7 +159,7 @@ describe("BaseProject.createProviderFile()", () => {
 // ------------------------------------
 describe("BaseProject.createFile()", () => {
     test("writes file for new project", async () => {
-        fs.readFileSync.mockReturnValue("template content");
+        mockFs.readFileSync.mockReturnValue("template content");
 
         await project.createFile(
             "main.tf",
@@ -176,7 +177,7 @@ describe("BaseProject.createFile()", () => {
             command: "module"
         });
 
-        fs.readFileSync.mockReturnValue("template");
+        mockFs.readFileSync.mockReturnValue("template");
 
         await project.createFile("x.tf", "/template", ".", false);
 
@@ -189,7 +190,7 @@ describe("BaseProject.createFile()", () => {
 // ------------------------------------
 describe("BaseProject.generateContent()", () => {
     test("reads and parses template", async () => {
-        fs.readFileSync.mockReturnValue("content");
+        mockFs.readFileSync.mockReturnValue("content");
 
         const output = await project.generateContent("/abc/test.liquid");
 
@@ -203,7 +204,7 @@ describe("BaseProject.generateContent()", () => {
 // ------------------------------------
 describe("BaseProject.copyFolderAndRender()", () => {
     test("logs error if source does not exist", async () => {
-        fs.existsSync.mockReturnValue(false);
+        mockFs.existsSync.mockReturnValue(false);
 
         await project.copyFolderAndRender("/src", "/dest");
 

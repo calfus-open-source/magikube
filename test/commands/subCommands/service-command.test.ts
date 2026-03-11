@@ -144,6 +144,8 @@ describe("Microservice Command", () => {
         originalExit = process.exit;
         process.exit = jest.fn() as any;
         jest.clearAllMocks();
+        // Mock setTimeout to resolve immediately (avoids 15s delay in source)
+        jest.spyOn(global, 'setTimeout').mockImplementation((fn: any) => { fn(); return 0 as any; });
 
         mockfs.existsSync = jest.fn(() => true);
         mockfs.writeFileSync = jest.fn();
@@ -161,6 +163,7 @@ describe("Microservice Command", () => {
 
     afterEach(() => {
         process.exit = originalExit;
+        jest.restoreAllMocks();
     });
 
     describe("Command Metadata", () => {
@@ -319,7 +322,7 @@ describe("Microservice Command", () => {
 
             await command.run();
 
-            expect(cloneAndCopyTemplates).toHaveBeenCalledWith("create:microservice");
+            expect(cloneAndCopyTemplates).toHaveBeenCalledWith("create:microservice", "aws");
         });
 
         test("should not clone templates if dist folder exists", async () => {
@@ -398,24 +401,22 @@ describe("Microservice Command", () => {
                     environment: "dev",
                 }),
                 expect.objectContaining({
-                    token: "test-token",
-                    userName: "testuser",
-                    orgName: "testorg",
-                    projectName: "test-project",
+                    common: expect.objectContaining({
+                        token: "test-token",
+                        userName: "testuser",
+                        orgName: "testorg",
+                        projectName: "test-project",
+                    }),
                 })
             );
         });
 
         test("should handle missing terraform project", async () => {
-            jest.useFakeTimers();
             (MicroserviceProject.getProject as jest.Mock).mockResolvedValue(null);
 
-            const runPromise = command.run();
-            jest.advanceTimersByTime(15000);
-            await runPromise;
+            await command.run();
 
             expect(setupAndPushServices).not.toHaveBeenCalled();
-            jest.useRealTimers();
         });
     });
 

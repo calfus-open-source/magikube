@@ -196,7 +196,7 @@ export default abstract class BaseProject {
     const templateFilePath = CreateProjectFile
       ? templateFilename
       : project_config.command === 'resume'
-        ? join(new URL('.', import.meta.url).pathname, templateFilename)
+        ? join(process.cwd(), 'dist/templates', templateFilename)
         : templateFilename;
 
     // Read the template file

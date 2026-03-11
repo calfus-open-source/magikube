@@ -78,7 +78,7 @@ jest.mock("../../../src/prompts/constants.js", () => ({
     },
 }));
 
-import NewModule from "../../../src/commands/subCommands/modue-command/index.js";
+import NewModule from "../../../src/commands/subCommands/module-command/index.js";
 
 describe("NewModule Command", () => {
     let originalExit: any;
@@ -533,7 +533,7 @@ describe("NewModule Command", () => {
     describe("Integration Tests - Module Command Execution", () => {
         test("should initialize logger with project name on run", async () => {
             const { AppLogger } = require("../../../src/logger/appLogger.js");
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -557,7 +557,7 @@ describe("NewModule Command", () => {
 
         test("should read .magikube file and validate existence", async () => {
             const fs = require("fs");
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -578,7 +578,7 @@ describe("NewModule Command", () => {
             const fs = require("fs");
             jest.clearAllMocks();
 
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -600,7 +600,7 @@ describe("NewModule Command", () => {
         test("should call handlePrompts with module type", async () => {
             const { handlePrompts } = require("../../../src/core/utils/handlePrompts-utils.js");
             const fs = require("fs");
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -627,7 +627,7 @@ describe("NewModule Command", () => {
             const fs = require("fs");
             jest.clearAllMocks();
 
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -650,7 +650,7 @@ describe("NewModule Command", () => {
         test("should execute terraform operations if project exists", async () => {
             const SubModuleTemplateProject = require("../../../src/core/submoduleTerraform.js").default;
             const fs = require("fs");
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -688,7 +688,7 @@ describe("NewModule Command", () => {
 
         test("should exit with success code on completion", async () => {
             const fs = require("fs");
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({
@@ -710,7 +710,7 @@ describe("NewModule Command", () => {
 
         test("should exit with error code on failure", async () => {
             const fs = require("fs");
-            const NewModule = require("../../../src/commands/subCommands/modue-command/index.js").default;
+            const NewModule = require("../../../src/commands/subCommands/module-command/index.js").default;
             const mockCommand = Object.create(NewModule.prototype);
             mockCommand.id = "module";
             mockCommand.parse = jest.fn().mockResolvedValue({

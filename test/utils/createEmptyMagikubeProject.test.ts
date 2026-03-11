@@ -1,4 +1,4 @@
-import { createEmptyMagikubeProject } from "../../src/core/utils/createEmptyProject-utils.js";
+import { createBlankMagikubeProject } from "../../src/core/utils/createEmptyProject-utils.js";
 import fs from "fs";
 import { AppLogger } from "../../src/logger/appLogger.js";
 import { join } from "path";
@@ -24,7 +24,7 @@ describe("createEmptyMagikubeProject", () => {
     it("should create a new project folder and write config file", async () => {
         (fs.existsSync as jest.Mock).mockReturnValue(false);
 
-        await createEmptyMagikubeProject(projectName, mockResponses);
+        await createBlankMagikubeProject(projectName, mockResponses);
 
         expect(fs.existsSync).toHaveBeenCalledWith(projectPath);
         expect(fs.mkdirSync).toHaveBeenCalledWith(projectPath);
@@ -39,7 +39,7 @@ describe("createEmptyMagikubeProject", () => {
     it("should not create folder if it already exists", async () => {
         (fs.existsSync as jest.Mock).mockReturnValue(true);
 
-        await createEmptyMagikubeProject(projectName, mockResponses);
+        await createBlankMagikubeProject(projectName, mockResponses);
 
         expect(fs.existsSync).toHaveBeenCalledWith(projectPath);
         expect(fs.mkdirSync).not.toHaveBeenCalled();

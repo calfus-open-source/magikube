@@ -27,7 +27,7 @@ jest.mock("../../src/core/code-repository/common-repository.js", () => {
     };
 });
 
-jest.mock("../../src/core/argocd/setup-argocd.js", () => {
+jest.mock("../../src/core/argocd/setup-argocd-aws.js", () => {
     return {
         __esModule: true,
         default: jest.fn().mockImplementation(() => ({

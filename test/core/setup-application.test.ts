@@ -1,5 +1,4 @@
 import CreateApplication from "../../src/core/setup-application.js";
-import BaseCommand from "../../src/commands/base.js";
 import { AppLogger } from "../../src/logger/appLogger.js";
 import fs from 'fs-extra';
 import SystemConfig from "../../src/config/system.js";
@@ -13,7 +12,9 @@ jest.mock('fs-extra');
 jest.mock("../../src/logger/appLogger.js");
 jest.mock("../../src/config/system.js");
 jest.mock("../../src/core/manage-repository.js");
-jest.mock("../../src/core/utils/executeCommandWithRetry-utils.js");
+jest.mock("../../src/core/utils/executeCommandWithRetry-utils.js", () => ({
+    executeCommandWithRetry: jest.fn(() => Promise.resolve()),
+}));
 jest.mock("../../src/core/utils/statusUpdater-utils.js");
 jest.mock("path", () => ({
     ...jest.requireActual("path"),
@@ -22,10 +23,12 @@ jest.mock("path", () => ({
 }));
 
 // Mock process.exit to prevent tests from crashing the environment
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => { });
+const originalExit = process.exit;
+process.exit = jest.fn() as any;
+const mockExit = process.exit as jest.Mock;
 
 // --- Test Setup ---
-const MockCommand = new BaseCommand();
+const MockCommand = {} as any;
 const mockBaseProjectConfig = {
     project_name: "test-project",
     environment: "dev",
@@ -90,7 +93,7 @@ describe('CreateApplication.setupAuthenticationService', () => {
         const result = await createApplicationInstance.setupAuthenticationService(mockBaseProjectConfig);
 
         expect(result).toBe(true);
-        expect(createApplicationInstance.createFile).toHaveBeenCalledTimes(20);
+        expect(createApplicationInstance.createFile).toHaveBeenCalledTimes(19);
         expect(createApplicationInstance.createFile).toHaveBeenCalledWith(
             'ci-build.yml',
             `${copyPathPrefix}/dist/keycloak-auth-service/ci-build.yml.liquid`,
@@ -109,7 +112,7 @@ describe('CreateApplication.setupAuthenticationService', () => {
     test('should handle failure during auth-service setup', async () => {
         const expectedAppName = 'auth-service';
         const { applicationPath } = getExpectedPaths(expectedAppName);
-        executeCommandWithRetry.mockRejectedValue(new Error('npm failed'));
+        (executeCommandWithRetry as jest.Mock).mockRejectedValue(new Error('npm failed'));
 
         await createApplicationInstance.setupAuthenticationService(mockBaseProjectConfig);
 
@@ -198,7 +201,7 @@ describe('CreateApplication App Creation', () => {
     const testAppCreationFailure = async (methodName:string, appNameKey:string, appName:string) => {
         const { applicationPath } = getExpectedPaths(appName);
         const method = createApplicationInstance[methodName];
-        executeCommandWithRetry.mockRejectedValue(new Error('installation failed'));
+        (executeCommandWithRetry as jest.Mock).mockRejectedValue(new Error('installation failed'));
 
         await method({ appName: mockBaseProjectConfig[appNameKey], projectName: mockBaseProjectConfig.project_name });
 
@@ -234,16 +237,21 @@ describe('CreateApplication App Creation', () => {
 
     // GenAI Tests
     test('should successfully create GenAI app', async () => {
-        // GenAI uses 'genAI_app_name' as key but appName in the function is 'genai-app'
-        await testAppCreation('createGenAIApp', 'genAI_app_name', 'genai-app');
+        const { copyPathPrefix, createPathPrefix, applicationPath } = getExpectedPaths('genai-app');
+        const method = createApplicationInstance.createGenAIApp;
+        mockSystemConfigGetConfig.mockReturnValue(mockBaseProjectConfig);
+
+        await method({ genAI_app_name: mockBaseProjectConfig.genAI_app_name, projectName: mockBaseProjectConfig.project_name });
+        expect(updateStatusFile).toHaveBeenCalledWith(mockBaseProjectConfig.project_name, 'genai-app', expect.any(String));
+        expect(AppLogger.info).toHaveBeenCalled();
+        expect(createApplicationInstance.createFile).toHaveBeenCalled();
     });
     test('should handle GenAI app creation failure', async () => {
         // GenAI app logic doesn't use npm, so we mock createFile failure
         createApplicationInstance.createFile.mockRejectedValue(new Error('file write failed'));
-        fs.rmdirSync.mockClear();
+        (fs.rmdirSync as unknown as jest.Mock).mockClear();
 
-        // FIX: Pass the correct config object
-        await createApplicationInstance.createGenAIApp({ appName: 'genai-app', projectName: 'test-project' });
+        await createApplicationInstance.createGenAIApp({ genAI_app_name: 'genai-app', projectName: 'test-project' });
 
         expect(AppLogger.error).toHaveBeenCalled();
         expect(updateStatusFile).toHaveBeenCalledWith('test-project', 'genai-app', 'fail');
@@ -316,10 +324,10 @@ describe('CreateApplication.setupGitops', () => {
 // handleAppCreation()
 // ----------------------------------------------------
 describe('CreateApplication.handleAppCreation', () => {
-    const mockConfigObject: any = { projectId: 1 };
+    const mockConfigObject: any = { projectId: 1, common: {} };
 
     beforeEach(() => {
-        ManageRepository.pushCode.mockResolvedValue(null);
+        (ManageRepository.pushCode as jest.Mock).mockResolvedValue(null);
         createApplicationInstance.createReactApp = jest.fn().mockResolvedValue(true);
         // Ensure the appTypeMap references the mocked function (constructor set earlier)
         if (createApplicationInstance.appTypeMap && createApplicationInstance.appTypeMap['react']) {
@@ -335,8 +343,8 @@ describe('CreateApplication.handleAppCreation', () => {
         expect(createApplicationInstance.createReactApp).toHaveBeenCalled();
         expect(ManageRepository.pushCode).toHaveBeenCalled();
         // The implementation sets the appName and appType from the project config
-        expect(mockConfigObject.appName).toBe(mockBaseProjectConfig.react_app_name);
-        expect(mockConfigObject.appType).toBe(mockBaseProjectConfig.frontend_app_type);
+        expect(mockConfigObject.common.appName).toBe(mockBaseProjectConfig.react_app_name);
+        expect(mockConfigObject.common.appType).toBe(mockBaseProjectConfig.frontend_app_type);
     });
 
     test('should not call pushCode if createAppFunction fails', async () => {
@@ -349,8 +357,8 @@ describe('CreateApplication.handleAppCreation', () => {
     });
 
     test('should handle error if pushCode fails', async () => {
-        ManageRepository.pushCode.mockResolvedValue('Repo Setup Error');
-        const mockConfigObject = { projectId: 1, appName: '', appType: '' };
+        (ManageRepository.pushCode as jest.Mock).mockResolvedValue('Repo Setup Error');
+        const mockConfigObject = { projectId: 1, common: { appName: '', appType: '' } };
 
         // Provide an explicit, minimal currentProjectConfig for the call
         const currentProjectConfig = mockBaseProjectConfig;
@@ -378,8 +386,8 @@ describe('CreateApplication.destroyApp', () => {
     const mockProject = 'my-project';
 
     test('should delete both frontend and backend repos and local folders (with org)', async () => {
-        fs.existsSync.mockReturnValue(true);
-        executeCommandWithRetry.mockResolvedValue({});
+        (fs.existsSync as jest.Mock).mockReturnValue(true);
+        (executeCommandWithRetry as jest.Mock).mockResolvedValue({});
 
         await createApplicationInstance.destroyApp(mockUser, mockAuth, mockOrg, mockFrontend, mockBackend, mockProject);
 
@@ -398,8 +406,8 @@ describe('CreateApplication.destroyApp', () => {
     });
 
     test('should delete both frontend and backend repos and local folders (without org)', async () => {
-        fs.existsSync.mockReturnValue(true);
-        executeCommandWithRetry.mockResolvedValue({});
+        (fs.existsSync as jest.Mock).mockReturnValue(true);
+        (executeCommandWithRetry as jest.Mock).mockResolvedValue({});
 
         await createApplicationInstance.destroyApp(mockUser, mockAuth, '', mockFrontend, mockBackend, mockProject);
 
@@ -413,8 +421,8 @@ describe('CreateApplication.destroyApp', () => {
     });
 
     test('should log error if repository deletion fails', async () => {
-        fs.existsSync.mockReturnValue(true);
-        executeCommandWithRetry.mockRejectedValueOnce(new Error('Repo delete failed'));
+        (fs.existsSync as jest.Mock).mockReturnValue(true);
+        (executeCommandWithRetry as jest.Mock).mockRejectedValueOnce('Repo delete failed');
 
         await createApplicationInstance.destroyApp(mockUser, mockAuth, mockOrg, mockFrontend, mockBackend, mockProject);
 

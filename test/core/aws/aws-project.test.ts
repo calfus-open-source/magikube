@@ -31,6 +31,7 @@ jest.mock('../../../src/core/base-project.js', () => {
             (BaseProjectMock.prototype as any).createProject = jest.fn(() => Promise.resolve(true));
             (BaseProjectMock.prototype as any).destroyProject = jest.fn(() => Promise.resolve(true));
             (BaseProjectMock.prototype as any).createFile = jest.fn();
+            (BaseProjectMock.prototype as any).deleteFolder = jest.fn(() => Promise.resolve());
             return BaseProjectMock;
         })(),
     };

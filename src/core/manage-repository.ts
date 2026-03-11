@@ -1,5 +1,5 @@
 import { AppLogger } from '../logger/appLogger.js';
-import { ProgressBar } from '../logger/progressLogger.js';
+import ProgressBar from '../logger/progressLogger.js';
 import { FullConfigObject } from './interface.js';
 import axios from 'axios';
 import SystemConfig from '../config/system.js';

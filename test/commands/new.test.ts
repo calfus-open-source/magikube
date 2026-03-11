@@ -75,7 +75,7 @@ jest.mock("../../src/core/utils/groupingTemplateProject-utils.js", () => ({
     handleTemplateFlag: jest.fn(() => Promise.resolve(true)),
 }));
 jest.mock("../../src/core/utils/terraformHandlers-utils.js", () => ({
-    handleEKS: jest.fn(() => Promise.resolve(true)),
+    handleEKSandAKS: jest.fn(() => Promise.resolve(true)),
     handleK8s: jest.fn(() => Promise.resolve(true)),
 }));
 jest.mock("../../src/core/utils/setupAndPushService-utils.js", () => ({
@@ -83,7 +83,8 @@ jest.mock("../../src/core/utils/setupAndPushService-utils.js", () => ({
 }));
 jest.mock("../../src/core/constants/constants.js", () => ({
     services: ["auth-service"],
-    modules: ["vpc"],
+    aws_modules: ["vpc"],
+    azure_modules: ["network"],
     InvalidProjectNames: ["help"],
     supportedTemplates: ["eks-fargate-vpc"],
 }));
@@ -307,8 +308,8 @@ describe("CreateProject Command", () => {
         });
 
         test("should handle EKS infrastructure", async () => {
-            const { handleEKS } = require("../../src/core/utils/terraformHandlers-utils.js");
-            const result = await handleEKS("myapp", {}, {}, true, {});
+            const { handleEKSandAKS } = require("../../src/core/utils/terraformHandlers-utils.js");
+            const result = await handleEKSandAKS("myapp", {}, {}, true, {});
             expect(result).toBe(true);
         });
 
@@ -382,9 +383,9 @@ describe("CreateProject Command", () => {
         });
 
         test("should have modules defined", () => {
-            const { modules } = require("../../src/core/constants/constants.js");
-            expect(Array.isArray(modules)).toBe(true);
-            expect(modules).toContain("vpc");
+            const { aws_modules } = require("../../src/core/constants/constants.js");
+            expect(Array.isArray(aws_modules)).toBe(true);
+            expect(aws_modules).toContain("vpc");
         });
 
         test("should have system defaults defined", () => {
@@ -573,6 +574,47 @@ describe("CreateProject Command", () => {
 
         test("should get AWS account ID for AWS provider", async () => {
             const AWSAccount = require("../../src/core/aws/aws-account.js").default;
+            AWSAccount.getAccountId.mockResolvedValue("123456789012");
+
+            // Re-setup mocks cleared by clearAllMocks so run() progresses to getAccountId
+            const { handlePrompts } = require("../../src/core/utils/handlePrompts-utils.js");
+            (handlePrompts as jest.Mock).mockResolvedValue({
+                cloud_provider: "aws",
+                cluster_type: "eks-fargate",
+                aws_profile: "default",
+                github_access_token: "test-token",
+                git_user_name: "testuser",
+                github_owner: "testorg",
+                source_code_repository: "https://github.com/test/repo",
+                aws_region: "us-east-1",
+                aws_access_key_id: "AKIAIOSFODNN7EXAMPLE",
+                aws_secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                environment: "dev",
+            });
+
+            const SystemConfig = require("../../src/config/system.js").default;
+            const mockGetConfig = jest.fn(() => ({
+                cloud_provider: "aws",
+                github_access_token: "test-token",
+                git_user_name: "testuser",
+                github_owner: "testorg",
+                source_code_repository: "https://github.com/test/repo",
+                aws_region: "us-east-1",
+                aws_access_key_id: "AKIAIOSFODNN7EXAMPLE",
+                aws_secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                environment: "dev",
+                cluster_type: "eks-fargate",
+            }));
+            SystemConfig.getInstance.mockReturnValue({
+                mergeConfigs: jest.fn(),
+                getConfig: mockGetConfig,
+            });
+
+            const TerraformProject = require("../../src/core/terraform-project.js").default;
+            TerraformProject.getProject.mockResolvedValue({
+                createProject: jest.fn(() => Promise.resolve()),
+                AWSProfileActivate: jest.fn(() => Promise.resolve()),
+            });
 
             const CreateProject = require("../../src/commands/new/index.js").default;
             const mockCommand = Object.create(CreateProject.prototype);
@@ -592,7 +634,7 @@ describe("CreateProject Command", () => {
         });
 
         test("should handle EKS infrastructure when cluster_type is eks-fargate", async () => {
-            const { handleEKS } = require("../../src/core/utils/terraformHandlers-utils.js");
+            const { handleEKSandAKS } = require("../../src/core/utils/terraformHandlers-utils.js");
             const { handlePrompts } = require("../../src/core/utils/handlePrompts-utils.js");
 
             // Mock handlePrompts to return eks-fargate cluster type
@@ -624,7 +666,7 @@ describe("CreateProject Command", () => {
                 // Expected
             }
 
-            expect(handleEKS).toHaveBeenCalled();
+            expect(handleEKSandAKS).toHaveBeenCalled();
         });
 
         test("should handle K8s infrastructure when cluster_type is k8s", async () => {

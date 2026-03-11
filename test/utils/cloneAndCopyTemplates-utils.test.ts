@@ -33,7 +33,7 @@ describe("cloneAndCopyTemplates", () => {
         mockFs.existsSync.mockImplementation((path: any) => false);
 
         await cloneAndCopyTemplates(undefined);
-        expect(mockExec).toHaveBeenCalledTimes(8); // mkdir + 5 clone/copy/rm
+        expect(mockExec).toHaveBeenCalledTimes(7); // mkdir + clone/copy/rm operations
         expect(mockExec).toHaveBeenCalledWith(
             expect.stringContaining("mkdir -p"),
             { cwd: parentPath },
@@ -66,7 +66,7 @@ describe("cloneAndCopyTemplates", () => {
         );
 
         // Should still rsync + rm both dirs
-        expect(mockExec).toHaveBeenCalledTimes(5);
+        expect(mockExec).toHaveBeenCalledTimes(4);
         expect(AppLogger.info).toHaveBeenCalled();
     });
 

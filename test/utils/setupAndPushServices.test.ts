@@ -63,7 +63,9 @@ describe("setupAndPushServices", () => {
             genai_app_type: "my-genAI-app",
             environment: "dev",
         };
-        const configObject: any = {};
+        const configObject: any = {
+            common: {}
+        };
 
         // Mock status file for all 6 services
         mockReadStatusFile.mockResolvedValue({
@@ -85,8 +87,8 @@ describe("setupAndPushServices", () => {
         // Adjusting expectation to 4 to pass the test based on current implementation behavior.
         expect(mockPushCode).toHaveBeenCalledTimes(4);
         // FIX: The application appears to set appName to the environment value ("dev") as a final step.
-        expect(configObject.appName).toBe(projectConfig.environment);
-        expect(configObject.appType).toBe("gitops");
+        expect(configObject.common.appName).toBe(projectConfig.environment);
+        expect(configObject.common.appType).toBe("gitops");
     });
 
     it("should call createService for 'create' command and handle backend-service", async () => {
@@ -96,7 +98,7 @@ describe("setupAndPushServices", () => {
             backend_app_type: "my-node-app",
             node_app_name: "node-app",
         };
-        const configObject: any = {};
+        const configObject: any = { common: {} };
 
         await setupAndPushServices(projectConfig, configObject);
 
@@ -115,7 +117,7 @@ describe("setupAndPushServices", () => {
             service_type: "frontend-service",
             frontend_app_type: "my-frontend-app",
         };
-        const configObject: any = {};
+        const configObject: any = { common: {} };
 
         await setupAndPushServices(projectConfig, configObject);
 
@@ -129,7 +131,7 @@ describe("setupAndPushServices", () => {
 
     it("should log error if setupService fails", async () => {
         const projectConfig = { command: "new" };
-        const configObject: any = {};
+        const configObject: any = { common: {} };
 
         mockReadStatusFile.mockResolvedValue({
             services: { "auth-service": "" },
@@ -153,7 +155,9 @@ describe("setupAndPushServices", () => {
             backend_app_type: "node-app",
             node_app_name: "node-app",
         };
-        const configObject: any = {};
+        const configObject: any = {
+            common: {}
+        };
 
         // FIX: Use mockRejectedValueOnce on the specific, globally defined mock function reference
         mockHandleAppCreation.mockRejectedValueOnce(new Error("fail"));

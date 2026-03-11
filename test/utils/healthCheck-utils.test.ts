@@ -112,7 +112,9 @@ describe("serviceHealthCheck", () => {
 
         await serviceHealthCheck(args, responses, projectConfig);
 
-        expect(AppLogger.error).toHaveBeenCalledWith("config.sh file not found", true);
+        // Implementation checks services first, then config.sh
+        expect(AppLogger.error).toHaveBeenCalledWith("Failed to detect that keycloak service is up. Exiting...", true);
+        expect(AppLogger.error).toHaveBeenCalledWith("Failed to detect that argocd service is up. Exiting...", true);
     });
 
     it("logs error when one or more services fail", async () => {

@@ -114,6 +114,8 @@
     "posttest": "npm run lint:check",
     "prepack": "oclif manifest && oclif readme",
     "test": "jest --coverage --passWithNoTests",
+    "test:unit": "jest --no-coverage",
+    "test:quick": "jest --no-coverage --bail",
     "test:coverage": "jest --coverage",
     "version": "oclif readme && git add README.md"
   },

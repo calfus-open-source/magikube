@@ -29,7 +29,8 @@ jest.mock("../../src/core/manage-repository.js", () => ({
 }));
 
 jest.mock("../../src/core/constants/constants.js", () => ({
-    modules: ["network", "eks", "fargate"],
+    aws_modules: ["network", "eks", "fargate"],
+    azure_modules: ["network", "aks"],
     playbooks: ["setup-master.yml", "deploy-app.yml"]
 }));
 
@@ -40,8 +41,8 @@ import { execSync } from "child_process";
 import { updateStatusFile } from "../../src/core/utils/statusUpdater-utils.js";
 import { ManageRepository } from "../../src/core/manage-repository.js";
 import { AppLogger } from "../../src/logger/appLogger.js";
-import { modules, playbooks } from "../../src/core/constants/constants.js";
-import { handleEKS, handleK8s } from "../../src/core/utils/terraformHandlers-utils.js";
+import { aws_modules as modules, playbooks } from "../../src/core/constants/constants.js";
+import { handleEKSandAKS, handleK8s } from "../../src/core/utils/terraformHandlers-utils.js";
 
 // Utility
 const mockTerraform = {
@@ -56,7 +57,7 @@ const mockTerraform = {
 
 describe("handleEKS", () => {
     const projectName = "demo";
-    const responses = { environment: "dev" };
+    const responses = { environment: "dev", cloud_provider: "aws" };
     const configObject: any = {};
 
     beforeEach(() => {
@@ -68,7 +69,7 @@ describe("handleEKS", () => {
         // Return for each module
         mockTerraform.runTerraformApply.mockResolvedValue(true);
 
-        execSync.mockReturnValue(Buffer.from("ok"));
+        (execSync as jest.Mock).mockReturnValue(Buffer.from("ok"));
     });
 
     it("should initialize terraform and apply all modules successfully", async () => {
@@ -77,7 +78,7 @@ describe("handleEKS", () => {
             mockTerraform.runTerraformApply.mockResolvedValueOnce(true);
         });
 
-        await handleEKS(projectName, responses, mockTerraform, true, configObject);
+        await handleEKSandAKS(projectName, responses, mockTerraform, true, configObject);
 
         expect(mockTerraform.runTerraformInit).toHaveBeenCalledWith(
             "/current/demo/infrastructure",
@@ -97,7 +98,7 @@ describe("handleEKS", () => {
             .mockResolvedValueOnce(true)
             .mockRejectedValueOnce(new Error("Apply failed"));
 
-        await handleEKS(projectName, responses, mockTerraform, false, configObject);
+        await handleEKSandAKS(projectName, responses, mockTerraform, false, configObject);
 
         expect(updateStatusFile).toHaveBeenCalledWith("demo", "eks", "fail");
         expect(updateStatusFile).toHaveBeenCalledWith("demo", "terraform-apply", "fail");
@@ -121,7 +122,7 @@ describe("handleK8s", () => {
         mockTerraform.getMasterIp.mockResolvedValue("1.2.3.4");
         mockTerraform.editKubeConfigFile.mockResolvedValue(true);
 
-        execSync.mockReturnValue(Buffer.from("OK"));
+        (execSync as jest.Mock).mockReturnValue(Buffer.from("OK"));
     });
 
     it("should run terraform init/apply and ansible playbooks", async () => {

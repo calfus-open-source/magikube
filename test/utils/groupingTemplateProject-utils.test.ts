@@ -120,7 +120,7 @@ describe("handleTemplateFlag", () => {
 
         await handleTemplateFlag(args, "create", template);
 
-        expect(cloneAndCopyTemplates).toHaveBeenCalledWith("create");
+        expect(cloneAndCopyTemplates).toHaveBeenCalledWith("create", "aws");
         expect(dotMagikubeConfig).toHaveBeenCalledWith("demo", process.cwd());
         expect(TemplateTerraformProject.getProject).toHaveBeenCalledWith("create");
         expect(AWSAccount.getAccountId).toHaveBeenCalled();
