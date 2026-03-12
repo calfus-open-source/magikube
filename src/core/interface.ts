@@ -30,6 +30,28 @@ export interface FullConfigObject {
   azure?: AzureConfig;
 }
 
+export interface AzureSubscriptionInfo {
+  Name: string;
+  SubscriptionId: string;
+  TenantId: string;
+  State: string;
+}
+
+export interface AzureAccountInfo {
+  Name: string;
+  SubscriptionId: string;
+  TenantId: string;
+}
+
+export interface AzureProfileEntry {
+  profileName: string;
+  clientId: string;
+  clientSecret: string;
+  tenantId: string;
+  subscriptionId: string;
+  state?: string;
+}
+
 export interface AppTypeMap {
   [key: string]: {
     appNameKey: string;

@@ -146,9 +146,11 @@ export default class NewModule extends BaseCommand {
       await readStatusFile(projectConfig, this.id);
 
       if (terraform) {
-        await terraform.createProject("", currentDir);
-        if (projectConfig["cloud_provider"] === "aws") {
-          await (terraform as any).AWSProfileActivate(projectConfig["aws_profile"]);
+        await terraform.createProject('', currentDir);
+        if (projectConfig['cloud_provider'] === 'aws') {
+          await (terraform as any).AWSProfileActivate(
+            projectConfig['aws_profile'],
+          );
         }
         // Delay of 15 seconds
         await new Promise((resolve) => setTimeout(resolve, 15000));

@@ -1,6 +1,5 @@
 import { AppLogger } from '../../logger/appLogger.js';
 
-
 export function updateProjectConfigArrays(
   config: { [key: string]: any },
   moduleType: string,

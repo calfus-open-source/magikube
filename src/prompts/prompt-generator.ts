@@ -8,7 +8,10 @@ import {
   Colours,
 } from './constants.js';
 import fs from 'fs';
-import { awsSupportedRegions, azureSupportedRegions } from '../core/constants/constants.js';
+import {
+  awsSupportedRegions,
+  azureSupportedRegions,
+} from '../core/constants/constants.js';
 
 const productionPrompts: any[] = [
   {
@@ -78,10 +81,10 @@ const awsPrompts: any[] = [
     type: 'list',
   },
   {
-    message: "Enter AWS profile to use: ",
-    name: "aws_profile",
-    type: "input",
-    default: "",
+    message: 'Enter AWS profile to use: ',
+    name: 'aws_profile',
+    type: 'input',
+    default: '',
   },
   {
     message: 'Source code repository: ',
@@ -278,12 +281,12 @@ enum ApplicationType {
 
 const azureRegion: any[] = [
   {
-    message: "Select an Azure Location: ",
-    name: "azure_location",
+    message: 'Select an Azure Location: ',
+    name: 'azure_location',
     default:
       process.env.AZURE_LOCATION ||
       SystemConfig.getInstance().getConfig().azure_location,
-    type: "input",
+    type: 'input',
     // Validate the input
     validate: function (input: string) {
       const azureRegions = [...azureSupportedRegions];
@@ -297,44 +300,41 @@ const azureRegion: any[] = [
 
 const azureProfile: any[] = [
   {
-    message: "Enter Azure profile to use: ",
-    name: "azure_profile",
-    type: "input",
-    default: "sample",
+    message: 'Enter Azure profile to use: ',
+    name: 'azure_profile',
+    type: 'input',
+    default: 'sample',
   },
 ];
 
 const azurePrompts: any[] = [
   {
-    message: "Select an Azure Location: ",
-    name: "azure_location",
+    message: 'Select an Azure Location: ',
+    name: 'azure_location',
     default:
       process.env.AZURE_LOCATION ||
       SystemConfig.getInstance().getConfig().azure_location,
-    type: "input",
+    type: 'input',
     // Validate the input
-    validate: function(input: string) {
+    validate: function (input: string) {
       const azureRegions = [...azureSupportedRegions];
       if (!azureRegions.includes(input)) {
-         return `${Colours.boldText}${Colours.redColor}\n Invalid Location. Please enter existing Azure location.${Colours.colorReset}`;
-      } 
+        return `${Colours.boldText}${Colours.redColor}\n Invalid Location. Please enter existing Azure location.${Colours.colorReset}`;
+      }
       return true;
-  },
-  },
-  {
-    choices: ["aks", "k8s"],
-    message: "Select a Cluster Type:",
-    name: "cluster_type",
-    type: "list",
+    },
   },
   {
-    message: "Source code repository: ",
-    name: "source_code_repository",
-    type: "list",
-    choices: [
-      VersionControl.GITHUB,
-      VersionControl.BITBUCKET,
-    ],
+    choices: ['aks', 'k8s'],
+    message: 'Select a Cluster Type:',
+    name: 'cluster_type',
+    type: 'list',
+  },
+  {
+    message: 'Source code repository: ',
+    name: 'source_code_repository',
+    type: 'list',
+    choices: [VersionControl.GITHUB, VersionControl.BITBUCKET],
     default:
       VersionControl.GITHUB ||
       SystemConfig.getInstance().getConfig().source_code_repository,

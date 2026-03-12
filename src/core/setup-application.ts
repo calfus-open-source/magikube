@@ -19,12 +19,12 @@ export default class CreateApplication extends BaseProject {
         appTypeKey: 'backend_app_type',
         createAppFunction: this.createNodeExpressApp,
       },
-      'next': {
+      next: {
         appNameKey: 'next_app_name',
         appTypeKey: 'frontend_app_type',
         createAppFunction: this.createNextApp,
       },
-      'react': {
+      react: {
         appNameKey: 'react_app_name',
         appTypeKey: 'frontend_app_type',
         createAppFunction: this.createReactApp,
@@ -659,7 +659,9 @@ export default class CreateApplication extends BaseProject {
         // store app-specific values under the `common` section to match types
         configObject.common.appName = projectConfig[appConfig.appNameKey];
         configObject.common.appType = projectConfig[appConfig.appTypeKey];
-        const appStatus = await appConfig.createAppFunction(configObject.common);
+        const appStatus = await appConfig.createAppFunction(
+          configObject.common,
+        );
         // After app creation, repository setup initiates
         if (appStatus) {
           const repoSetupError = await ManageRepository.pushCode(configObject);

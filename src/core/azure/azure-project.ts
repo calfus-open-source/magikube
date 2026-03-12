@@ -1,22 +1,22 @@
-import BaseProject from "../base-project.js";
-import AzureTerraformBackend from "./azure-tf-backend.js";
-import { spawn, execSync } from "child_process";
-import fs from "fs";
-import * as jsyaml from "js-yaml";
-import * as os from "os";
-import { AppLogger } from "../../logger/appLogger.js";
-import { ProgressBar } from "../../logger/progressLogger.js";
-import CreateApplication from "../setup-application.js";
-import BaseCommand from "../../commands/base.js";
-import { executeCommandWithRetry } from "../utils/executeCommandWithRetry-utils.js";
+import BaseProject from '../base-project.js';
+import AzureTerraformBackend from './azure-tf-backend.js';
+import { spawn, execSync } from 'child_process';
+import fs from 'fs';
+import * as jsyaml from 'js-yaml';
+import * as os from 'os';
+import { AppLogger } from '../../logger/appLogger.js';
+import ProgressBar from '../../logger/progressLogger.js';
+import CreateApplication from '../setup-application.js';
+import BaseCommand from '../../commands/base.js';
+import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
 import {
   readStatusFile,
   updateStatusFile,
-} from "../utils/statusUpdater-utils.js";
-import { join } from "path";
-import SystemConfig from "../../config/system.js";
-import { CloudProject } from "../interfaces/cloud-project.js";
-import { azure_destroy_modules } from "../constants/constants.js";
+} from '../utils/statusUpdater-utils.js';
+import { join } from 'path';
+import SystemConfig from '../../config/system.js';
+import { CloudProject } from '../interfaces/cloud-project.js';
+import { azure_destroy_modules } from '../constants/constants.js';
 
 let sshProcess: any;
 
@@ -24,9 +24,9 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async createProject(
     name: string,
     path: string,
-    commandName?: string
+    commandName?: string,
   ): Promise<void> {
-    if (this.config.command === "new") {
+    if (this.config.command === 'new') {
       await super.createProject(name, path);
     }
 
@@ -37,389 +37,295 @@ export default class AzureProject extends BaseProject implements CloudProject {
       this.config.azure_client_id,
       this.config.azure_client_secret,
       this.config.azure_tenant_id,
-      this.config.azure_subscription_id
+      this.config.azure_subscription_id,
     );
   }
-
-  // async destroyProject(name: string, path: string): Promise<void> {
-  //   let azureStatus = false;
-  //   if (this.config.cloud_provider === "azure") {
-  //     azureStatus = true;
-  //   }
-  //   let command: BaseCommand | undefined;
-  //   const createApplication = new CreateApplication(
-  //     command as BaseCommand,
-  //     this.config
-  //   );
-  //   if (!this.config.dryrun) {
-  //     // Once the prompts are accepted at the start, these parameters will be accessible
-  //     if (this.config.command === "new" || this.config.command === "resume") {
-  //       const {
-  //         git_user_name,
-  //         github_access_token,
-  //         github_owner,
-  //         project_name,
-  //       } = this.config;
-  //       let frontend_app_name;
-  //       let backend_app_name;
-  //       if (this.config.frontend_app_type == "react") {
-  //         frontend_app_name = this.config.react_app_name;
-  //       }
-  //       if (this.config.frontend_app_type == "next") {
-  //         frontend_app_name = this.config.next_app_name;
-  //       }
-  //       if (this.config.backend_app_type == "node-express") {
-  //         backend_app_name = this.config.node_app_name;
-  //       }
-  //       await createApplication.destroyApp(
-  //         git_user_name,
-  //         github_access_token,
-  //         github_owner,
-  //         frontend_app_name,
-  //         backend_app_name,
-  //         project_name
-  //       );
-
-  //       if (azureStatus) {
-  //         await super.destroyProject(name, path);
-  //       }
-  //     }
-  //   }
-  // }
 
   async createCommon(path?: string): Promise<void> {
-    this.createVNet(path);
-    this.createACR();
-    this.createAKS(path);
-    this.createApplicationGateway();
-    this.createBastion();
-    this.createKeyVault();
-    this.createSecurityGroups();
-    this.createSqlServer();
-    // this.createAIFoundry();
-    // this.createVpnGateway();
-    // this.createResourceGroup(path);
-    // this.createDNSZone();
-    // this.createIngressController();
-    // this.createSQLDatabase(path);
-    // this.createEnvironment();
+    const basePath = path || process.cwd();
+    this.createVNet(basePath);
+    this.createACR(basePath);
+    this.createAKS(basePath);
+    this.createApplicationGateway(basePath);
+    this.createBastion(basePath);
+    this.createKeyVault(basePath);
+    this.createSecurityGroups(basePath);
+    this.createSqlServer(basePath);
   }
 
-  async createVNet(path?: string): Promise<void> {
+  async createVNet(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${path}/dist/templates/azure/modules/vnet/main.tf.liquid`,
-      "/infrastructure/modules/vnet",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/vnet/main.tf.liquid`,
+      '/infrastructure/modules/vnet',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${path}/dist/templates/azure/modules/vnet/variables.tf.liquid`,
-      "/infrastructure/modules/vnet",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/vnet/variables.tf.liquid`,
+      '/infrastructure/modules/vnet',
+      true,
     );
     this.createFile(
-      "subnet.tf",
-      `${path}/dist/templates/azure/modules/vnet/subnets.tf.liquid`,
-      "/infrastructure/modules/vnet",
-      true
+      'subnet.tf',
+      `${basePath}/dist/templates/azure/modules/vnet/subnets.tf.liquid`,
+      '/infrastructure/modules/vnet',
+      true,
     );
     this.createFile(
-      "outputs.tf",
-      `${path}/dist/templates/azure/modules/vnet/outputs.tf.liquid`,
-      "/infrastructure/modules/vnet",
-      true
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/vnet/outputs.tf.liquid`,
+      '/infrastructure/modules/vnet',
+      true,
     );
   }
 
-  async createACR(): Promise<void> {
+  async createACR(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/acr/main.tf.liquid`,
-      "/infrastructure/modules/acr",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/acr/main.tf.liquid`,
+      '/infrastructure/modules/acr',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/acr/variables.tf.liquid`,
-      "/infrastructure/modules/acr",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/acr/variables.tf.liquid`,
+      '/infrastructure/modules/acr',
+      true,
     );
     this.createFile(
-      "outputs.tf",
-      `${process.cwd()}/dist/templates/azure/modules/acr/outputs.tf.liquid`,
-      "/infrastructure/modules/acr",
-      true
-    );
-  }
-
-  // async createAIFoundry(): Promise<void> {
-  //   this.createFile(
-  //     "main.tf",
-  //     `${process.cwd()}/dist/templates/azure/modules/ai_foundry/main.tf.liquid`,
-  //     "/infrastructure/modules/ai_foundry",
-  //     true
-  //   );
-  //   this.createFile(
-  //     "variables.tf",
-  //     `${process.cwd()}/dist/templates/azure/modules/ai_foundry/variables.tf.liquid`,
-  //     "/infrastructure/modules/ai_foundry",
-  //     true
-  //   );
-  //   this.createFile(
-  //     "outputs.tf",
-  //     `${process.cwd()}/dist/templates/azure/modules/ai_foundry/outputs.tf.liquid`,
-  //     "/infrastructure/modules/ai_foundry",
-  //     true
-  //   );
-  // }
-
-  async createApplicationGateway(): Promise<void> {
-    this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/application_gateway/main.tf.liquid`,
-      "/infrastructure/modules/application_gateway",
-      true
-    );
-    this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/application_gateway/variables.tf.liquid`,
-      "/infrastructure/modules/application_gateway",
-      true
-    );
-    this.createFile(
-      "outputs.tf",
-      `${process.cwd()}/dist/templates/azure/modules/application_gateway/outputs.tf.liquid`,
-      "/infrastructure/modules/application_gateway",
-      true
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/acr/outputs.tf.liquid`,
+      '/infrastructure/modules/acr',
+      true,
     );
   }
 
-  async createBastion(): Promise<void> {
+  async createApplicationGateway(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/bastion/main.tf.liquid`,
-      "/infrastructure/modules/bastion",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/application_gateway/main.tf.liquid`,
+      '/infrastructure/modules/application_gateway',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/bastion/variables.tf.liquid`,
-      "/infrastructure/modules/bastion",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/application_gateway/variables.tf.liquid`,
+      '/infrastructure/modules/application_gateway',
+      true,
     );
     this.createFile(
-      "ssh.tf",
-      `${process.cwd()}/dist/templates/azure/modules/bastion/ssh.tf.liquid`,
-      "/infrastructure/modules/bastion",
-      true
-    );
-    this.createFile(
-      "outputs.tf",
-      `${process.cwd()}/dist/templates/azure/modules/bastion/outputs.tf.liquid`,
-      "/infrastructure/modules/bastion",
-      true
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/application_gateway/outputs.tf.liquid`,
+      '/infrastructure/modules/application_gateway',
+      true,
     );
   }
 
-  async createKeyVault(): Promise<void> {
+  async createBastion(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/key_vault/main.tf.liquid`,
-      "/infrastructure/modules/key_vault",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/bastion/main.tf.liquid`,
+      '/infrastructure/modules/bastion',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/key_vault/variables.tf.liquid`,
-      "/infrastructure/modules/key_vault",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/bastion/variables.tf.liquid`,
+      '/infrastructure/modules/bastion',
+      true,
     );
     this.createFile(
-      "outputs.tf",
-      `${process.cwd()}/dist/templates/azure/modules/key_vault/outputs.tf.liquid`,
-      "/infrastructure/modules/key_vault",
-      true
-    );
-  }
-
-  async createSecurityGroups(): Promise<void> {
-    this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/security_groups/main.tf.liquid`,
-      "/infrastructure/modules/security_groups",
-      true
+      'ssh.tf',
+      `${basePath}/dist/templates/azure/modules/bastion/ssh.tf.liquid`,
+      '/infrastructure/modules/bastion',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/security_groups/variables.tf.liquid`,
-      "/infrastructure/modules/security_groups",
-      true
-    );
-    this.createFile(
-      "outputs.tf",
-      `${process.cwd()}/dist/templates/azure/modules/security_groups/outputs.tf.liquid`,
-      "/infrastructure/modules/security_groups",
-      true
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/bastion/outputs.tf.liquid`,
+      '/infrastructure/modules/bastion',
+      true,
     );
   }
 
-  async createSqlServer(): Promise<void> {
+  async createKeyVault(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/sql_server/main.tf.liquid`,
-      "/infrastructure/modules/sql_server",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/key_vault/main.tf.liquid`,
+      '/infrastructure/modules/key_vault',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/sql_server/variables.tf.liquid`,
-      "/infrastructure/modules/sql_server",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/key_vault/variables.tf.liquid`,
+      '/infrastructure/modules/key_vault',
+      true,
     );
     this.createFile(
-      "outputs.tf",
-      `${process.cwd()}/dist/templates/azure/modules/sql_server/outputs.tf.liquid`,
-      "/infrastructure/modules/sql_server",
-      true
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/key_vault/outputs.tf.liquid`,
+      '/infrastructure/modules/key_vault',
+      true,
     );
   }
 
-  // async createVpnGateway(): Promise<void> {
-  //   this.createFile(
-  //     "main.tf",
-  //     `${process.cwd()}/dist/templates/azure/modules/vpn_gateway/main.tf.liquid`,
-  //     "/infrastructure/modules/vpn_gateway",
-  //     true
-  //   );
-  //   this.createFile(
-  //     "variables.tf",
-  //     `${process.cwd()}/dist/templates/azure/modules/vpn_gateway/variables.tf.liquid`,
-  //     "/infrastructure/modules/vpn_gateway",
-  //     true
-  //   );
-  //   this.createFile(
-  //     "outputs.tf",
-  //     `${process.cwd()}/dist/templates/azure/modules/vpn_gateway/outputs.tf.liquid`,
-  //     "/infrastructure/modules/vpn_gateway",
-  //     true
-  //   );
-  // }
+  async createSecurityGroups(basePath: string): Promise<void> {
+    this.createFile(
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/security_groups/main.tf.liquid`,
+      '/infrastructure/modules/security_groups',
+      true,
+    );
+    this.createFile(
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/security_groups/variables.tf.liquid`,
+      '/infrastructure/modules/security_groups',
+      true,
+    );
+    this.createFile(
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/security_groups/outputs.tf.liquid`,
+      '/infrastructure/modules/security_groups',
+      true,
+    );
+  }
+
+  async createSqlServer(basePath: string): Promise<void> {
+    this.createFile(
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/sql_server/main.tf.liquid`,
+      '/infrastructure/modules/sql_server',
+      true,
+    );
+    this.createFile(
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/sql_server/variables.tf.liquid`,
+      '/infrastructure/modules/sql_server',
+      true,
+    );
+    this.createFile(
+      'outputs.tf',
+      `${basePath}/dist/templates/azure/modules/sql_server/outputs.tf.liquid`,
+      '/infrastructure/modules/sql_server',
+      true,
+    );
+  }
 
   async createResourceGroup(path?: string): Promise<void> {
     this.createFile(
-      "main.tf",
+      'main.tf',
       `${path}/dist/templates/azure/modules/resource-group/main.tf.liquid`,
-      "/infrastructure/modules/resource-group",
-      true
+      '/infrastructure/modules/resource-group',
+      true,
     );
     this.createFile(
-      "variables.tf",
+      'variables.tf',
       `${path}/dist/templates/azure/modules/resource-group/variables.tf.liquid`,
-      "/infrastructure/modules/resource-group",
-      true
+      '/infrastructure/modules/resource-group',
+      true,
     );
   }
 
   async createAKS(path?: string): Promise<void> {
     this.createFile(
-      "main.tf",
+      'main.tf',
       `${path}/dist/templates/azure/modules/kubernetes/aks/main.tf.liquid`,
-      "/infrastructure/modules/kubernetes/aks",
-      true
+      '/infrastructure/modules/kubernetes/aks',
+      true,
     );
     this.createFile(
-      "variables.tf",
+      'variables.tf',
       `${path}/dist/templates/azure/modules/kubernetes/aks/variables.tf.liquid`,
-      "/infrastructure/modules/kubernetes/aks",
-      true
+      '/infrastructure/modules/kubernetes/aks',
+      true,
     );
     this.createFile(
-      "main.tf",
+      'main.tf',
       `${path}/dist/templates/azure/modules/kubernetes/common/main.tf.liquid`,
-      "/infrastructure/modules/kubernetes/common",
-      true
+      '/infrastructure/modules/kubernetes/common',
+      true,
     );
     this.createFile(
-      "variables.tf",
+      'variables.tf',
       `${path}/dist/templates/azure/modules/kubernetes/common/variables.tf.liquid`,
-      "/infrastructure/modules/kubernetes/common",
-      true
+      '/infrastructure/modules/kubernetes/common',
+      true,
     );
   }
 
   async createSQLDatabase(path?: string): Promise<void> {
     this.createFile(
-      "main.tf",
+      'main.tf',
       `${path}/dist/templates/azure/modules/sql-database/main.tf.liquid`,
-      "/infrastructure/modules/sql-database",
-      true
+      '/infrastructure/modules/sql-database',
+      true,
     );
     this.createFile(
-      "variables.tf",
+      'variables.tf',
       `${path}/dist/templates/azure/modules/sql-database/variables.tf.liquid`,
-      "/infrastructure/modules/sql-database",
-      true
+      '/infrastructure/modules/sql-database',
+      true,
     );
   }
 
-  async createDNSZone(): Promise<void> {
+  async createDNSZone(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/dns-zone/main.tf.liquid`,
-      "/infrastructure/modules/dns-zone",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/dns-zone/main.tf.liquid`,
+      '/infrastructure/modules/dns-zone',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/dns-zone/variables.tf.liquid`,
-      "/infrastructure/modules/dns-zone",
-      true
-    );
-  }
-
-  async createIngressController(): Promise<void> {
-    this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/ingress-controller/main.tf.liquid`,
-      "/infrastructure/modules/ingress-controller",
-      true
-    );
-    this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/ingress-controller/variables.tf.liquid`,
-      "/infrastructure/modules/ingress-controller",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/dns-zone/variables.tf.liquid`,
+      '/infrastructure/modules/dns-zone',
+      true,
     );
   }
 
-  async createEnvironment(): Promise<void> {
+  async createIngressController(basePath: string): Promise<void> {
     this.createFile(
-      "main.tf",
-      `${process.cwd()}/dist/templates/azure/modules/environment/main.tf.liquid`,
-      "/infrastructure/modules/environment",
-      true
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/ingress-controller/main.tf.liquid`,
+      '/infrastructure/modules/ingress-controller',
+      true,
     );
     this.createFile(
-      "variables.tf",
-      `${process.cwd()}/dist/templates/azure/modules/environment/variables.tf.liquid`,
-      "/infrastructure/modules/environment",
-      true
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/ingress-controller/variables.tf.liquid`,
+      '/infrastructure/modules/ingress-controller',
+      true,
+    );
+  }
+
+  async createEnvironment(basePath: string): Promise<void> {
+    this.createFile(
+      'main.tf',
+      `${basePath}/dist/templates/azure/modules/environment/main.tf.liquid`,
+      '/infrastructure/modules/environment',
+      true,
+    );
+    this.createFile(
+      'variables.tf',
+      `${basePath}/dist/templates/azure/modules/environment/variables.tf.liquid`,
+      '/infrastructure/modules/environment',
+      true,
     );
   }
 
   async startSSHProcess() {
     // Azure specific SSH process if needed
-    AppLogger.debug("Starting SSH process for Azure");
+    AppLogger.debug('Starting SSH process for Azure');
   }
 
   async stopSSHProcess() {
     // Azure specific SSH process cleanup if needed
-    AppLogger.debug("Stopping SSH process for Azure");
+    AppLogger.debug('Stopping SSH process for Azure');
   }
 
   async getCreds(profileName: string) {
-    const AzureProfile = (await import("./azure-profile.js")).default;
+    const AzureProfile = (await import('./azure-profile.js')).default;
     const profiles = AzureProfile.getProfiles();
     const profile = profiles.find((p: any) => p.profileName === profileName);
 
@@ -438,28 +344,28 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async runTerraformInit(
     projectPath: string,
     backend: string,
-    projectName: string
+    projectName: string,
   ): Promise<void> {
     const progressBar = ProgressBar.createProgressBar();
     try {
       AppLogger.info(`Initializing Terraform...`, true);
       progressBar.start(100, 0, {
-        message: "Initializing Terraform backend for Azure...",
+        message: 'Initializing Terraform backend for Azure...',
       });
 
       const terraform = spawn(
-        "terraform",
-        ["init", `-backend-config=${backend}`],
+        'terraform',
+        ['init', `-backend-config=${backend}`],
         {
           cwd: projectPath,
-          stdio: "pipe",
-        }
+          stdio: 'pipe',
+        },
       );
 
-      let output = "";
-      let errorOutput = "";
+      let output = '';
+      let errorOutput = '';
 
-      terraform.stdout.on("data", (data) => {
+      terraform.stdout.on('data', (data) => {
         const dataStr = data.toString();
         output += dataStr;
         AppLogger.debug(dataStr);
@@ -467,24 +373,24 @@ export default class AzureProject extends BaseProject implements CloudProject {
         // Update progress based on keywords
         const progressUpdates = [
           {
-            keyword: "Initializing modules",
+            keyword: 'Initializing modules',
             progress: 25,
-            message: "Initializing modules...",
+            message: 'Initializing modules...',
           },
           {
-            keyword: "Initializing provider plugins",
+            keyword: 'Initializing provider plugins',
             progress: 50,
-            message: "Initializing provider plugins...",
+            message: 'Initializing provider plugins...',
           },
           {
-            keyword: "Configuring backend",
+            keyword: 'Configuring backend',
             progress: 75,
-            message: "Configuring backend...",
+            message: 'Configuring backend...',
           },
           {
-            keyword: "Terraform has been successfully initialized!",
+            keyword: 'Terraform has been successfully initialized!',
             progress: 100,
-            message: "Initialization complete",
+            message: 'Initialization complete',
           },
         ];
 
@@ -496,22 +402,22 @@ export default class AzureProject extends BaseProject implements CloudProject {
         }
       });
 
-      terraform.stderr.on("data", (data) => {
+      terraform.stderr.on('data', (data) => {
         const dataStr = data.toString();
         errorOutput += dataStr;
         AppLogger.debug(dataStr);
       });
 
       await new Promise<void>((resolve, reject) => {
-        terraform.on("close", (code) => {
+        terraform.on('close', (code) => {
           progressBar.stop();
           if (code === 0) {
-            AppLogger.info("Terraform initialization completed successfully");
+            AppLogger.info('Terraform initialization completed successfully');
             resolve();
           } else {
             AppLogger.error(
               `Terraform initialization failed with code ${code}`,
-              true
+              true,
             );
             AppLogger.error(errorOutput, true);
             reject(new Error(`Terraform init failed with code ${code}`));
@@ -529,7 +435,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
     projectPath: string,
     module?: string,
     moduleName?: string,
-    varFile?: string
+    varFile?: string,
   ): Promise<void> {
     AppLogger.debug(`Running terraform apply in path: ${projectPath}`);
     const projectConfig = SystemConfig.getInstance().getConfig();
@@ -537,14 +443,14 @@ export default class AzureProject extends BaseProject implements CloudProject {
       try {
         AppLogger.info(`Creating module: ${module}`, true);
 
-        let args = ["apply", "-no-color", "-auto-approve"];
+        const args = ['apply', '-no-color', '-auto-approve'];
         if (
-          (module && module && projectConfig.command === "new") ||
-          (module && projectConfig.command === "resume")
+          (module && module && projectConfig.command === 'new') ||
+          (module && projectConfig.command === 'resume')
         ) {
           args.push(`-target=${module}`);
         }
-        if (projectConfig.command === "module") {
+        if (projectConfig.command === 'module') {
           args.push(`-target=module.${module}`);
         }
 
@@ -552,19 +458,19 @@ export default class AzureProject extends BaseProject implements CloudProject {
           args.push(`-var-file=${varFile}`);
         }
 
-        const terraformProcess = spawn("terraform", args, {
+        const terraformProcess = spawn('terraform', args, {
           cwd: projectPath,
           env: process.env,
-          stdio: ["inherit", "pipe", "pipe"],
+          stdio: ['inherit', 'pipe', 'pipe'],
         });
 
         const totalSteps = 100;
         const progressBar = ProgressBar.createProgressBar();
         progressBar.start(totalSteps, 0, {
-          message: "Terraform apply in progress...",
+          message: 'Terraform apply in progress...',
         });
 
-        terraformProcess.stdout.on("data", (data) => {
+        terraformProcess.stdout.on('data', (data) => {
           const output = data.toString();
           AppLogger.info(`stdout: ${output}`);
           const creationCompleteRegex =
@@ -575,34 +481,35 @@ export default class AzureProject extends BaseProject implements CloudProject {
           }
         });
 
-        terraformProcess.stderr.on("data", (data) => {
+        let stderrOutput = '';
+        terraformProcess.stderr.on('data', (data) => {
           const errorOutput = data.toString();
-          progressBar.stop();
-          AppLogger.error(`stderr: ${errorOutput}`);
-          // Reject the promise on stderr output
-          reject(new Error(`Terraform apply error: ${errorOutput}`));
+          stderrOutput += errorOutput;
+          AppLogger.debug(`stderr: ${errorOutput}`);
         });
 
-        terraformProcess.on("close", (code) => {
+        terraformProcess.on('close', (code) => {
           if (code === 0) {
-            progressBar.update(100, { message: "Terraform apply completed." });
+            progressBar.update(100, { message: 'Terraform apply completed.' });
             progressBar.stop();
-            AppLogger.debug("Terraform apply completed successfully.", true);
+            AppLogger.debug('Terraform apply completed successfully.', true);
             resolve();
           } else {
             progressBar.stop();
             AppLogger.error(
               `Terraform apply process exited with code ${code}`,
-              true
+              true,
             );
+            if (stderrOutput) {
+              AppLogger.error(stderrOutput, true);
+            }
             reject(
-              new Error(`Terraform apply process exited with code ${code}`)
+              new Error(`Terraform apply process exited with code ${code}`),
             );
-            setImmediate(() => process.exit(1));
           }
         });
 
-        terraformProcess.on("error", (err) => {
+        terraformProcess.on('error', (err) => {
           progressBar.stop();
           AppLogger.error(`Failed to run Terraform process: ${err}`, true);
           reject(err);
@@ -617,31 +524,31 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async runTerraformDestroy(
     projectPath: string,
     module?: string,
-    varFile?: string
+    varFile?: string,
   ): Promise<void> {
     const progressBar = ProgressBar.createProgressBar();
 
     try {
-      const args = ["destroy", "-no-color", "-auto-approve"];
+      const args = ['destroy', '-no-color', '-auto-approve'];
       if (module) args.push(`-target=${module}`);
       if (varFile) args.push(`-var-file=${varFile}`);
 
       AppLogger.info(`Running Terraform destroy in ${projectPath}`, true);
 
-      const terraformProcess = spawn("terraform", args, {
+      const terraformProcess = spawn('terraform', args, {
         cwd: projectPath,
         env: process.env,
-        stdio: ["inherit", "pipe", "pipe"],
+        stdio: ['inherit', 'pipe', 'pipe'],
       });
 
       progressBar.start(100, 0, {
-        message: "Destroying Terraform resources in Azure...",
+        message: 'Destroying Terraform resources in Azure...',
       });
 
       let deletedResources = 0;
       let totalExpectedDeletes = 10; // Default fallback
 
-      terraformProcess.stdout.on("data", (data) => {
+      terraformProcess.stdout.on('data', (data) => {
         const output = data.toString();
         AppLogger.info(`stdout: ${output}`);
 
@@ -656,25 +563,25 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
         const progress = Math.min(
           Math.floor((deletedResources / totalExpectedDeletes) * 100),
-          100
+          100,
         );
 
         progressBar.update(progress);
       });
 
-      terraformProcess.stderr.on("data", (data) => {
+      terraformProcess.stderr.on('data', (data) => {
         progressBar.stop();
         AppLogger.error(`stderr: ${data.toString()}`);
       });
 
       await new Promise<void>((resolve, reject) => {
-        terraformProcess.on("close", (code) => {
+        terraformProcess.on('close', (code) => {
           if (code === 0) {
             progressBar.update(100, {
-              message: "Terraform destroy completed.",
+              message: 'Terraform destroy completed.',
             });
             progressBar.stop();
-            AppLogger.info("Terraform destroy completed successfully", true);
+            AppLogger.info('Terraform destroy completed successfully', true);
             resolve();
           } else {
             progressBar.stop();
@@ -684,7 +591,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
           }
         });
 
-        terraformProcess.on("error", (err) => {
+        terraformProcess.on('error', (err) => {
           progressBar.stop();
           AppLogger.error(`Failed to run Terraform destroy: ${err}`);
           reject(err);
@@ -700,19 +607,19 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async runTerraformDestroyTemplate(
     infrastructureFilePath: string,
     varFile?: string,
-    status?: any
+    status?: any,
   ): Promise<void> {
     try {
       if (azure_destroy_modules && azure_destroy_modules.length > 0) {
         for (const module of azure_destroy_modules) {
           if (
-            status.modules[module] === "fail" ||
-            status.modules[module] === "success"
+            status.modules[module] === 'fail' ||
+            status.modules[module] === 'success'
           ) {
             const args = [
-              "destroy",
-              "-no-color",
-              "-auto-approve",
+              'destroy',
+              '-no-color',
+              '-auto-approve',
               `-target=${module}`,
             ];
             if (varFile) {
@@ -721,10 +628,10 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
             AppLogger.info(`Destroying module: ${module}`, true);
 
-            const terraformProcess = spawn("terraform", args, {
+            const terraformProcess = spawn('terraform', args, {
               cwd: infrastructureFilePath,
               env: process.env,
-              stdio: ["inherit", "pipe", "pipe"],
+              stdio: ['inherit', 'pipe', 'pipe'],
             });
 
             const totalSteps = 100;
@@ -733,7 +640,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
               message: `Destroying module: ${module}...`,
             });
 
-            terraformProcess.stdout.on("data", (data) => {
+            terraformProcess.stdout.on('data', (data) => {
               const output = data.toString();
               AppLogger.info(`stdout: ${output}`);
 
@@ -745,13 +652,13 @@ export default class AzureProject extends BaseProject implements CloudProject {
               }
             });
 
-            terraformProcess.stderr.on("data", (data) => {
+            terraformProcess.stderr.on('data', (data) => {
               progressBar.stop();
               AppLogger.error(`stderr: ${data.toString()}`);
             });
 
             await new Promise<void>((resolve, reject) => {
-              terraformProcess.on("close", (code) => {
+              terraformProcess.on('close', (code) => {
                 if (code === 0) {
                   progressBar.update(100, {
                     message: `Module ${module} destroyed.`,
@@ -761,20 +668,20 @@ export default class AzureProject extends BaseProject implements CloudProject {
                 } else {
                   progressBar.stop();
                   AppLogger.error(
-                    `Terraform destroy failed for module ${module} with code ${code}`
+                    `Terraform destroy failed for module ${module} with code ${code}`,
                   );
                   reject(
                     new Error(
-                      `Terraform destroy failed for module ${module} with code ${code}`
-                    )
+                      `Terraform destroy failed for module ${module} with code ${code}`,
+                    ),
                   );
                 }
               });
 
-              terraformProcess.on("error", (err) => {
+              terraformProcess.on('error', (err) => {
                 progressBar.stop();
                 AppLogger.error(
-                  `Failed to run Terraform destroy for ${module}: ${err}`
+                  `Failed to run Terraform destroy for ${module}: ${err}`,
                 );
                 reject(err);
               });
@@ -782,7 +689,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
           }
         }
 
-        AppLogger.info("All modules destroyed successfully.", true);
+        AppLogger.info('All modules destroyed successfully.', true);
       }
     } catch (error) {
       AppLogger.error(`Error during Terraform destroy: ${error}`, true);
@@ -796,7 +703,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
       this.config.azure_client_id,
       this.config.azure_client_secret,
       this.config.azure_tenant_id,
-      this.config.azure_subscription_id
+      this.config.azure_subscription_id,
     );
     if (azureBackendStatus) {
       await this.deleteFolder(this.config.project_name);
@@ -806,16 +713,16 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {
     try {
       const homeDir = os.homedir();
-      const kubeConfigPath = join(homeDir, ".kube", "config");
+      const kubeConfigPath = join(homeDir, '.kube', 'config');
 
       if (fs.existsSync(newClusterConfigPath)) {
-        const newConfig = fs.readFileSync(newClusterConfigPath, "utf8");
+        const newConfig = fs.readFileSync(newClusterConfigPath, 'utf8');
         const newConfigObj = jsyaml.load(newConfig) as any;
 
         let existingConfigObj: any = { clusters: [], contexts: [], users: [] };
 
         if (fs.existsSync(kubeConfigPath)) {
-          const existingConfig = fs.readFileSync(kubeConfigPath, "utf8");
+          const existingConfig = fs.readFileSync(kubeConfigPath, 'utf8');
           existingConfigObj = jsyaml.load(existingConfig) as any;
         }
 
@@ -824,7 +731,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
           existingConfigObj.clusters = existingConfigObj.clusters || [];
           newConfigObj.clusters.forEach((cluster: any) => {
             const existingIndex = existingConfigObj.clusters.findIndex(
-              (c: any) => c.name === cluster.name
+              (c: any) => c.name === cluster.name,
             );
             if (existingIndex >= 0) {
               existingConfigObj.clusters[existingIndex] = cluster;
@@ -838,7 +745,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
           existingConfigObj.contexts = existingConfigObj.contexts || [];
           newConfigObj.contexts.forEach((context: any) => {
             const existingIndex = existingConfigObj.contexts.findIndex(
-              (c: any) => c.name === context.name
+              (c: any) => c.name === context.name,
             );
             if (existingIndex >= 0) {
               existingConfigObj.contexts[existingIndex] = context;
@@ -852,7 +759,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
           existingConfigObj.users = existingConfigObj.users || [];
           newConfigObj.users.forEach((user: any) => {
             const existingIndex = existingConfigObj.users.findIndex(
-              (u: any) => u.name === user.name
+              (u: any) => u.name === user.name,
             );
             if (existingIndex >= 0) {
               existingConfigObj.users[existingIndex] = user;
@@ -862,12 +769,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
           });
         }
 
-        existingConfigObj["current-context"] = newConfigObj["current-context"];
+        existingConfigObj['current-context'] = newConfigObj['current-context'];
 
         const mergedConfig = jsyaml.dump(existingConfigObj);
         fs.writeFileSync(kubeConfigPath, mergedConfig);
 
-        AppLogger.info("Azure AKS kubeconfig merged successfully", true);
+        AppLogger.info('Azure AKS kubeconfig merged successfully', true);
       }
     } catch (error) {
       AppLogger.error(`Error editing kubeconfig: ${error}`, true);
@@ -879,7 +786,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
       AppLogger.info(`Running Ansible playbook: ${playbook}`, true);
       const result = execSync(`ansible-playbook ${playbook}`, {
         cwd: projectPath,
-        encoding: "utf8",
+        encoding: 'utf8',
       });
       AppLogger.debug(result);
     } catch (error) {

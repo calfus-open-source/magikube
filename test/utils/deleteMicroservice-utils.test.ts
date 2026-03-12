@@ -1,89 +1,90 @@
-import { deleteMicroservice } from "../../src/core/utils/deleteMicroService-utils.js";
-import { AppLogger } from "../../src/logger/appLogger.js";
-import { executeCommandWithRetry } from "../../src/core/utils/executeCommandWithRetry-utils.js";
-import { deleteArrayProperty } from "../../src/core/utils/updateDotMagikube-utils.js";
+import { deleteMicroservice } from '../../src/core/utils/deleteMicroService-utils.js';
+import { AppLogger } from '../../src/logger/appLogger.js';
+import { executeCommandWithRetry } from '../../src/core/utils/executeCommandWithRetry-utils.js';
+import { deleteArrayProperty } from '../../src/core/utils/updateDotMagikube-utils.js';
 
-jest.mock("../../src/logger/appLogger.js", () => ({
-    AppLogger: {
-        info: jest.fn(),
-        error: jest.fn(),
-    },
+jest.mock('../../src/logger/appLogger.js', () => ({
+  AppLogger: {
+    info: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
-jest.mock(
-    "../../src/core/utils/executeCommandWithRetry-utils.js",
-    () => ({
-        executeCommandWithRetry: jest.fn(),
-    })
-);
-
-jest.mock("../../src/core/utils/updateDotMagikube-utils.js", () => ({
-    deleteArrayProperty: jest.fn(),
+jest.mock('../../src/core/utils/executeCommandWithRetry-utils.js', () => ({
+  executeCommandWithRetry: jest.fn(),
 }));
 
-describe("deleteMicroservice", () => {
-    const mockResp = {
-        project_name: "testproj",
-        github_access_token: "mocktoken",
-        github_owner: "mockowner",
-        service_names: ["service1", "service2"]
-    };
+jest.mock('../../src/core/utils/updateDotMagikube-utils.js', () => ({
+  deleteArrayProperty: jest.fn(),
+}));
 
-    const createdResp = {
-        service_Name: "backend"
-    };
+describe('deleteMicroservice', () => {
+  const mockResp = {
+    project_name: 'testproj',
+    github_access_token: 'mocktoken',
+    github_owner: 'mockowner',
+    service_names: ['service1', 'service2'],
+  };
 
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
+  const createdResp = {
+    service_Name: 'backend',
+  };
 
-    it("should delete microservice successfully (happy path)", async () => {
-        (executeCommandWithRetry as jest.Mock).mockResolvedValue(undefined);
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-        const result = await deleteMicroservice(mockResp, createdResp);
+  it('should delete microservice successfully (happy path)', async () => {
+    (executeCommandWithRetry as jest.Mock).mockResolvedValue(undefined);
 
-        const repoName = "testproj-backend-app";
-        const teamName = "backend-team";
+    const result = await deleteMicroservice(mockResp, createdResp);
 
-        // Ensure logs were called
-        expect(AppLogger.info).toHaveBeenCalled();
+    const repoName = 'testproj-backend-app';
+    const teamName = 'backend-team';
 
-        // Validate team delete command call
-        const deleteTeamCall = (executeCommandWithRetry as jest.Mock).mock.calls[0][0];
-        expect(deleteTeamCall).toContain(`teams/${teamName}/repos/mockowner/${repoName}`);
+    // Ensure logs were called
+    expect(AppLogger.info).toHaveBeenCalled();
 
-        // Validate repo delete command call
-        const deleteRepoCall = (executeCommandWithRetry as jest.Mock).mock.calls[1][0];
-        expect(deleteRepoCall).toContain(`repos/mockowner/${repoName}`);
+    // Validate team delete command call
+    const deleteTeamCall = (executeCommandWithRetry as jest.Mock).mock
+      .calls[0][0];
+    expect(deleteTeamCall).toContain(
+      `teams/${teamName}/repos/mockowner/${repoName}`,
+    );
 
-        // Ensure 2 retries executed
-        expect(executeCommandWithRetry).toHaveBeenCalledTimes(2);
+    // Validate repo delete command call
+    const deleteRepoCall = (executeCommandWithRetry as jest.Mock).mock
+      .calls[1][0];
+    expect(deleteRepoCall).toContain(`repos/mockowner/${repoName}`);
 
-        // Ensure deleteArrayProperty is called correctly
-        expect(deleteArrayProperty).toHaveBeenCalledWith(
-            mockResp.service_names,
-            createdResp.service_Name
-        );
+    // Ensure 2 retries executed
+    expect(executeCommandWithRetry).toHaveBeenCalledTimes(2);
 
-        // Function should return resp
-        expect(result).toBe(mockResp);
-    });
+    // Ensure deleteArrayProperty is called correctly
+    expect(deleteArrayProperty).toHaveBeenCalledWith(
+      mockResp.service_names,
+      createdResp.service_Name,
+    );
 
-    it("should log error when delete fails", async () => {
-        const mockError = new Error("Delete failed");
-        (executeCommandWithRetry as jest.Mock).mockRejectedValue(mockError);
+    // Function should return resp
+    expect(result).toBe(mockResp);
+  });
 
-        // suppress console error logs from Jest
-        jest.spyOn(AppLogger, "error").mockImplementation(() => { });
+  it('should log error when delete fails', async () => {
+    const mockError = new Error('Delete failed');
+    (executeCommandWithRetry as jest.Mock).mockRejectedValue(mockError);
 
-        const result = await deleteMicroservice(mockResp, createdResp);
+    // suppress console error logs from Jest
+    jest.spyOn(AppLogger, 'error').mockImplementation(() => {});
 
-        expect(AppLogger.error).toHaveBeenCalledWith(
-            expect.stringContaining("backend"),
-            true
-        );
+    const result = await deleteMicroservice(mockResp, createdResp);
 
-        // should return undefined on error case
-        expect(result).toBeUndefined();
-    });
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('backend'),
+      true,
+    );
+
+    // should return undefined on error case
+    expect(result).toBeUndefined();
+  });
 });

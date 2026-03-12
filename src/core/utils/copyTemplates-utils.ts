@@ -3,7 +3,10 @@ import fs from 'fs';
 import * as path from 'path'; // Correct import
 import { AppLogger } from '../../logger/appLogger.js';
 
-export async function cloneAndCopyTemplates(commandName: string | undefined, cloud_provider:string): Promise<void> {
+export async function cloneAndCopyTemplates(
+  commandName: string | undefined,
+  cloud_provider: string,
+): Promise<void> {
   try {
     const parentPath =
       commandName === 'module' || commandName === 'create'
@@ -29,19 +32,19 @@ export async function cloneAndCopyTemplates(commandName: string | undefined, clo
       );
     }
     // Copy infrastructure templates to the 'dist' folder
-    if (cloud_provider === "aws"){
+    if (cloud_provider === 'aws') {
       await executeCommandWithRetry(
         `rsync -av ${dir_infra}/aws/* ${distFolder}/templates/aws/ --prune-empty-dirs > /dev/null 2>&1`,
         { cwd: parentPath },
-        1
+        1,
       );
     }
 
-    if (cloud_provider === "azure"){
+    if (cloud_provider === 'azure') {
       await executeCommandWithRetry(
         `rsync -av ${dir_infra}/azure/* ${distFolder}/templates/azure/ --prune-empty-dirs > /dev/null 2>&1`,
         { cwd: parentPath },
-        1
+        1,
       );
     }
 

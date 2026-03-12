@@ -35,7 +35,7 @@ export default class AWSProject extends BaseProject {
         this.config.aws_region,
         this.config.aws_access_key_id,
         this.config.aws_secret_access_key,
-        this.config.project_name
+        this.config.project_name,
       );
     }
 
@@ -549,7 +549,7 @@ export default class AWSProject extends BaseProject {
     if (
       (!this.config.moduleType ||
         (this.config.moduleType && this.config.moduleType.length > 1)) &&
-      this.config.command !== "create"
+      this.config.command !== 'create'
     ) {
       const status = await AWSPolicies.delete(
         this,
@@ -564,7 +564,7 @@ export default class AWSProject extends BaseProject {
       this.config.project_id,
       this.config.aws_region,
       this.config.aws_access_key_id,
-      this.config.aws_secret_access_key
+      this.config.aws_secret_access_key,
     );
 
     await this.deleteFolder(this.projectPath);

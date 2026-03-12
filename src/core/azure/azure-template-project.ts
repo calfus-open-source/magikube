@@ -18,24 +18,27 @@ export default class AzureTemplateProject extends AzureProject {
 
   async createProject(name: string, path: string): Promise<void> {
     AppLogger.info(`Creating Azure template project: ${name}`, true);
-    
+
     // Call parent createProject if needed
     await super.createProject(name, path);
-    
+
     // Create template-specific files
     await this.createTemplateFiles(path, name);
   }
 
-  async createTemplateFiles(projectPath: string, projectName: string): Promise<void> {
+  async createTemplateFiles(
+    projectPath: string,
+    projectName: string,
+  ): Promise<void> {
     const templateBasePath = join(projectPath, projectName);
-    
+
     try {
       // Create main template structure
       await this.createMainTemplate(templateBasePath);
       await this.createVariablesTemplate(templateBasePath);
       await this.createOutputsTemplate(templateBasePath);
       await this.createBackendConfig(templateBasePath);
-      
+
       AppLogger.info('Azure template files created successfully', true);
     } catch (error) {
       AppLogger.error(`Error creating Azure template files: ${error}`, true);
@@ -45,32 +48,17 @@ export default class AzureTemplateProject extends AzureProject {
 
   async createMainTemplate(basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/main.tf.liquid`;
-    this.createFile(
-      'main.tf',
-      templatePath,
-      '/infrastructure',
-      true
-    );
+    this.createFile('main.tf', templatePath, '/infrastructure', true);
   }
 
   async createVariablesTemplate(basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/variables.tf.liquid`;
-    this.createFile(
-      'variables.tf',
-      templatePath,
-      '/infrastructure',
-      true
-    );
+    this.createFile('variables.tf', templatePath, '/infrastructure', true);
   }
 
   async createOutputsTemplate(basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/outputs.tf.liquid`;
-    this.createFile(
-      'outputs.tf',
-      templatePath,
-      '/infrastructure',
-      true
-    );
+    this.createFile('outputs.tf', templatePath, '/infrastructure', true);
   }
 
   async createBackendConfig(basePath: string): Promise<void> {
@@ -79,33 +67,26 @@ export default class AzureTemplateProject extends AzureProject {
       `${this.config.environment}-config.tfvars`,
       templatePath,
       '/infrastructure',
-      true
+      true,
     );
   }
 
   async createProviderTemplate(basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/providers.tf.liquid`;
-    this.createFile(
-      'providers.tf',
-      templatePath,
-      '/infrastructure',
-      true
-    );
+    this.createFile('providers.tf', templatePath, '/infrastructure', true);
   }
 
   async createTerraformVars(basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/terraform.tfvars.liquid`;
-    this.createFile(
-      'terraform.tfvars',
-      templatePath,
-      '/infrastructure',
-      true
-    );
+    this.createFile('terraform.tfvars', templatePath, '/infrastructure', true);
   }
 
   async customizeTemplate(templateType: string): Promise<void> {
-    AppLogger.info(`Customizing Azure template for type: ${templateType}`, true);
-    
+    AppLogger.info(
+      `Customizing Azure template for type: ${templateType}`,
+      true,
+    );
+
     switch (templateType) {
       case 'aks':
         await this.createAKSTemplate();
@@ -127,8 +108,8 @@ export default class AzureTemplateProject extends AzureProject {
   private async createAKSTemplate(): Promise<void> {
     // Create AKS specific template files
     this.createAKS();
-    this.createVNet();
-    this.createACR();
+    this.createVNet(process.cwd());
+    this.createACR(process.cwd());
   }
 
   private async createAppServiceTemplate(): Promise<void> {
@@ -138,7 +119,7 @@ export default class AzureTemplateProject extends AzureProject {
       'main.tf',
       templatePath,
       '/infrastructure/modules/app-service',
-      true
+      true,
     );
   }
 
@@ -149,7 +130,7 @@ export default class AzureTemplateProject extends AzureProject {
       'main.tf',
       templatePath,
       '/infrastructure/modules/function-app',
-      true
+      true,
     );
   }
 
@@ -160,7 +141,7 @@ export default class AzureTemplateProject extends AzureProject {
       'main.tf',
       templatePath,
       '/infrastructure/modules/storage-account',
-      true
+      true,
     );
   }
-} 
+}

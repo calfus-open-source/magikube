@@ -6,7 +6,10 @@ import BaseCommand from '../commands/base.js';
 import TerraformProject from './terraform-project.js';
 import { AppLogger } from '../logger/appLogger.js';
 import { readStatusFile } from './utils/statusUpdater-utils.js';
-import { aws_destroy_modules, azure_destroy_modules } from './constants/constants.js';
+import {
+  aws_destroy_modules,
+  azure_destroy_modules,
+} from './constants/constants.js';
 import { appendUniqueLines } from './utils/appendUniqueLines-utils.js';
 
 export default abstract class BaseProject {
@@ -31,7 +34,7 @@ export default abstract class BaseProject {
     } catch (err) {
       AppLogger.error(
         `Project destroy failed, skipping deleteFolder :${err}`,
-        true
+        true,
       );
     }
   }
@@ -43,12 +46,12 @@ export default abstract class BaseProject {
     const terraform = await TerraformProject.getProject(this.command);
 
     // Initialize modules with a default value
-    let modules =
-      this.config.cluster_type === "eks-fargate"
+    const modules =
+      this.config.cluster_type === 'eks-fargate'
         ? aws_destroy_modules
-        : this.config.cluster_type === "aks"
-        ? azure_destroy_modules
-        : [];
+        : this.config.cluster_type === 'aks'
+          ? azure_destroy_modules
+          : [];
     if (
       this.config.cluster_type === 'eks-fargate' ||
       this.config.cluster_type === 'eks-nodegroup'
@@ -65,8 +68,8 @@ export default abstract class BaseProject {
       // Destroy modules one by one
       for (const module of modules) {
         if (
-          readFile.modules[module] == "success" ||
-          readFile.modules[module] == "fail"
+          readFile.modules[module] == 'success' ||
+          readFile.modules[module] == 'fail'
         ) {
           try {
             AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
@@ -129,7 +132,7 @@ export default abstract class BaseProject {
     } else {
       AppLogger.debug(
         `Project '${this.projectPath}' does not exist in the path`,
-        true
+        true,
       );
     }
   }
@@ -138,12 +141,12 @@ export default abstract class BaseProject {
     try {
       this.projectPath = join(path, name);
       await this.createFolder();
-      const projectConfigFile = join(this.projectPath, ".magikube");
+      const projectConfigFile = join(this.projectPath, '.magikube');
       fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
       AppLogger.info(`Created project folder with name: '${name}'`, true);
     } catch (error) {
       AppLogger.error(
-        `Failed to create project folder'${name}': ${(error as Error).message}`
+        `Failed to create project folder'${name}': ${(error as Error).message}`,
       );
       throw error;
     }
@@ -228,13 +231,13 @@ export default abstract class BaseProject {
 
     let lastModule;
     if (project_config.moduleType !== undefined) {
-      lastModule = project_config.moduleType[project_config.moduleType.length - 1];
-
+      lastModule =
+        project_config.moduleType[project_config.moduleType.length - 1];
     }
 
     if (
-      project_config.command === "new" ||
-      project_config.command === "resume"
+      project_config.command === 'new' ||
+      project_config.command === 'resume'
     ) {
       // Logic for "resume" command
       AppLogger.debug(`Creating ${filename} file for resume command.`);

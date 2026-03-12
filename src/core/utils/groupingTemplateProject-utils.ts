@@ -23,7 +23,7 @@ import {
   MASTER_SYSTEM_CONFIG,
   WORKER_SYSTEM_CONFIG,
   EKSNODEGROUP_SYSTEM_CONFIG,
-  KUBERNITIES_SYSTEM_CONFIG
+  KUBERNITIES_SYSTEM_CONFIG,
 } from '../constants/systemDefaults.js';
 
 export async function handleTemplateFlag(
@@ -172,7 +172,7 @@ export async function handleTemplateFlag(
         // ⭐ THIS WILL NOW ALWAYS EXECUTE FOR ALL TEMPLATE TYPES
         AppLogger.error(
           `Error applying Terraform for module: ${module}: ${error}`,
-          true
+          true,
         );
 
         allModulesAppliedSuccessfully = false;

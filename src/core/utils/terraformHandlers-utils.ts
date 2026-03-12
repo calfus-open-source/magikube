@@ -1,6 +1,6 @@
 import { updateStatusFile } from './statusUpdater-utils.js'; // Adjust the import path as necessary
 import { execSync } from 'child_process';
-import {aws_modules, azure_modules } from '../../core/constants/constants.js';
+import { aws_modules, azure_modules } from '../../core/constants/constants.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { ManageRepository } from '../manage-repository.js';
 import { playbooks } from '../../core/constants/constants.js';
@@ -19,7 +19,8 @@ export const handleEKSandAKS = async (
     projectName,
   );
   let allModulesAppliedSuccessfully = true;
-  const modules = responses.cloud_provider === "aws" ? aws_modules : azure_modules;
+  const modules =
+    responses.cloud_provider === 'aws' ? aws_modules : azure_modules;
   for (const module of modules) {
     try {
       updateStatusFile(projectName, module, 'fail');
@@ -109,4 +110,3 @@ export const handleK8s = async (
   );
   terraform?.stopSSHProcess();
 };
-

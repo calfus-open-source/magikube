@@ -43,7 +43,7 @@ export async function handlePrompts(
         responses = { ...responses, ...resp };
       }
 
-      if (responses.cloud_provider === "aws") {
+      if (responses.cloud_provider === 'aws') {
         for (const regionPrompt of promptGenerator.getRegion()) {
           const regionResp = await inquirer.prompt(regionPrompt);
           responses = { ...responses, ...regionResp };
@@ -53,7 +53,7 @@ export async function handlePrompts(
           const profileResp = await inquirer.prompt(profilePrompt);
           responses = { ...responses, ...profileResp };
         }
-      } else if (responses.cloud_provider === "azure") {
+      } else if (responses.cloud_provider === 'azure') {
         for (const regionPrompt of promptGenerator.getAzureRegion()) {
           const regionResp = await inquirer.prompt(regionPrompt);
           responses = { ...responses, ...regionResp };
@@ -66,10 +66,10 @@ export async function handlePrompts(
 
         // Collect Azure credentials
         const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
-          responses["cloud_provider"],
-          responses
+          responses['cloud_provider'],
+          responses,
         );
-        
+
         if (credentialPrompts.length > 0) {
           for (const prompt of credentialPrompts) {
             const credentialResp = await inquirer.prompt(prompt);
@@ -77,26 +77,29 @@ export async function handlePrompts(
           }
           credentialsPrompts.saveCredentials(responses);
         } else {
-          AppLogger.info("No credential prompts - using existing profile credentials", true);
+          AppLogger.info(
+            'No credential prompts - using existing profile credentials',
+            true,
+          );
         }
 
         // Azure login attempt
-        AppLogger.info("Attempting Azure login...", true);
+        AppLogger.info('Attempting Azure login...', true);
         const loginResp = await AzurePolicies.getAzureLogin();
-        
+
         if (loginResp === false) {
-          AppLogger.error("Azure login failed!", true);
+          AppLogger.error('Azure login failed!', true);
         } else {
-          AppLogger.info("Azure login successful!", true);
+          AppLogger.info('Azure login successful!', true);
           responses = { ...responses, ...loginResp };
         }
       }
 
       // Move general credential collection for AWS or other cases
-      if (responses.cloud_provider !== "azure") {
+      if (responses.cloud_provider !== 'azure') {
         const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
-          responses["cloud_provider"],
-          responses
+          responses['cloud_provider'],
+          responses,
         );
         if (credentialPrompts.length > 0) {
           for (const prompt of credentialPrompts) {

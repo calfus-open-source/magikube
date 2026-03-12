@@ -1,31 +1,31 @@
-import { Args, Flags } from "@oclif/core";
-import BaseCommand from "../base.js";
-import { Answers } from "inquirer";
-import fs from "fs";
-import TerraformProject from "../../core/terraform-project.js";
-import SystemConfig from "../../config/system.js";
-import { AppLogger } from "../../logger/appLogger.js";
-import CreateApplication from "../../core/setup-application.js";
-import { Colours } from "../../prompts/constants.js";
-import { initializeStatusFile } from "../../core/utils/statusUpdater-utils.js";
-import AWSAccount from "../../core/aws/aws-account.js";
-import { serviceHealthCheck } from "../../core/utils/healthCheck-utils.js";
-import { handlePrompts } from "../../core/utils/handlePrompts-utils.js";
-import { cloneAndCopyTemplates } from "../../core/utils/copyTemplates-utils.js";
+import { Args, Flags } from '@oclif/core';
+import BaseCommand from '../base.js';
+import { Answers } from 'inquirer';
+import fs from 'fs';
+import TerraformProject from '../../core/terraform-project.js';
+import SystemConfig from '../../config/system.js';
+import { AppLogger } from '../../logger/appLogger.js';
+import CreateApplication from '../../core/setup-application.js';
+import { Colours } from '../../prompts/constants.js';
+import { initializeStatusFile } from '../../core/utils/statusUpdater-utils.js';
+import AWSAccount from '../../core/aws/aws-account.js';
+import { serviceHealthCheck } from '../../core/utils/healthCheck-utils.js';
+import { handlePrompts } from '../../core/utils/handlePrompts-utils.js';
+import { cloneAndCopyTemplates } from '../../core/utils/copyTemplates-utils.js';
 import {
   services,
   aws_modules,
   InvalidProjectNames,
   supportedTemplates,
   azure_modules,
-} from "../../core/constants/constants.js";
+} from '../../core/constants/constants.js';
 import {
   handleEKSandAKS,
   handleK8s,
-} from "../../core/utils/terraformHandlers-utils.js";
-import { setupAndPushServices } from "../../core/utils/setupAndPushService-utils.js";
-import { createBlankMagikubeProject } from "../../core/utils/createEmptyProject-utils.js";
-import { handleTemplateFlag } from "../../core/utils/groupingTemplateProject-utils.js";
+} from '../../core/utils/terraformHandlers-utils.js';
+import { setupAndPushServices } from '../../core/utils/setupAndPushService-utils.js';
+import { createBlankMagikubeProject } from '../../core/utils/createEmptyProject-utils.js';
+import { handleTemplateFlag } from '../../core/utils/groupingTemplateProject-utils.js';
 import {
   BASTION_SYSTEM_CONFIG,
   MASTER_SYSTEM_CONFIG,
@@ -38,10 +38,10 @@ import {
   NODE_APP_CONFIG,
   AWS_SPECIFIC_CONFIG,
   AZURE_SPECIFIC_CONFIG,
-} from "../../core/constants/systemDefaults.js";
-import { FullConfigObject } from "../../core/interface.js";
-import AzurePolicies from "../../core/azure/azure-iam.js";
-import { executeCommandWithRetry } from "../../core/utils/executeCommandWithRetry-utils.js";
+} from '../../core/constants/systemDefaults.js';
+import { FullConfigObject } from '../../core/interface.js';
+import AzurePolicies from '../../core/azure/azure-iam.js';
+import { executeCommandWithRetry } from '../../core/utils/executeCommandWithRetry-utils.js';
 
 // Validates the project name input using regex rules
 function validateUserInput(input: string): void {
@@ -115,7 +115,7 @@ export default class CreateProject extends BaseCommand {
 
     try {
       // If template is 'empty', generate a skeleton project with config only
-      if (flags.template === "empty") {
+      if (flags.template === 'empty') {
         const responses: Answers = await handlePrompts(
           args,
           this.id,
@@ -129,7 +129,7 @@ export default class CreateProject extends BaseCommand {
         );
         process.exit(0);
       }
-      
+
       if (
         flags.template &&
         this.predefinedTemplates.includes(flags.template.trim())
@@ -142,14 +142,14 @@ export default class CreateProject extends BaseCommand {
       let responses: Answers = await handlePrompts(args, this.id);
 
       // Special handling for Azure login if selected as provider
-      if (responses["cloud_provider"] === "azure") {
-        AppLogger.info("Attempting Azure login...", true);
+      if (responses['cloud_provider'] === 'azure') {
+        AppLogger.info('Attempting Azure login...', true);
         try {
           const loginResp = await AzurePolicies.getAzureLogin();
           if (loginResp === false) {
-            AppLogger.error("Azure login failed!");
+            AppLogger.error('Azure login failed!');
           } else {
-            AppLogger.info("Azure login successful!", true);
+            AppLogger.info('Azure login successful!', true);
             responses = { ...responses, ...loginResp };
           }
         } catch (error) {
@@ -165,8 +165,8 @@ export default class CreateProject extends BaseCommand {
 
       // default system config values
       const systemConfig = {
-        ...(responses.cloud_provider === "aws" ? AWS_SPECIFIC_CONFIG : {}),
-        ...(responses.cloud_provider === "azure" ? AZURE_SPECIFIC_CONFIG : {}),
+        ...(responses.cloud_provider === 'aws' ? AWS_SPECIFIC_CONFIG : {}),
+        ...(responses.cloud_provider === 'azure' ? AZURE_SPECIFIC_CONFIG : {}),
         ...BASTION_SYSTEM_CONFIG,
         ...MASTER_SYSTEM_CONFIG,
         ...WORKER_SYSTEM_CONFIG,
@@ -183,11 +183,11 @@ export default class CreateProject extends BaseCommand {
       const distFolderPath = `${process.cwd()}/dist`;
       if (!fs.existsSync(distFolderPath)) {
         await cloneAndCopyTemplates(this.id, responses.cloud_provider);
-     }
+      }
 
       AppLogger.info(
         `Creating new Magikube project named '${args.name}' in the current directory`,
-        true
+        true,
       );
 
       // Combine user input and default configurations
@@ -201,18 +201,18 @@ export default class CreateProject extends BaseCommand {
 
       // Choose modules based on cloud provider
       const modules =
-        projectConfig.cloud_provider === "aws" ? aws_modules : azure_modules;
+        projectConfig.cloud_provider === 'aws' ? aws_modules : azure_modules;
 
       // Initialize a status file to track provisioning progress
       initializeStatusFile(
         projectName,
         modules,
-        projectConfig.cloud_provider === "azure"
+        projectConfig.cloud_provider === 'azure'
           ? [
-              ...services.filter((s) => s !== "policy"),
+              ...services.filter((s) => s !== 'policy'),
               projectConfig.frontend_app_type,
             ]
-          : [...services, projectConfig.frontend_app_type]
+          : [...services, projectConfig.frontend_app_type],
       );
 
       // Extracting required config values
@@ -245,7 +245,7 @@ export default class CreateProject extends BaseCommand {
       };
 
       // Populate cloud-specific configuration
-      if (projectConfig.cloud_provider === "aws") {
+      if (projectConfig.cloud_provider === 'aws') {
         configObject.aws = {
           region,
           awsAccessKey,
@@ -256,12 +256,12 @@ export default class CreateProject extends BaseCommand {
         const accountId = await AWSAccount.getAccountId(
           awsAccessKey,
           awsSecretKey,
-          region
+          region,
         );
 
         configObject.aws.accountId = accountId;
         SystemConfig.getInstance().mergeConfigs({ accountId });
-      } else if (projectConfig.cloud_provider === "azure") {
+      } else if (projectConfig.cloud_provider === 'azure') {
         configObject.azure = {
           location: azureLocation,
           clientId: azureClientId,
@@ -275,24 +275,23 @@ export default class CreateProject extends BaseCommand {
       }
 
       // Setup GitOps repository/service
-      const setupGitopsServiceStatus = await createApp.setupGitops(
-        projectConfig
-      );
+      const setupGitopsServiceStatus =
+        await createApp.setupGitops(projectConfig);
 
       if (terraform) {
         // Run Terraform project generation
         await terraform.createProject(projectName, process.cwd());
 
         // Activate AWS profile if applicable
-        if (responses.cloud_provider === "aws") {
+        if (responses.cloud_provider === 'aws') {
           await (terraform as any).AWSProfileActivate(responses.aws_profile);
         }
 
         // Conditional handling for Kubernetes cluster setup
         if (
-          responses.cluster_type === "eks-fargate" ||
-          responses.cluster_type === "eks-nodegroup" ||
-          responses.cluster_type === "aks"
+          responses.cluster_type === 'eks-fargate' ||
+          responses.cluster_type === 'eks-nodegroup' ||
+          responses.cluster_type === 'aks'
         ) {
           await handleEKSandAKS(
             projectName,
@@ -304,7 +303,7 @@ export default class CreateProject extends BaseCommand {
         }
 
         // Conditional setup for generic Kubernetes clusters
-        if (responses.cluster_type === "k8s") {
+        if (responses.cluster_type === 'k8s') {
           await handleK8s(
             projectName,
             responses,
@@ -321,7 +320,7 @@ export default class CreateProject extends BaseCommand {
       await executeCommandWithRetry(
         `rm -rf ${distFolderPath}`,
         { cwd: `${process.cwd()}` },
-        1
+        1,
       );
       // Perform health check to ensure services are live
       await serviceHealthCheck(args, responses, projectConfig);

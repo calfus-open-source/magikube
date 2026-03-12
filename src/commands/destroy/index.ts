@@ -169,18 +169,18 @@ export default class DestroyProject extends BaseCommand {
         await terraform.destroyProject(args.name, process.cwd());
       }
     } else if (
-      responses.cloud_provider === "azure" &&
-      project_config.command === "new"
+      responses.cloud_provider === 'azure' &&
+      project_config.command === 'new'
     ) {
       await terraform?.runTerraformInit(
         infrastructurePath,
-        `${project_config["environment"]}-config.tfvars`,
-        project_config.project_name
+        `${project_config['environment']}-config.tfvars`,
+        project_config.project_name,
       );
       await terraform?.runTerraformDestroyTemplate(
         infrastructurePath,
-        "terraform.tfvars",
-        readFile
+        'terraform.tfvars',
+        readFile,
       );
     } else {
       AppLogger.error(

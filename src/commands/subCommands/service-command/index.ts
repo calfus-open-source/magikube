@@ -124,7 +124,7 @@ export default class Microservice extends BaseCommand {
         aws_secret_access_key: awsSecretKey,
         environment,
       } = projectConfig;
-       
+
       const configObject: FullConfigObject = {
         common: {
           token,

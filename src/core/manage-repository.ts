@@ -92,10 +92,10 @@ export class ManageRepository {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github.v3+json",
-            "X-GitHub-Api-Version": "2022-11-28",
+            Accept: 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28',
           },
-        }
+        },
       );
       return {
         key: response.data.key,
@@ -107,7 +107,7 @@ export class ManageRepository {
       token: string,
       org: string,
       repo: string,
-      retries = 3
+      retries = 3,
     ): Promise<{ key: string; keyId: string }> {
       for (let i = 0; i < retries; i++) {
         try {
@@ -115,18 +115,17 @@ export class ManageRepository {
         } catch (err) {
           AppLogger.error(
             `Retrying public key fetch... Attempt ${i + 1}`,
-            true
+            true,
           );
           if (i === retries - 1) {
-            AppLogger.error("Max retries reached for public key fetch", true);
+            AppLogger.error('Max retries reached for public key fetch', true);
           }
         }
       }
 
       // Ensures function always returns or throws — this satisfies TypeScript
-      throw new Error("Failed to fetch GitHub public key after retries");
+      throw new Error('Failed to fetch GitHub public key after retries');
     }
-    
 
     async function encryptSecret(
       secret: string,
@@ -145,84 +144,87 @@ export class ManageRepository {
     const { key, keyId } = await fetchPublicKeyWithRetry(
       token,
       orgName,
-      repoName
+      repoName,
     );
     publicKey = key;
     publicKeyId = keyId;
 
-    AppLogger.info("Starting encryption process...", true);
+    AppLogger.info('Starting encryption process...', true);
 
     const encryptedSecrets: Record<string, string> = {};
 
-    if (cloud_provider === "aws") {
-      encryptedSecrets["AWS_ACCESS_KEY_ID"] = await encryptSecret(
+    if (cloud_provider === 'aws') {
+      encryptedSecrets['AWS_ACCESS_KEY_ID'] = await encryptSecret(
         aws_access_key_id,
-        publicKey
+        publicKey,
       );
-      encryptedSecrets["AWS_SECRET_ACCESS_KEY"] = await encryptSecret(
+      encryptedSecrets['AWS_SECRET_ACCESS_KEY'] = await encryptSecret(
         aws_secret_access_key,
-        publicKey
+        publicKey,
       );
-    } else if (cloud_provider === "azure") {
-      encryptedSecrets["AZURE_TENANT_ID"] = await encryptSecret(
+    } else if (cloud_provider === 'azure') {
+      encryptedSecrets['AZURE_TENANT_ID'] = await encryptSecret(
         azure_tenant_id,
-        publicKey
+        publicKey,
       );
-      encryptedSecrets["AZURE_SUBSCRIPTION_ID"] = await encryptSecret(
+      encryptedSecrets['AZURE_SUBSCRIPTION_ID'] = await encryptSecret(
         azure_subscription_id,
-        publicKey
+        publicKey,
       );
-      encryptedSecrets["AZURE_CLIENT_ID"] = await encryptSecret(
+      encryptedSecrets['AZURE_CLIENT_ID'] = await encryptSecret(
         azure_client_id,
-        publicKey
+        publicKey,
       );
-      encryptedSecrets["AZURE_CLIENT_SECRET"] = await encryptSecret(
+      encryptedSecrets['AZURE_CLIENT_SECRET'] = await encryptSecret(
         azure_client_secret,
-        publicKey
+        publicKey,
       );
     }
 
-    encryptedSecrets["REPO_TOKEN"] = await encryptSecret(token, publicKey);
+    encryptedSecrets['REPO_TOKEN'] = await encryptSecret(token, publicKey);
 
     // Create curl commands for secrets
     const cloudSecretsCmds = Object.entries(encryptedSecrets).map(
       ([key, value]) => ({
         cmd: `curl -L -X PUT -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/secrets/${key} -d '{"encrypted_value":"${value}","key_id":"${publicKeyId}"}'`,
         message: `Setting secret: ${key}`,
-      })
+      }),
     );
 
     // Common GitHub environment variable setup
     const envVariablesCmds = [
       {
         cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"AWS_REGION","value":"${aws_region}"}'`,
-        message: "Creating AWS_REGION variable",
+        message: 'Creating AWS_REGION variable',
       },
       {
         cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"ECR_REPOSITORY","value":"${repoName}"}'`,
-        message: "Creating ECR_REPOSITORY variable",
+        message: 'Creating ECR_REPOSITORY variable',
       },
       {
         cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"GITOPS_REPO","value":"${gitopsRepo}"}'`,
-        message: "Creating GITOPS_REPO variable",
+        message: 'Creating GITOPS_REPO variable',
       },
       {
         cmd: `curl -L -X POST -H "Authorization: Bearer ${token}" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/${orgName}/${repoName}/actions/variables -d '{"name":"USERNAME","value":"${orgName}"}'`,
-        message: "Creating USERNAME variable",
+        message: 'Creating USERNAME variable',
       },
     ];
 
     const gitCommands = [
-      { cmd: "git init", message: "Initializing Git repository..." },
-      { cmd: "git add .", message: "Adding files to Git..." },
-      { cmd: 'git -c commit.gpgSign=false commit -m "Initial commit"', message: "Committing files..." },
-      { cmd: "git branch -M main", message: "Creating main branch..." },
+      { cmd: 'git init', message: 'Initializing Git repository...' },
+      { cmd: 'git add .', message: 'Adding files to Git...' },
+      {
+        cmd: 'git -c commit.gpgSign=false commit -m "Initial commit"',
+        message: 'Committing files...',
+      },
+      { cmd: 'git branch -M main', message: 'Creating main branch...' },
       {
         cmd: `git remote add origin ${remoteRepoUrl}`,
         message: 'Adding remote repository...',
       },
       {
-        cmd: "git push -u origin main",
+        cmd: 'git push -u origin main',
         message: `${appName} - Setup Completed, Pushing to remote repository...`,
       },
     ];
@@ -237,7 +239,7 @@ export class ManageRepository {
     const progressStep = 100 / allCommands.length;
     let currentProgress = 0;
 
-    progressBar.start(100, 0, { message: "Starting Repository Setup..." });
+    progressBar.start(100, 0, { message: 'Starting Repository Setup...' });
 
     try {
       for (const { cmd, message } of allCommands) {
@@ -245,7 +247,7 @@ export class ManageRepository {
         execAndLog(cmd, message);
         currentProgress += progressStep;
       }
-      progressBar.update(100, { message: "Repository setup completed." });
+      progressBar.update(100, { message: 'Repository setup completed.' });
       progressBar.stop();
     } catch (error) {
       AppLogger.error(`Error during Git repository setup: ${error}`, true);
@@ -256,4 +258,3 @@ export class ManageRepository {
     return repoSetupError;
   }
 }
-

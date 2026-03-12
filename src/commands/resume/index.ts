@@ -68,17 +68,17 @@ export default class RestartProject extends BaseCommand {
         await terraform.createProject(projectName, process.cwd());
 
         // Activate the AWS profile
-        if (project_config.cloud_provider === "aws") {
+        if (project_config.cloud_provider === 'aws') {
           await (terraform as any).AWSProfileActivate(
-            project_config.aws_profile
+            project_config.aws_profile,
           );
         }
 
         // Setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
         if (
-          project_config.cluster_type === "eks-fargate" ||
-          project_config.cluster_type === "eks-nodegroup" ||
-          project_config.cluster_type === "aks"
+          project_config.cluster_type === 'eks-fargate' ||
+          project_config.cluster_type === 'eks-nodegroup' ||
+          project_config.cluster_type === 'aks'
         ) {
           // Delay of 15 seconds to allow the user to review the terraform files
           await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -103,7 +103,10 @@ export default class RestartProject extends BaseCommand {
               unlockCommandsExecuted = true;
             }
 
-            const modules = project_config.cloud_provider === "aws" ? aws_modules : azure_modules;
+            const modules =
+              project_config.cloud_provider === 'aws'
+                ? aws_modules
+                : azure_modules;
 
             for (const module of modules) {
               if (status.modules[module] === 'fail') {
@@ -129,7 +132,7 @@ export default class RestartProject extends BaseCommand {
                     true,
                   );
 
-                  updateStatusFile(projectName, module, "fail");
+                  updateStatusFile(projectName, module, 'fail');
 
                   await (terraform as any).runTerraformApply(
                     `${process.cwd()}/${projectName}/infrastructure`,
@@ -141,7 +144,7 @@ export default class RestartProject extends BaseCommand {
                     `Successfully applied Terraform for module: ${module}`,
                   );
 
-                  updateStatusFile(projectName, module, "success");
+                  updateStatusFile(projectName, module, 'success');
                 } catch (error) {
                   AppLogger.error(
                     `Error applying Terraform for module: ${module}, ${error}`,
@@ -192,7 +195,7 @@ export default class RestartProject extends BaseCommand {
       await executeCommandWithRetry(
         `rm -rf ${distFolderPath}`,
         { cwd: `${process.cwd()}` },
-        1
+        1,
       );
 
       // Check the status of microservice
