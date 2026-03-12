@@ -9,7 +9,6 @@ import {
   initializeStatusFile,
   updateStatusFile,
 } from '../../../core/utils/statusUpdater-utils.js';
-import { services } from '../../../core/constants/constants.js';
 import { readStatusFile } from '../../../core/utils/statusUpdater-utils.js';
 import MicroserviceProject from '../../../core/microserviceTerraform.js';
 import { dotMagikubeConfig } from '../../../core/utils/projectConfigReader-utils.js';
@@ -119,9 +118,9 @@ export default class Microservice extends BaseCommand {
         git_user_name: userName,
         github_owner: orgName,
         source_code_repository: sourceCodeRepo,
-        aws_region: region,
-        aws_access_key_id: awsAccessKey,
-        aws_secret_access_key: awsSecretKey,
+        aws_region: _region,
+        aws_access_key_id: _awsAccessKey,
+        aws_secret_access_key: _awsSecretKey,
         environment,
       } = projectConfig;
 

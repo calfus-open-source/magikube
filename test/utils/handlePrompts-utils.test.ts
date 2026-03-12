@@ -4,7 +4,6 @@
  * Jest tests for the handlePrompts function
  */
 
-import { Answers } from 'inquirer';
 import * as fs from 'fs';
 import { AppLogger } from '../../src/logger/appLogger.js';
 import { dotMagikubeConfig } from '../../src/core/utils/projectConfigReader-utils.js';
@@ -29,25 +28,24 @@ jest.mock('../../src/prompts/prompt-generator.js', () => {
     getEnvironment: () => [{ name: 'environment' }],
     getDomainPrompt: () => [{ name: 'domain' }],
     getCIDRPrompt: () => [{ name: 'cidr' }],
-    getVPCPrompt: (vpcArray: any) => [{ name: 'vpc' }],
+    getVPCPrompt: (_vpcArray: any) => [{ name: 'vpc' }],
     getFrontendApplicationType: () => [{ name: 'frontend_type' }],
     getBackendApplicationType: () => [{ name: 'backend_type' }],
     getgenAIApplication: () => [{ name: 'genai' }],
     getCloudProviderPrompts: (provider: string) => [
       { name: `${provider}_extra` },
     ],
-    getVersionControlPrompts: (repo: string) => [{ name: 'vc' }],
-    getLifecycles: (env: string) => [{ name: 'lifecycle' }],
+    getVersionControlPrompts: (_repo: string) => [{ name: 'vc' }],
+    getLifecycles: (_env: string) => [{ name: 'lifecycle' }],
     getMicroService: () => [{ name: 'service_type' }],
     getServiceName: () => [{ name: 'service_name' }],
     getSourceCodeRepositories: () => [{ name: 'source_code_repository' }],
   }));
 });
-import PromptGenerator from '../../src/prompts/prompt-generator.js';
 
 jest.mock('../../src/prompts/credentials-prompts.js', () => {
   return jest.fn().mockImplementation(() => ({
-    getCredentialsPrompts: (provider: string, responses: any) =>
+    getCredentialsPrompts: (provider: string, _responses: any) =>
       provider === 'aws' ? [{ name: 'access_key' }] : [],
     saveCredentials: jest.fn(),
   }));

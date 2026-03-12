@@ -16,7 +16,7 @@ export default class AWSTemplateProject extends AWSProject {
 
   async createMainFile(config: any): Promise<void> {
     const path = process.cwd();
-    let command: BaseCommand | undefined;
+    let _command: BaseCommand | undefined;
     this.createFile(
       'main.tf',
       `${process.cwd()}/dist/templates/${config.cloud_provider}/predefined/grouping-templates/${config.template}/main.tf.liquid`,

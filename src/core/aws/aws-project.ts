@@ -20,7 +20,7 @@ export default class AWSProject extends BaseProject {
   async createProject(
     name: string,
     path: string,
-    commandName?: string,
+    _commandName?: string,
   ): Promise<void> {
     if (this.config.command === 'new') {
       await super.createProject(name, path);
@@ -92,14 +92,14 @@ export default class AWSProject extends BaseProject {
         }
       }
 
-      const status = await AWSPolicies.delete(
+      const _status = await AWSPolicies.delete(
         this,
         this.config.aws_region,
         this.config.aws_access_key_id,
         this.config.aws_secret_access_key,
       );
 
-      if (status) {
+      if (_status) {
         awsStatus = await AWSTerraformBackend.delete(
           this,
           this.config.project_id,
@@ -442,8 +442,8 @@ export default class AWSProject extends BaseProject {
           AppLogger.info(`stdout: ${output}`);
           const creationCompleteRegex =
             /Creation complete after \d+s \[id=.*\]/g;
-          let match;
-          while ((match = creationCompleteRegex.exec(output)) !== null) {
+          let _match;
+          while ((_match = creationCompleteRegex.exec(output)) !== null) {
             progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
           }
         });
@@ -526,9 +526,9 @@ export default class AWSProject extends BaseProject {
     varFile?: string,
   ): Promise<void> {
     AppLogger.info(`Running terraform destroy... in ${projectPath}`, true);
-    let awsStatus = false;
+    let _awsStatus = false;
     if (this.config.cloud_provider === 'aws') {
-      awsStatus = true;
+      _awsStatus = true;
     }
     try {
       let command = `terraform destroy  -auto-approve`;
@@ -551,7 +551,7 @@ export default class AWSProject extends BaseProject {
         (this.config.moduleType && this.config.moduleType.length > 1)) &&
       this.config.command !== 'create'
     ) {
-      const status = await AWSPolicies.delete(
+      await AWSPolicies.delete(
         this,
         this.config.aws_region,
         this.config.aws_access_key_id,
@@ -559,7 +559,7 @@ export default class AWSProject extends BaseProject {
       );
     }
 
-    awsStatus = await AWSTerraformBackend.delete(
+    await AWSTerraformBackend.delete(
       this,
       this.config.project_id,
       this.config.aws_region,
@@ -608,9 +608,9 @@ export default class AWSProject extends BaseProject {
     const newClusterConfig: any = jsyaml.load(newClusterConfigContent);
     AppLogger.debug(`New cluster config: ${newClusterConfig}`);
     // Extract cluster information from the existing kubeconfig
-    const clusters = kubeconfig.clusters;
-    const users = kubeconfig.users;
-    const contexts = kubeconfig.contexts;
+    const _clusters = kubeconfig.clusters;
+    const _users = kubeconfig.users;
+    const _contexts = kubeconfig.contexts;
 
     // Define the new cluster configuration
     const newCluster = {

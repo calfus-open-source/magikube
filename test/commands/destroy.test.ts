@@ -435,7 +435,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -457,7 +457,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -478,7 +478,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -497,7 +497,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -532,7 +532,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -554,7 +554,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -576,7 +576,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -594,7 +594,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -614,7 +614,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -683,7 +683,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -705,7 +705,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -728,7 +728,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -751,7 +751,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -777,7 +777,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -870,7 +870,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -896,7 +896,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -998,7 +998,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -1025,7 +1025,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -1054,7 +1054,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -1080,7 +1080,7 @@ describe('DestroyProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 

@@ -1,9 +1,7 @@
 import fs from 'fs';
-import path from 'path';
 import BaseProject from '../../src/core/base-project.js';
 import { AppLogger } from '../../src/logger/appLogger.js';
 import { appendUniqueLines } from '../../src/core/utils/appendUniqueLines-utils.js';
-import SystemConfig from '../../src/config/system.js';
 
 // -------------------- MOCKS --------------------
 jest.mock('fs');

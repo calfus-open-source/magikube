@@ -11,7 +11,6 @@ import {
   loginWithServicePrincipal,
   logout,
 } from '../utils/azure-utils.js';
-import { AzureSubscriptionInfo } from '../interface.js';
 
 export default class AzureAccount {
   static async create(
@@ -59,12 +58,12 @@ export default class AzureAccount {
   }
 
   static async delete(
-    project: BaseProject,
-    location: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
-    subscriptionId: string,
+    _project: BaseProject,
+    _location: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
+    _subscriptionId: string,
   ): Promise<boolean> {
     try {
       AppLogger.info('Cleaning up Azure account configuration', true);
@@ -172,7 +171,7 @@ export default class AzureAccount {
         stdio: 'pipe',
       });
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

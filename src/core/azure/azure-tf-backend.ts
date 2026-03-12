@@ -5,20 +5,17 @@ import BaseProject from '../base-project.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { execSync } from 'child_process';
 import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
-import {
-  checkAzureLogin,
-  displayCurrentAccount,
-} from '../utils/azure-utils.js';
+import { checkAzureLogin } from '../utils/azure-utils.js';
 
 export default class AzureTerraformBackend {
   static async create(
     project: BaseProject,
     projectName: string,
     location: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
-    subscriptionId: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
+    _subscriptionId: string,
   ): Promise<boolean> {
     const storageAccountName = `${projectName.replace(
       /-/g,
@@ -65,11 +62,11 @@ export default class AzureTerraformBackend {
   static async delete(
     project: BaseProject,
     projectName: string,
-    location: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
-    subscriptionId: string,
+    _location: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
+    _subscriptionId: string,
   ): Promise<boolean> {
     const resourceGroupName = `${projectName}-rg`;
 
@@ -105,7 +102,7 @@ export default class AzureTerraformBackend {
         });
         AppLogger.info(`Resource group ${resourceGroupName} already exists.`);
         return true;
-      } catch (error) {
+      } catch (_error) {
         // Resource group doesn't exist, create it
         AppLogger.info(
           `Resource group ${resourceGroupName} does not exist. Creating...`,
@@ -152,14 +149,14 @@ export default class AzureTerraformBackend {
           true,
         );
         return true;
-      } catch (error) {
+      } catch (_error) {
         // Storage account doesn't exist, create it
         AppLogger.info(
           `Storage account ${storageAccountName} does not exist. Creating...`,
         );
 
         const createCommand = `az storage account create --name "${storageAccountName}" --resource-group "${resourceGroupName}" --location "${location}" --sku Standard_LRS --output table`;
-        const result = execSync(createCommand, { encoding: 'utf8' });
+        execSync(createCommand, { encoding: 'utf8' });
 
         AppLogger.info(
           `Storage account ${storageAccountName} created successfully`,
@@ -201,7 +198,7 @@ export default class AzureTerraformBackend {
         );
         AppLogger.info(`Container ${containerName} already exists.`);
         return true;
-      } catch (error) {
+      } catch (_error) {
         // Container doesn't exist, create it
         AppLogger.info(
           `Container ${containerName} does not exist. Creating...`,
@@ -304,7 +301,7 @@ export default class AzureTerraformBackend {
     try {
       const keyCommand = `az storage account keys list --resource-group "${resourceGroupName}" --account-name "${storageAccountName}" --query '[0].value' --output tsv`;
       return execSync(keyCommand, { encoding: 'utf8' }).trim();
-    } catch (error) {
+    } catch (_error) {
       AppLogger.error(
         `Failed to retrieve storage account key for ${storageAccountName}`,
         true,

@@ -3,7 +3,6 @@ import ProgressBar from '../logger/progressLogger.js';
 import { FullConfigObject } from './interface.js';
 import axios from 'axios';
 import SystemConfig from '../config/system.js';
-import fs from 'fs-extra';
 import sodium from 'libsodium-wrappers';
 import { executeCommandWithRetry } from './utils/executeCommandWithRetry-utils.js';
 
@@ -112,7 +111,7 @@ export class ManageRepository {
       for (let i = 0; i < retries; i++) {
         try {
           return await fetchPublicKey(token, org, repo);
-        } catch (err) {
+        } catch (_err) {
           AppLogger.error(
             `Retrying public key fetch... Attempt ${i + 1}`,
             true,

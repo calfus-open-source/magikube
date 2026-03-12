@@ -14,7 +14,6 @@ import {
   DeleteUserCommand,
   AddUserToGroupCommand,
   RemoveUserFromGroupCommand,
-  CreateServiceSpecificCredentialCommand,
   ListServiceSpecificCredentialsCommand,
   DeleteServiceSpecificCredentialCommand,
 } from '@aws-sdk/client-iam';

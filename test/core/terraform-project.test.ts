@@ -1,5 +1,4 @@
 import TerraformProject from '../../src/core/terraform-project.js';
-import SystemConfig from '../../src/config/system.js';
 
 import EKSFargateProject from '../../src/core/aws/aws-eks-fargate.js';
 import AWSK8SProject from '../../src/core/aws/aws-k8s.js';

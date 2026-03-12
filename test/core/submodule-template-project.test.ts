@@ -1,5 +1,4 @@
 import SubModuleTemplateProject from '../../src/core/submoduleTerraform.js';
-import SystemConfig from '../../src/config/system.js';
 import CommonSubModuleProject from '../../src/core/aws/aws-submodules.js';
 
 const mockGetConfig = jest.fn();

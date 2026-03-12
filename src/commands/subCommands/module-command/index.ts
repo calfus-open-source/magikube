@@ -8,7 +8,6 @@ import {
   readStatusFile,
   updateStatusFile,
 } from '../../../core/utils/statusUpdater-utils.js';
-import { services, singleModules } from '../../../core/constants/constants.js';
 import path from 'path';
 import fs from 'fs';
 import SubModuleTemplateProject from '../../../core/submoduleTerraform.js';

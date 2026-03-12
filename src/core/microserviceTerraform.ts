@@ -6,7 +6,7 @@ import CreateMicroserviceProject from './aws/aws-microservice.js';
 export default abstract class MicroserviceProject {
   static async getProject(
     command: BaseCommand,
-    projectame?: string,
+    _projectName?: string,
   ): Promise<AWSProject | null> {
     const projectConfig = SystemConfig.getInstance().getConfig();
     if (projectConfig.cloud_provider === 'aws') {

@@ -1,8 +1,6 @@
-import path from 'path';
 import BaseCommand from '../../commands/base.js';
 import { ManageRepository } from '../manage-repository.js';
 import CreateApplication from '../setup-application.js';
-import fs from 'fs';
 import { readStatusFile } from './statusUpdater-utils.js';
 import { AppLogger } from '../../logger/appLogger.js';
 

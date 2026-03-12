@@ -3,11 +3,7 @@ import { AppLogger } from '../../logger/appLogger.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import SystemConfig from '../../config/system.js';
-import {
-  checkAzureLogin,
-  displayCurrentAccount,
-  getCurrentTenantId,
-} from '../utils/azure-utils.js';
+import { checkAzureLogin, getCurrentTenantId } from '../utils/azure-utils.js';
 
 export default class AzurePolicies {
   static async getAzureLogin(): Promise<
@@ -180,7 +176,7 @@ export default class AzurePolicies {
           AppLogger.info(`Role ${roleName} already exists.`, true);
           return true;
         }
-      } catch (error) {
+      } catch (_error) {
         // Role doesn't exist, continue to create
       }
 
@@ -210,7 +206,7 @@ export default class AzurePolicies {
       fs.writeFileSync(roleDefFile, JSON.stringify(rolePermissions, null, 2));
 
       AppLogger.info(`Creating custom role: ${roleName}...`, true);
-      const createResult = execSync(
+      const _createResult = execSync(
         `az role definition create --role-definition "${roleDefFile}"`,
         { encoding: 'utf8' },
       );
@@ -266,7 +262,7 @@ export default class AzurePolicies {
             tenantId: tenantId,
           };
         }
-      } catch (error) {
+      } catch (_error) {
         // Service principal doesn't exist, continue to create
       }
 
@@ -352,10 +348,10 @@ export default class AzurePolicies {
     keyVaultName: string,
     resourceGroupName: string,
     location: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
-    subscriptionId: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
+    _subscriptionId: string,
   ): Promise<boolean> {
     try {
       AppLogger.info(`Checking if Key Vault ${keyVaultName} exists...`, true);
@@ -368,7 +364,7 @@ export default class AzurePolicies {
         );
         AppLogger.info(`Key Vault ${keyVaultName} already exists.`, true);
         return true;
-      } catch (error) {
+      } catch (_error) {
         // Key Vault doesn't exist, create it
         AppLogger.info(
           `Creating Key Vault ${keyVaultName} in resource group ${resourceGroupName}`,
@@ -392,11 +388,11 @@ export default class AzurePolicies {
     project: BaseProject,
     keyVaultName: string,
     objectId: string,
-    permissions: string[],
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
-    subscriptionId: string,
+    _permissions: string[],
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
+    _subscriptionId: string,
   ): Promise<boolean> {
     try {
       AppLogger.info(
@@ -420,9 +416,9 @@ export default class AzurePolicies {
   // Helper method to get service principal by display name
   static async getServicePrincipalByName(
     displayName: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
   ): Promise<string | null> {
     try {
       const spCheck = execSync(
@@ -445,9 +441,9 @@ export default class AzurePolicies {
   // Helper method to delete service principal
   static async deleteServicePrincipal(
     servicePrincipalId: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
   ): Promise<boolean> {
     try {
       execSync(`az ad sp delete --id "${servicePrincipalId}"`, {

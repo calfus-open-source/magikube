@@ -6,7 +6,7 @@ export function checkAzureLogin(): boolean {
   try {
     execSync('az account show', { stdio: 'pipe' });
     return true;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -19,7 +19,7 @@ export function displayCurrentAccount(): void {
     );
     AppLogger.info('Currently logged in account details:', true);
     AppLogger.info(accountInfo, true);
-  } catch (error) {
+  } catch (_error) {
     AppLogger.error('Failed to get current account details', true);
   }
 }
@@ -31,7 +31,7 @@ export function getCurrentSubscriptionId(): string | null {
       { encoding: 'utf8' },
     ).trim();
     return subscriptionId;
-  } catch (error) {
+  } catch (_error) {
     AppLogger.error('Failed to get current subscription ID', true);
     return null;
   }
@@ -44,7 +44,7 @@ export function getCurrentTenantId(): string | null {
       { encoding: 'utf8' },
     ).trim();
     return tenantId;
-  } catch (error) {
+  } catch (_error) {
     AppLogger.error('Failed to get current tenant ID', true);
     return null;
   }
@@ -69,7 +69,7 @@ export function getAccountInfo(): AzureAccountInfo | null {
       encoding: 'utf8',
     });
     return JSON.parse(accountJson);
-  } catch (error) {
+  } catch (_error) {
     AppLogger.error('Failed to get account information', true);
     return null;
   }

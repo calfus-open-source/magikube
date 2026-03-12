@@ -1,6 +1,5 @@
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
-import AWSProject from './aws/aws-project.js';
 import AWSTemplateProject from './aws/aws-template-project.js';
 import AzureTemplateProject from './azure/azure-template-project.js';
 import BaseProject from './base-project.js';

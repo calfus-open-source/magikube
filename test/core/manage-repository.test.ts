@@ -1,7 +1,5 @@
 import { ManageRepository } from '../../src/core/manage-repository.js';
 import { AppLogger } from '../../src/logger/appLogger.js';
-import ProgressBar from '../../src/logger/progressLogger.js';
-import SystemConfig from '../../src/config/system.js';
 import axios from 'axios';
 import sodium from 'libsodium-wrappers';
 import { executeCommandWithRetry } from '../../src/core/utils/executeCommandWithRetry-utils.js';

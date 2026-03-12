@@ -133,7 +133,6 @@ import SystemConfig from '../../../src/config/system.js';
 import {
   initializeStatusFile,
   updateStatusFile,
-  readStatusFile,
 } from '../../../src/core/utils/statusUpdater-utils.js';
 import MicroserviceProject from '../../../src/core/microserviceTerraform.js';
 import { dotMagikubeConfig } from '../../../src/core/utils/projectConfigReader-utils.js';

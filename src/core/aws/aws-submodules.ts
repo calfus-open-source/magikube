@@ -1,4 +1,4 @@
-import path, { join } from 'path';
+import path from 'path';
 import AWSProject from './aws-project.js';
 import SystemConfig from '../../config/system.js';
 import { readStatusFile } from '../utils/statusUpdater-utils.js';

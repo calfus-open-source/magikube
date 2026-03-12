@@ -81,7 +81,7 @@ export const handleK8s = async (
       stdio: 'inherit',
     });
     AppLogger.info('AWS export command executed.', true);
-  } catch (error) {
+  } catch (_error) {
     AppLogger.error('AWS export command NOT executed', true);
   }
 

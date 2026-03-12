@@ -1,6 +1,5 @@
 import ProgressBar from '../../src/logger/progressLogger';
 import cliProgress from 'cli-progress';
-import colors from 'colors';
 
 jest.mock('cli-progress', () => {
   const SingleBarMock = jest.fn();

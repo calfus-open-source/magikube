@@ -170,9 +170,9 @@ export default class RestartProject extends BaseCommand {
           git_user_name: userName,
           github_owner: orgName,
           source_code_repository: sourceCodeRepo,
-          aws_region: region,
-          aws_access_key_id: awsAccessKey,
-          aws_secret_access_key: awsSecretKey,
+          aws_region: _region,
+          aws_access_key_id: _awsAccessKey,
+          aws_secret_access_key: _awsSecretKey,
           environment: environment,
         } = project_config;
 

@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import { appendUniqueLines } from '../../src/core/utils/appendUniqueLines-utils.js';
 import { AppLogger } from '../../src/logger/appLogger.js';
-import SystemConfig from '../../src/config/system.js';
 
 jest.mock('fs');
 jest.mock('../../src/logger/appLogger.js', () => ({

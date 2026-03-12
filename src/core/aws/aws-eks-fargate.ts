@@ -3,7 +3,6 @@ import gitOpsProject from '../gitops/common-gitops.js';
 import AWSProject from './aws-project.js';
 import repositoryProject from '../code-repository/common-repository.js';
 import argoCdProjectAWS from '../argocd/setup-argocd-aws.js';
-import fs from 'fs-extra';
 
 export default class EKSFargateProject extends AWSProject {
   private path: string | undefined;

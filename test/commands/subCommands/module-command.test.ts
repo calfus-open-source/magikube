@@ -579,7 +579,7 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_) {
         // Expected
       }
 
@@ -600,7 +600,9 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {}
+      } catch (_) {
+        // Expected to throw
+      }
 
       expect(fs.existsSync).toHaveBeenCalled();
     });
@@ -621,7 +623,7 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_) {
         // Expected
       }
 
@@ -649,7 +651,7 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_) {
         // Expected
       }
 
@@ -657,7 +659,7 @@ describe('NewModule Command', () => {
     });
 
     test('should merge config and get terraform project', async () => {
-      const SystemConfig = require('../../../src/config/system.js').default;
+      require('../../../src/config/system.js');
       const SubModuleTemplateProject =
         require('../../../src/core/submoduleTerraform.js').default;
       const fs = require('fs');
@@ -678,7 +680,9 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {}
+      } catch (_) {
+        // Expected to throw
+      }
 
       expect(SubModuleTemplateProject.getProject).toHaveBeenCalled();
     });
@@ -702,7 +706,9 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {}
+      } catch (_) {
+        // Expected to throw
+      }
 
       expect(SubModuleTemplateProject.getProject).toHaveBeenCalled();
     });
@@ -740,7 +746,9 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {}
+      } catch (_) {
+        // Expected to throw
+      }
 
       expect(process.exit).toHaveBeenCalledWith(0);
     });
@@ -759,7 +767,9 @@ describe('NewModule Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {}
+      } catch (_) {
+        // Expected to throw
+      }
 
       expect(process.exit).toHaveBeenCalled();
     });

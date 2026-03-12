@@ -5,8 +5,6 @@ import {
 } from '../../src/core/utils/healthCheck-utils';
 import fs from 'fs';
 import { AppLogger } from '../../src/logger/appLogger.js';
-import { executeCommandWithRetry } from '../../src/core/utils/executeCommandWithRetry-utils.js';
-import ora from 'ora';
 
 jest.mock('follow-redirects', () => ({
   http: {
@@ -97,7 +95,7 @@ describe('serviceHealthCheck', () => {
   const args = { name: 'demo' };
   const responses = { domain: 'example.com' };
   const projectConfig = { frontend_app_type: 'frontend' };
-  const keycloakPath = `${process.cwd()}/demo/keycloak/config.sh`;
+  const _keycloakPath = `${process.cwd()}/demo/keycloak/config.sh`;
 
   beforeEach(() => {
     jest.clearAllMocks();

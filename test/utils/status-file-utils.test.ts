@@ -26,7 +26,7 @@ jest.mock('../../src/config/system.js', () => ({
 
 const mockedFS = fs as jest.Mocked<typeof fs>;
 const mockedSystem = SystemConfig.getInstance();
-const mockedLogger = AppLogger;
+const _mockedLogger = AppLogger;
 
 describe('Status File Utils', () => {
   beforeEach(() => {

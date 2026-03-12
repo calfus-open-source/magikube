@@ -1,7 +1,6 @@
 import MicroserviceProject from '../../src/core/microserviceTerraform';
 import SystemConfig from '../../src/config/system';
 import CreateMicroserviceProject from '../../src/core/aws/aws-microservice';
-import BaseCommand from '../../src/commands/base';
 
 jest.mock('../../src/config/system', () => ({
   __esModule: true,

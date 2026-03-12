@@ -1,7 +1,6 @@
 import { AppLogger } from '../../src/logger/appLogger.js';
 import fs from 'fs';
 import winston from 'winston';
-import path from 'path';
 
 jest.mock('fs');
 jest.mock('winston', () => {

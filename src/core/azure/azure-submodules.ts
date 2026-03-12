@@ -1,4 +1,3 @@
-import BaseProject from '../base-project.js';
 import AzureProject from './azure-project.js';
 import BaseCommand from '../../commands/base.js';
 import { AppLogger } from '../../logger/appLogger.js';

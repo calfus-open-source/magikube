@@ -2,7 +2,7 @@ import inquirer, { Answers } from 'inquirer';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
-import path, { join } from 'path';
+import path from 'path';
 import fs from 'fs';
 import { AppLogger } from '../../logger/appLogger.js';
 import { dotMagikubeConfig } from './projectConfigReader-utils.js';
@@ -13,7 +13,7 @@ export async function handlePrompts(
   commandName?: any,
   template?: any,
   moduleType?: string,
-  serviceName?: string,
+  _serviceName?: string,
 ): Promise<Answers> {
   let responses: any =
     commandName === 'module' || commandName === 'create'

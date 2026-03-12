@@ -1,9 +1,7 @@
-import BaseProject from '../base-project.js';
 import AzureProject from './azure-project.js';
 import BaseCommand from '../../commands/base.js';
 import SystemConfig from '../../config/system.js';
 import { AppLogger } from '../../logger/appLogger.js';
-import fs from 'fs';
 import { join } from 'path';
 
 export default class AzureTemplateProject extends AzureProject {
@@ -46,22 +44,22 @@ export default class AzureTemplateProject extends AzureProject {
     }
   }
 
-  async createMainTemplate(basePath: string): Promise<void> {
+  async createMainTemplate(_basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/main.tf.liquid`;
     this.createFile('main.tf', templatePath, '/infrastructure', true);
   }
 
-  async createVariablesTemplate(basePath: string): Promise<void> {
+  async createVariablesTemplate(_basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/variables.tf.liquid`;
     this.createFile('variables.tf', templatePath, '/infrastructure', true);
   }
 
-  async createOutputsTemplate(basePath: string): Promise<void> {
+  async createOutputsTemplate(_basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/outputs.tf.liquid`;
     this.createFile('outputs.tf', templatePath, '/infrastructure', true);
   }
 
-  async createBackendConfig(basePath: string): Promise<void> {
+  async createBackendConfig(_basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/backend-config.tfvars.liquid`;
     this.createFile(
       `${this.config.environment}-config.tfvars`,
@@ -71,12 +69,12 @@ export default class AzureTemplateProject extends AzureProject {
     );
   }
 
-  async createProviderTemplate(basePath: string): Promise<void> {
+  async createProviderTemplate(_basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/providers.tf.liquid`;
     this.createFile('providers.tf', templatePath, '/infrastructure', true);
   }
 
-  async createTerraformVars(basePath: string): Promise<void> {
+  async createTerraformVars(_basePath: string): Promise<void> {
     const templatePath = `${process.cwd()}/dist/templates/azure/template/terraform.tfvars.liquid`;
     this.createFile('terraform.tfvars', templatePath, '/infrastructure', true);
   }

@@ -1,9 +1,8 @@
 import { Liquid } from 'liquidjs';
 import fs from 'fs-extra';
-import path, { dirname, join } from 'path';
+import { dirname, join } from 'path';
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
-import TerraformProject from './terraform-project.js';
 import { AppLogger } from '../logger/appLogger.js';
 import { readStatusFile } from './utils/statusUpdater-utils.js';
 import {
@@ -189,12 +188,12 @@ export default abstract class BaseProject {
     templateFilename: string,
     folderName: string = '.',
     CreateProjectFile: boolean = false,
-    command: string = '',
+    _command: string = '',
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
 
     const project_config = SystemConfig.getInstance().getConfig();
-    const status = readStatusFile(project_config, project_config.command);
+    const _status = readStatusFile(project_config, project_config.command);
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
@@ -229,9 +228,9 @@ export default abstract class BaseProject {
     // Define full path to the file
     const filePath = join(folderPath, filename);
 
-    let lastModule;
+    let _lastModule;
     if (project_config.moduleType !== undefined) {
-      lastModule =
+      _lastModule =
         project_config.moduleType[project_config.moduleType.length - 1];
     }
 

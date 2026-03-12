@@ -53,12 +53,12 @@ export default class AzureProfile {
   }
 
   static async delete(
-    project: BaseProject,
-    location: string,
-    clientId: string,
-    clientSecret: string,
-    tenantId: string,
-    subscriptionId: string,
+    _project: BaseProject,
+    _location: string,
+    _clientId: string,
+    _clientSecret: string,
+    _tenantId: string,
+    _subscriptionId: string,
   ): Promise<boolean> {
     try {
       AppLogger.info('Cleaning up Azure CLI profile', true);
@@ -173,15 +173,15 @@ export default class AzureProfile {
         });
         AppLogger.info('Azure credentials validated successfully', true);
         return true;
-      } catch (error) {
+      } catch (_error) {
         AppLogger.error(
           `Subscription ${subscriptionId} is not accessible`,
           true,
         );
         return false;
       }
-    } catch (error) {
-      AppLogger.error(`Error validating credentials: ${error}`, true);
+    } catch (_error) {
+      AppLogger.error(`Error validating credentials: ${_error}`, true);
       return false;
     }
   }
@@ -198,7 +198,7 @@ export default class AzureProfile {
         (item: any) => item.name === 'location',
       );
       return locationConfig ? locationConfig.value : null;
-    } catch (error) {
+    } catch (_error) {
       AppLogger.error('Failed to get default location', true);
       return null;
     }
@@ -222,7 +222,7 @@ export default class AzureProfile {
     try {
       execSync('az --version', { stdio: 'pipe' });
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -231,7 +231,7 @@ export default class AzureProfile {
     try {
       const version = execSync('az --version', { encoding: 'utf8' });
       return version.split('\n')[0];
-    } catch (error) {
+    } catch (_error) {
       AppLogger.error('Failed to get Azure CLI version', true);
       return null;
     }
@@ -268,7 +268,7 @@ export default class AzureProfile {
         clientId: '',
         clientSecret: '',
       }));
-    } catch (error) {
+    } catch (_error) {
       AppLogger.debug(
         'Could not retrieve Azure CLI account list, returning empty profiles',
         true,

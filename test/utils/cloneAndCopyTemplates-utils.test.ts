@@ -32,7 +32,7 @@ describe('cloneAndCopyTemplates', () => {
   });
 
   it('should clone and copy when dist and template dirs do NOT exist', async () => {
-    mockFs.existsSync.mockImplementation((path: any) => false);
+    mockFs.existsSync.mockImplementation((_path: any) => false);
 
     await cloneAndCopyTemplates(undefined);
     expect(mockExec).toHaveBeenCalledTimes(7); // mkdir + clone/copy/rm operations

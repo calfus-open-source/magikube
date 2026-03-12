@@ -485,7 +485,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected to fail on process.exit
       }
 
@@ -496,9 +496,7 @@ describe('CreateProject Command', () => {
       const {
         handlePrompts,
       } = require('../../src/core/utils/handlePrompts-utils.js');
-      const {
-        createEmptyMagikubeProject,
-      } = require('../../src/core/utils/createEmptyProject-utils.js');
+      require('../../src/core/utils/createEmptyProject-utils.js');
 
       const CreateProject = require('../../src/commands/new/index.js').default;
       const mockCommand = Object.create(CreateProject.prototype);
@@ -510,7 +508,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -532,7 +530,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -554,7 +552,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -574,7 +572,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -599,7 +597,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -620,7 +618,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -684,7 +682,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -724,7 +722,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -764,7 +762,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -786,7 +784,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -808,7 +806,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 
@@ -826,7 +824,7 @@ describe('CreateProject Command', () => {
 
       try {
         await mockCommand.run();
-      } catch (e) {
+      } catch (_e) {
         // Expected
       }
 

@@ -1,7 +1,5 @@
 import TemplateTerraformProject from '../../src/core/templatesTerraform-projects.js';
-import SystemConfig from '../../src/config/system.js';
 import AWSTemplateProject from '../../src/core/aws/aws-template-project.js';
-import { supportedTemplates } from '../../src/core/constants/constants.js';
 
 const mockGetConfig = jest.fn();
 

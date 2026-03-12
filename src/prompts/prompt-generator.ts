@@ -1,4 +1,3 @@
-import path from 'path';
 import SystemConfig from '../config/system.js';
 import { AppLogger } from '../logger/appLogger.js';
 import {
@@ -7,7 +6,6 @@ import {
   VersionControl,
   Colours,
 } from './constants.js';
-import fs from 'fs';
 import {
   awsSupportedRegions,
   azureSupportedRegions,
@@ -170,7 +168,7 @@ const githubPrompts: any[] = [
   },
 ];
 
-const codeCommitPrompts: any[] = [
+const _codeCommitPrompts: any[] = [
   {
     message: 'Enter Name for Frontend Repo: ',
     name: 'frontend_repo_codecommit',
@@ -185,7 +183,7 @@ const codeCommitPrompts: any[] = [
   },
 ];
 
-const vpcPrompt: any[] = [
+const _vpcPrompt: any[] = [
   {
     choices: [],
     message: 'Select the Vpc:',

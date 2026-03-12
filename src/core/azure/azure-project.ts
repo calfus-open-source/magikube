@@ -6,25 +6,20 @@ import * as jsyaml from 'js-yaml';
 import * as os from 'os';
 import { AppLogger } from '../../logger/appLogger.js';
 import ProgressBar from '../../logger/progressLogger.js';
-import CreateApplication from '../setup-application.js';
-import BaseCommand from '../../commands/base.js';
-import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
-import {
-  readStatusFile,
-  updateStatusFile,
-} from '../utils/statusUpdater-utils.js';
+import { updateStatusFile as _updateStatusFile } from '../utils/statusUpdater-utils.js';
 import { join } from 'path';
 import SystemConfig from '../../config/system.js';
 import { CloudProject } from '../interfaces/cloud-project.js';
 import { azure_destroy_modules } from '../constants/constants.js';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let sshProcess: any;
 
 export default class AzureProject extends BaseProject implements CloudProject {
   async createProject(
     name: string,
     path: string,
-    commandName?: string,
+    _commandName?: string,
   ): Promise<void> {
     if (this.config.command === 'new') {
       await super.createProject(name, path);
@@ -344,7 +339,7 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async runTerraformInit(
     projectPath: string,
     backend: string,
-    projectName: string,
+    _projectName: string,
   ): Promise<void> {
     const progressBar = ProgressBar.createProgressBar();
     try {
@@ -362,12 +357,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
         },
       );
 
-      let output = '';
+      let _output = '';
       let errorOutput = '';
 
       terraform.stdout.on('data', (data) => {
         const dataStr = data.toString();
-        output += dataStr;
+        _output += dataStr;
         AppLogger.debug(dataStr);
 
         // Update progress based on keywords
@@ -475,8 +470,8 @@ export default class AzureProject extends BaseProject implements CloudProject {
           AppLogger.info(`stdout: ${output}`);
           const creationCompleteRegex =
             /Creation complete after \d+s \[id=.*\]/g;
-          let match;
-          while ((match = creationCompleteRegex.exec(output)) !== null) {
+          let _match;
+          while ((_match = creationCompleteRegex.exec(output)) !== null) {
             progressBar.increment(totalSteps / totalSteps); // Adjust as per your progress tracking
           }
         });
@@ -646,8 +641,8 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
               // Increment the progress bar when a destruction completes
               const destructionRegex = /Destruction complete after \d+s/g;
-              let match;
-              while ((match = destructionRegex.exec(output)) !== null) {
+              let _match;
+              while ((_match = destructionRegex.exec(output)) !== null) {
                 progressBar.increment(totalSteps / totalSteps); // Increment step
               }
             });

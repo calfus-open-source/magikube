@@ -2,8 +2,8 @@ jest.setTimeout(30000);
 
 const originalSetImmediate = global.setImmediate;
 // Assign a mock setImmediate while preserving correct typing for TypeScript
-const mockSetImmediate = (global.setImmediate = jest.fn(
-  (callback: Function) => {
+const _mockSetImmediate = (global.setImmediate = jest.fn(
+  (callback: (...args: unknown[]) => void) => {
     callback();
   },
 ) as unknown as typeof setImmediate);

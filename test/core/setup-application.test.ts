@@ -5,7 +5,6 @@ import SystemConfig from '../../src/config/system.js';
 import { ManageRepository } from '../../src/core/manage-repository.js';
 import { executeCommandWithRetry } from '../../src/core/utils/executeCommandWithRetry-utils.js';
 import { updateStatusFile } from '../../src/core/utils/statusUpdater-utils.js';
-import path from 'path';
 
 // Mocking External Dependencies
 jest.mock('fs-extra');
@@ -23,7 +22,7 @@ jest.mock('path', () => ({
 }));
 
 // Mock process.exit to prevent tests from crashing the environment
-const originalExit = process.exit;
+const _originalExit = process.exit;
 process.exit = jest.fn() as any;
 const mockExit = process.exit as jest.Mock;
 
@@ -153,7 +152,7 @@ describe('CreateApplication.setupKeyCloak', () => {
   test('should successfully create keycloak service files (create command)', async () => {
     createApplicationInstance.config.command = 'create';
     const expectedAppName = 'new-service';
-    const { copyPathPrefix, createPathPrefix } =
+    const { copyPathPrefix: _copyPathPrefix, createPathPrefix } =
       getExpectedPaths(expectedAppName);
 
     const result = await createApplicationInstance.setupKeyCloak(
@@ -213,8 +212,11 @@ describe('CreateApplication App Creation', () => {
     appNameKey: string,
     appName: string,
   ) => {
-    const { copyPathPrefix, createPathPrefix, applicationPath } =
-      getExpectedPaths(appName);
+    const {
+      copyPathPrefix: _copyPathPrefix,
+      createPathPrefix: _createPathPrefix,
+      applicationPath,
+    } = getExpectedPaths(appName);
     const method = createApplicationInstance[methodName];
 
     // Ensure SystemConfig mock returns the config for this test
@@ -310,8 +312,11 @@ describe('CreateApplication App Creation', () => {
 
   // GenAI Tests
   test('should successfully create GenAI app', async () => {
-    const { copyPathPrefix, createPathPrefix, applicationPath } =
-      getExpectedPaths('genai-app');
+    const {
+      copyPathPrefix: _copyPathPrefix2,
+      createPathPrefix: _createPathPrefix2,
+      applicationPath: _applicationPath,
+    } = getExpectedPaths('genai-app');
     const method = createApplicationInstance.createGenAIApp;
     mockSystemConfigGetConfig.mockReturnValue(mockBaseProjectConfig);
 

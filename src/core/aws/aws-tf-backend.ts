@@ -107,7 +107,7 @@ export default class AWSTerraformBackend {
           }),
         );
         return true;
-      } catch (err) {
+      } catch (_err) {
         return false;
       }
     };
@@ -117,8 +117,8 @@ export default class AWSTerraformBackend {
         AppLogger.info(`Table ${tableName} already exists`, true);
         return false;
       }
-    } catch (err) {
-      AppLogger.error(`Error creating table ${tableName}, ${err}`, true);
+    } catch (_err) {
+      AppLogger.error(`Error creating table ${tableName}, ${_err}`, true);
     }
 
     return true;
@@ -143,7 +143,7 @@ export default class AWSTerraformBackend {
       try {
         await s3Client.send(new HeadBucketCommand({ Bucket: bucketName }));
         return true;
-      } catch (err) {
+      } catch (_err) {
         return false;
       }
     };
@@ -153,10 +153,10 @@ export default class AWSTerraformBackend {
         AppLogger.info(`Bucket ${bucketName} already exists`, true);
         return false;
       }
-      const data = await s3Client.send(
+      const _data = await s3Client.send(
         new CreateBucketCommand({ Bucket: bucketName }),
       );
-      AppLogger.info(`Bucket ${bucketName} created, ${data}`, true);
+      AppLogger.info(`Bucket ${bucketName} created, ${_data}`, true);
     } catch (err) {
       AppLogger.error(`Error creating bucket ${bucketName}, ${err}`, true);
     }
@@ -219,9 +219,7 @@ export default class AWSTerraformBackend {
         }
       }
 
-      const data = await s3Client.send(
-        new DeleteBucketCommand({ Bucket: bucketName }),
-      );
+      await s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }));
       AppLogger.info(`Bucket ${bucketName} deleted`, true);
     } catch (err) {
       AppLogger.error(`Error deleting bucket ${bucketName}, ${err}`, true);
