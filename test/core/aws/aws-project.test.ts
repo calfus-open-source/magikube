@@ -126,6 +126,14 @@ import SystemConfig from '../../../src/config/system.js';
 import AWSTerraformBackend from '../../../src/core/aws/aws-tf-backend.js';
 import AWSPolicies from '../../../src/core/aws/aws-iam.js';
 import { EventEmitter } from 'events';
+import {
+  createMockTerraformProcess,
+  simulateTerraformSuccess,
+  simulateTerraformError,
+  simulateTerraformProgress,
+  simulateSpawnError,
+} from '../../utils/terraformMock-utils.js';
+import ProgressBar from '../../../src/logger/progressLogger.js';
 
 const mockExit = jest
   .spyOn(process, 'exit')
@@ -473,6 +481,199 @@ describe('AWSProject', () => {
         expect.any(Object),
       );
     });
+
+    test('should increment progress bar when resources are created', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+      const mockProgressBar = {
+        start: jest.fn(),
+        update: jest.fn(),
+        stop: jest.fn(),
+        increment: jest.fn(),
+      };
+      (ProgressBar.createProgressBar as jest.Mock).mockReturnValue(
+        mockProgressBar,
+      );
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+        'module.vpc',
+      );
+
+      setTimeout(() => {
+        mockProcess.stdout.emit(
+          'data',
+          'module.vpc: Creating...\nmodule.vpc: Creation complete after 5s [id=vpc-12345]\n',
+        );
+        mockProcess.emit('close', 0);
+      }, 10);
+
+      await applyPromise;
+
+      expect(mockProgressBar.start).toHaveBeenCalledWith(100, 0, {
+        message: 'Terraform apply in progress...',
+      });
+      expect(mockProgressBar.increment).toHaveBeenCalled();
+      expect(mockProgressBar.stop).toHaveBeenCalled();
+    });
+
+    test('should track multiple resource creations in progress bar', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+      const mockProgressBar = {
+        start: jest.fn(),
+        update: jest.fn(),
+        stop: jest.fn(),
+        increment: jest.fn(),
+      };
+      (ProgressBar.createProgressBar as jest.Mock).mockReturnValue(
+        mockProgressBar,
+      );
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+      );
+
+      setTimeout(() => {
+        // Emit multiple resource creation completions
+        mockProcess.stdout.emit(
+          'data',
+          'module.vpc: Creation complete after 5s [id=vpc-1]\n' +
+            'module.subnet: Creation complete after 3s [id=subnet-1]\n' +
+            'module.igw: Creation complete after 2s [id=igw-1]\n',
+        );
+        mockProcess.emit('close', 0);
+      }, 10);
+
+      await applyPromise;
+
+      // Should be called 3 times for 3 resources
+      expect(mockProgressBar.increment).toHaveBeenCalledTimes(3);
+    });
+
+    test('should verify spawn options with correct stdio and cwd', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+        'module.vpc',
+      );
+
+      setTimeout(() => {
+        mockProcess.emit('close', 0);
+      }, 10);
+
+      await applyPromise;
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'terraform',
+        expect.any(Array),
+        expect.objectContaining({
+          cwd: '/project/infrastructure',
+          env: process.env,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        }),
+      );
+    });
+
+    test('should handle module targeting for resume command', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+      (SystemConfig.getInstance().getConfig as jest.Mock).mockReturnValue({
+        command: 'resume',
+      });
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+        'module.vpc',
+      );
+
+      setTimeout(() => {
+        mockProcess.emit('close', 0);
+      }, 10);
+
+      await applyPromise;
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'terraform',
+        expect.arrayContaining(['-target=module.vpc']),
+        expect.any(Object),
+      );
+    });
+
+    test('should handle module targeting for module command with module. prefix', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+      (SystemConfig.getInstance as jest.Mock).mockReturnValue({
+        getConfig: jest.fn().mockReturnValue({
+          command: 'module',
+        }),
+      });
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+        'vpc',
+      );
+
+      setTimeout(() => {
+        mockProcess.emit('close', 0);
+      }, 10);
+
+      await applyPromise;
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'terraform',
+        expect.arrayContaining(['-target=module.vpc']),
+        expect.any(Object),
+      );
+    });
+
+    test('should handle spawn error event', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+      );
+
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('spawn ENOENT'));
+      }, 10);
+
+      await expect(applyPromise).rejects.toThrow('spawn ENOENT');
+    });
+
+    test('should call setImmediate on non-zero exit code', async () => {
+      const mockProcess = createMockTerraformProcess();
+      mockSpawn.mockReturnValue(mockProcess);
+
+      const applyPromise = awsProject.runTerraformApply(
+        '/project/infrastructure',
+      );
+
+      setTimeout(() => {
+        mockProcess.emit('close', 1);
+      }, 10);
+
+      await expect(applyPromise).rejects.toThrow(
+        'Terraform apply process exited with code 1',
+      );
+
+      // Verify setImmediate was called (mocked at top of file)
+      expect(global.setImmediate).toHaveBeenCalled();
+    });
+
+    test('should handle exception thrown in try block', async () => {
+      // Force an exception by making spawn throw
+      mockSpawn.mockImplementation(() => {
+        throw new Error('Unexpected spawn error');
+      });
+
+      await expect(
+        awsProject.runTerraformApply('/project/infrastructure'),
+      ).rejects.toThrow('Unexpected spawn error');
+    });
   });
 
   describe('runTerraformDestroy', () => {
@@ -515,6 +716,111 @@ describe('AWSProject', () => {
         expect.stringContaining('Failed to destroy terraform process'),
         true,
       );
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    test('should include var file in destroy command', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy(
+        '/project/infrastructure',
+        undefined,
+        'custom.tfvars',
+      );
+
+      expect(executeCommandWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('-var-file=custom.tfvars'),
+        expect.any(Object),
+        3,
+      );
+    });
+
+    test('should call executeCommandWithRetry with 3 retries', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy('/project/infrastructure');
+
+      expect(executeCommandWithRetry).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Object),
+        3, // Verify maxRetries parameter
+      );
+    });
+
+    test('should pass correct cwd option to executeCommandWithRetry', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy('/custom/path');
+
+      expect(executeCommandWithRetry).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          cwd: '/custom/path',
+          stdio: 'inherit',
+        }),
+        3,
+      );
+    });
+
+    test('should construct command with module and varFile', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy(
+        '/project/infrastructure',
+        'module.eks',
+        'prod.tfvars',
+      );
+
+      expect(executeCommandWithRetry).toHaveBeenCalledWith(
+        'terraform destroy -target=module.eks -auto-approve -var-file=prod.tfvars',
+        expect.any(Object),
+        3,
+      );
+    });
+
+    test('should log module-specific destroy message', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy(
+        '/project/infrastructure',
+        'module.vpc',
+      );
+
+      expect(AppLogger.info).toHaveBeenCalledWith(
+        'Destroying module module.vpc...',
+        true,
+      );
+    });
+
+    test('should log full project destroy message when no module specified', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy('/project/infrastructure');
+
+      expect(AppLogger.info).toHaveBeenCalledWith(
+        'Destroying entire project...',
+        true,
+      );
+    });
+
+    test('should log success message after destroy completes', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroy('/project/infrastructure');
+
+      expect(AppLogger.info).toHaveBeenCalledWith(
+        'Terraform destroy completed successfully.',
+        true,
+      );
+    });
+
+    test('should call process.exit(1) on error', async () => {
+      (executeCommandWithRetry as jest.Mock).mockRejectedValue(
+        new Error('Command failed'),
+      );
+
+      await awsProject.runTerraformDestroy('/project/infrastructure');
+
       expect(mockExit).toHaveBeenCalledWith(1);
     });
   });

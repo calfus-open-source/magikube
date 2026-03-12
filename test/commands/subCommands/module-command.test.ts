@@ -754,6 +754,9 @@ describe('NewModule Command', () => {
     });
 
     test('should exit with error code on failure', async () => {
+      // Mock console.error to suppress validation error output during testing
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
       const fs = require('fs');
       const NewModule =
         require('../../../src/commands/subCommands/module-command/index.js').default;
@@ -772,6 +775,9 @@ describe('NewModule Command', () => {
       }
 
       expect(process.exit).toHaveBeenCalled();
+
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
     });
   });
 
