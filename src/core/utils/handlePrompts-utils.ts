@@ -89,6 +89,7 @@ export async function handlePrompts(
 
         if (loginResp === false) {
           AppLogger.error('Azure login failed!', true);
+          throw new Error('Azure login failed. Cannot proceed without authentication.');
         } else {
           AppLogger.info('Azure login successful!', true);
           responses = { ...responses, ...loginResp };

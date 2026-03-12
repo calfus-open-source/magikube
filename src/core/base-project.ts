@@ -46,7 +46,7 @@ export default abstract class BaseProject {
 
     // Initialize modules with a default value
     const modules =
-      this.config.cluster_type === 'eks-fargate'
+      this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup'
         ? aws_destroy_modules
         : this.config.cluster_type === 'aks'
           ? azure_destroy_modules

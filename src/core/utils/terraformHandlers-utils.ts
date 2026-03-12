@@ -45,8 +45,8 @@ export const handleEKSandAKS = async (
   }
 
   if (setupGitopsServiceStatus) {
-    configObject.appName = `${responses.environment}`;
-    configObject.appType = 'gitops';
+    configObject.common.appName = `${responses.environment}`;
+    configObject.common.appType = 'gitops';
     await ManageRepository.pushCode(configObject);
   }
 
@@ -86,8 +86,8 @@ export const handleK8s = async (
   }
 
   if (setupGitopsServiceStatus) {
-    configObject.appName = `${responses.environment}`;
-    configObject.appType = 'gitops';
+    configObject.common.appName = `${responses.environment}`;
+    configObject.common.appType = 'gitops';
     await ManageRepository.pushCode(configObject);
   }
 

@@ -33,6 +33,9 @@ export async function handleTemplateFlag(
 ) {
   const currentDir = process.cwd();
   const responses = dotMagikubeConfig(args.name, currentDir);
+  if (!responses) {
+    throw new Error(`Failed to read .magikube configuration for project '${args.name}'`);
+  }
   const moduleType = '';
   const domain =
     template === 'vpc-rds-nodegroup-acm-ingress'

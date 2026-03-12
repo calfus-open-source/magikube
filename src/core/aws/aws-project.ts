@@ -567,7 +567,7 @@ export default class AWSProject extends BaseProject {
       this.config.aws_secret_access_key,
     );
 
-    await this.deleteFolder(this.projectPath);
+    await this.deleteFolder(this.config.project_name);
   }
 
   async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {

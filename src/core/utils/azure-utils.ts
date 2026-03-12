@@ -1,5 +1,5 @@
 import { AppLogger } from '../../logger/appLogger.js';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { AzureSubscriptionInfo, AzureAccountInfo } from '../interface.js';
 
 export function checkAzureLogin(): boolean {
@@ -83,10 +83,14 @@ export async function loginWithServicePrincipal(
   try {
     AppLogger.info('Logging in with service principal...', true);
 
-    const loginCommand = `az login --service-principal --username "${clientId}" --password "$AZURE_SP_SECRET" --tenant "${tenantId}"`;
-    execSync(loginCommand, {
+    execFileSync('az', [
+      'login', '--service-principal',
+      '--username', clientId,
+      '--password', clientSecret,
+      '--tenant', tenantId,
+    ], {
       encoding: 'utf8',
-      env: { ...process.env, AZURE_SP_SECRET: clientSecret },
+      stdio: 'pipe',
     });
 
     AppLogger.info('Successfully logged in with service principal', true);

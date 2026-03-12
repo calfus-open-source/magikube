@@ -17,7 +17,7 @@ export async function cloneAndCopyTemplates(
     const distFolder = `${parentPath}/dist`; // Dist folder path
     if (!fs.existsSync(distFolder)) {
       await executeCommandWithRetry(
-        `mkdir -p ${distFolder}/templates/aws`, // Create the required subfolders in dist
+        `mkdir -p ${distFolder}/templates/${cloud_provider}`, // Create the required subfolders in dist
         { cwd: parentPath },
         1,
       );

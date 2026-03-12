@@ -34,8 +34,8 @@ describe('cloneAndCopyTemplates', () => {
   it('should clone and copy when dist and template dirs do NOT exist', async () => {
     mockFs.existsSync.mockImplementation((_path: any) => false);
 
-    await cloneAndCopyTemplates(undefined);
-    expect(mockExec).toHaveBeenCalledTimes(7); // mkdir + clone/copy/rm operations
+    await cloneAndCopyTemplates(undefined, 'aws');
+    expect(mockExec).toHaveBeenCalledTimes(8); // mkdir + clone/copy/rm operations
     expect(mockExec).toHaveBeenCalledWith(
       expect.stringContaining('mkdir -p'),
       { cwd: parentPath },
@@ -54,7 +54,7 @@ describe('cloneAndCopyTemplates', () => {
       return false;
     });
 
-    await cloneAndCopyTemplates(undefined);
+    await cloneAndCopyTemplates(undefined, 'aws');
 
     // Should NOT clone repos or mkdir
     expect(mockExec).not.toHaveBeenCalledWith(
@@ -69,7 +69,7 @@ describe('cloneAndCopyTemplates', () => {
     );
 
     // Should still rsync + rm both dirs
-    expect(mockExec).toHaveBeenCalledTimes(4);
+    expect(mockExec).toHaveBeenCalledTimes(5);
     expect(AppLogger.info).toHaveBeenCalled();
   });
 
@@ -77,7 +77,7 @@ describe('cloneAndCopyTemplates', () => {
     mockFs.existsSync.mockReturnValue(false);
     mockExec.mockRejectedValueOnce(new Error('command failed'));
 
-    await expect(cloneAndCopyTemplates(undefined)).rejects.toThrow(
+    await expect(cloneAndCopyTemplates(undefined, 'aws')).rejects.toThrow(
       'command failed',
     );
 
