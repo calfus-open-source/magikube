@@ -30,11 +30,11 @@ jest.mock('../../src/config/system.js');
 
 describe('AWSPolicies', () => {
   let sendMock: jest.Mock;
-  let mockProject: any;
+  let mockProject: { generateContent: jest.Mock };
 
   beforeEach(() => {
     sendMock = jest.fn();
-    (IAMClient as any).mockImplementation(() => ({
+    (IAMClient as jest.Mock).mockImplementation(() => ({
       send: sendMock,
     }));
 

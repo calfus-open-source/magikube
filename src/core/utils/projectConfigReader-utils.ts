@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { join } from 'path';
 
-export function dotMagikubeConfig(name: any, path: string) {
+export function dotMagikubeConfig(name: string, path: string) {
   const projectPath = join(path);
   const projectConfigFile = join(projectPath, name, '.magikube');
   if (fs.existsSync(projectConfigFile)) {

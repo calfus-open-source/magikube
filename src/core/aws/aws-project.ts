@@ -1,7 +1,7 @@
 import BaseProject from '../base-project.js';
 import AWSTerraformBackend from './aws-tf-backend.js';
 import AWSPolicies from './aws-iam.js';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, ChildProcess } from 'child_process';
 import fs from 'fs';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
@@ -14,7 +14,7 @@ import { updateStatusFile } from '../utils/statusUpdater-utils.js';
 import { join } from 'path';
 import SystemConfig from '../../config/system.js';
 
-let sshProcess: any;
+let sshProcess: ChildProcess | null = null;
 
 export default class AWSProject extends BaseProject {
   async createProject(
@@ -28,23 +28,23 @@ export default class AWSProject extends BaseProject {
 
     if (
       (!this.config.moduleType && this.config.command !== 'create') ||
-      (this.config.moduleType && this.config.moduleType.length > 1)
+      (this.config.moduleType && this.getConfigArray('moduleType').length > 1)
     ) {
       await AWSPolicies.create(
         this,
-        this.config.aws_region,
-        this.config.aws_access_key_id,
-        this.config.aws_secret_access_key,
-        this.config.project_name,
+        this.getConfigString('aws_region'),
+        this.getConfigString('aws_access_key_id'),
+        this.getConfigString('aws_secret_access_key'),
+        this.getConfigString('project_name'),
       );
     }
 
     await AWSTerraformBackend.create(
       this,
-      this.config.project_id,
-      this.config.aws_region,
-      this.config.aws_access_key_id,
-      this.config.aws_secret_access_key,
+      this.getConfigString('project_id'),
+      this.getConfigString('aws_region'),
+      this.getConfigString('aws_access_key_id'),
+      this.getConfigString('aws_secret_access_key'),
     );
   }
 
@@ -61,30 +61,24 @@ export default class AWSProject extends BaseProject {
     if (!this.config.dryrun) {
       // Once the prompts are accepted at the start, these parameters will be accessible
       if (this.config.command === 'new' || this.config.command === 'resume') {
-        const {
-          git_user_name,
-          github_access_token,
-          github_owner,
-          project_name,
-        } = this.config;
-        let frontend_app_name;
-        let backend_app_name;
+        let frontend_app_name: string | undefined;
+        let backend_app_name: string | undefined;
         if (this.config.frontend_app_type == 'react') {
-          frontend_app_name = this.config.react_app_name;
+          frontend_app_name = this.getConfigStringOrUndefined('react_app_name');
         }
         if (this.config.frontend_app_type == 'next') {
-          frontend_app_name = this.config.next_app_name;
+          frontend_app_name = this.getConfigStringOrUndefined('next_app_name');
         }
         if (this.config.backend_app_type == 'node-express') {
-          backend_app_name = this.config.node_app_name;
+          backend_app_name = this.getConfigStringOrUndefined('node_app_name');
         }
         await createApplication.destroyApp(
-          git_user_name,
-          github_access_token,
-          github_owner,
-          frontend_app_name,
-          backend_app_name,
-          project_name,
+          this.getConfigString('git_user_name'),
+          this.getConfigString('github_access_token'),
+          this.getConfigString('github_owner'),
+          frontend_app_name as string,
+          backend_app_name as string,
+          this.getConfigString('project_name'),
         );
 
         if (awsStatus) {
@@ -94,21 +88,21 @@ export default class AWSProject extends BaseProject {
 
       const _status = await AWSPolicies.delete(
         this,
-        this.config.aws_region,
-        this.config.aws_access_key_id,
-        this.config.aws_secret_access_key,
+        this.getConfigString('aws_region'),
+        this.getConfigString('aws_access_key_id'),
+        this.getConfigString('aws_secret_access_key'),
       );
 
       if (_status) {
         awsStatus = await AWSTerraformBackend.delete(
           this,
-          this.config.project_id,
-          this.config.aws_region,
-          this.config.aws_access_key_id,
-          this.config.aws_secret_access_key,
+          this.getConfigString('project_id'),
+          this.getConfigString('aws_region'),
+          this.getConfigString('aws_access_key_id'),
+          this.getConfigString('aws_secret_access_key'),
         );
 
-        await this.deleteFolder(this.config.project_name);
+        await this.deleteFolder(this.getConfigString('project_name'));
       }
     }
   }
@@ -372,10 +366,10 @@ export default class AWSProject extends BaseProject {
             setImmediate(() => process.exit(1));
           }
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         progressBar.stop(); // Close progress bar on error
         AppLogger.error(
-          `Failed to initialize terraform process: ${error.message}`,
+          `Failed to initialize terraform process: ${error instanceof Error ? error.message : String(error)}`,
           true,
         );
         reject(error); // Reject promise on error
@@ -548,26 +542,27 @@ export default class AWSProject extends BaseProject {
 
     if (
       (!this.config.moduleType ||
-        (this.config.moduleType && this.config.moduleType.length > 1)) &&
+        (this.config.moduleType &&
+          this.getConfigArray('moduleType').length > 1)) &&
       this.config.command !== 'create'
     ) {
       await AWSPolicies.delete(
         this,
-        this.config.aws_region,
-        this.config.aws_access_key_id,
-        this.config.aws_secret_access_key,
+        this.getConfigString('aws_region'),
+        this.getConfigString('aws_access_key_id'),
+        this.getConfigString('aws_secret_access_key'),
       );
     }
 
     await AWSTerraformBackend.delete(
       this,
-      this.config.project_id,
-      this.config.aws_region,
-      this.config.aws_access_key_id,
-      this.config.aws_secret_access_key,
+      this.getConfigString('project_id'),
+      this.getConfigString('aws_region'),
+      this.getConfigString('aws_access_key_id'),
+      this.getConfigString('aws_secret_access_key'),
     );
 
-    await this.deleteFolder(this.config.project_name);
+    await this.deleteFolder(this.getConfigString('project_name'));
   }
 
   async editKubeConfigFile(newClusterConfigPath: string): Promise<void> {
@@ -580,14 +575,21 @@ export default class AWSProject extends BaseProject {
       fs.mkdirSync(kubeconfigDir);
     }
 
-    let kubeconfig: any;
+    let kubeconfig: {
+      apiVersion: string;
+      kind: string;
+      clusters: Record<string, unknown>[];
+      users: Record<string, unknown>[];
+      contexts: Record<string, unknown>[];
+      'current-context': string;
+    };
 
     // Check if the kubeconfig file exists
     if (fs.existsSync(kubeconfigFilePath)) {
       // Read the existing kubeconfig file
       const existingKubeconfig = fs.readFileSync(kubeconfigFilePath, 'utf8');
       // Parse the YAML content
-      kubeconfig = jsyaml.load(existingKubeconfig);
+      kubeconfig = jsyaml.load(existingKubeconfig) as typeof kubeconfig;
     } else {
       // Initialize an empty kubeconfig structure if the file doesn't exist
       kubeconfig = {
@@ -605,7 +607,10 @@ export default class AWSProject extends BaseProject {
       newClusterConfigPath,
       'utf8',
     );
-    const newClusterConfig: any = jsyaml.load(newClusterConfigContent);
+    const newClusterConfig = jsyaml.load(newClusterConfigContent) as {
+      clusters: { cluster: Record<string, string> }[];
+      users: { user: Record<string, string> }[];
+    };
     AppLogger.debug(`New cluster config: ${newClusterConfig}`);
     // Extract cluster information from the existing kubeconfig
     const _clusters = kubeconfig.clusters;
@@ -711,9 +716,9 @@ export default class AWSProject extends BaseProject {
         clearInterval(interval);
         AppLogger.info(`Playbook ${playbook} completed successfully.`, true);
         success = true;
-      } catch (error: any) {
+      } catch (error: unknown) {
         AppLogger.error(
-          `An error occurred while running ${playbook}: ${error.message}`,
+          `An error occurred while running ${playbook}: ${error instanceof Error ? error.message : String(error)}`,
           true,
         );
         if (attempt >= maxRetries) {

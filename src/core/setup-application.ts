@@ -2,7 +2,12 @@ import { AppLogger } from '../logger/appLogger.js';
 import BaseProject from './base-project.js';
 import fs from 'fs-extra';
 import SystemConfig from '../config/system.js';
-import { AppTypeMap, FullConfigObject } from './interface.js';
+import {
+  AppTypeMap,
+  CommonConfig,
+  FullConfigObject,
+  ProjectConfig,
+} from './interface.js';
 import { ManageRepository } from './manage-repository.js';
 import BaseCommand from '../commands/base.js';
 import { executeCommandWithRetry } from './utils/executeCommandWithRetry-utils.js';
@@ -11,7 +16,7 @@ import path from 'path';
 
 export default class CreateApplication extends BaseProject {
   private appTypeMap: AppTypeMap;
-  constructor(command: BaseCommand, projectConfig: any) {
+  constructor(command: BaseCommand, projectConfig: ProjectConfig) {
     super(command, projectConfig);
     this.appTypeMap = {
       'node-express': {
@@ -33,11 +38,13 @@ export default class CreateApplication extends BaseProject {
   }
 
   // Setup Auth service
-  async setupAuthenticationService(projectConfig: any) {
+  async setupAuthenticationService(projectConfig: ProjectConfig) {
     const appName = 'auth-service';
-    const { project_name: projectName } = projectConfig;
+    const projectName = projectConfig.project_name as string;
     const authServiceName =
-      this.config.command === 'create' ? projectConfig.service_name : appName;
+      this.config.command === 'create'
+        ? (projectConfig.service_name as string)
+        : appName;
     let copyFilePath;
     let createFilePath;
     let applicationPath;
@@ -144,11 +151,13 @@ export default class CreateApplication extends BaseProject {
   }
 
   // Setup Keycloak
-  async setupKeyCloak(projectConfig: any) {
+  async setupKeyCloak(projectConfig: ProjectConfig) {
     const appName = 'keycloak';
     const keycloakAppName =
-      this.config.command === 'create' ? projectConfig.service_name : appName;
-    const { project_name: projectName } = projectConfig;
+      this.config.command === 'create'
+        ? (projectConfig.service_name as string)
+        : appName;
+    const projectName = projectConfig.project_name as string;
     let copyFilePath;
     let createFilePath;
     let applicationPath;
@@ -204,11 +213,13 @@ export default class CreateApplication extends BaseProject {
   }
 
   // Create Node.js application
-  createNodeExpressApp = async (configObject: any) => {
+  createNodeExpressApp = async (configObject: CommonConfig) => {
     const projectConfig = SystemConfig.getInstance().getConfig();
     const { appName, projectName } = configObject;
     const nodeAppName =
-      this.config.command === 'create' ? projectConfig.service_name : appName;
+      this.config.command === 'create'
+        ? (projectConfig.service_name as string)
+        : appName;
     const _filePath = process.cwd();
     let copyFilePath;
     let createFilePath;
@@ -298,26 +309,28 @@ export default class CreateApplication extends BaseProject {
         3,
       );
       AppLogger.info('Node Express app created successfully.', true);
-      updateStatusFile(projectName, nodeAppName, 'success');
+      updateStatusFile(projectName, nodeAppName!, 'success');
       return true;
     } catch (error) {
       AppLogger.error(
         `Failed to create Node-express Application: ${error}`,
         true,
       );
-      updateStatusFile(projectName, nodeAppName, 'fail');
+      updateStatusFile(projectName, nodeAppName!, 'fail');
       fs.rmdirSync(`${applicationPath}`, { recursive: true });
       process.exit(1);
     }
   };
 
   // Create Next.js application
-  createNextApp = async (configObject: any) => {
+  createNextApp = async (configObject: CommonConfig) => {
     const _filePath = process.cwd();
     const projectConfig = SystemConfig.getInstance().getConfig();
     const { appName, projectName } = configObject;
     const nextAppName =
-      this.config.command === 'create' ? projectConfig.service_name : appName;
+      this.config.command === 'create'
+        ? (projectConfig.service_name as string)
+        : appName;
 
     let copyFilePath;
     let createFilePath;
@@ -388,23 +401,25 @@ export default class CreateApplication extends BaseProject {
         { cwd: `${applicationPath}` },
         3,
       );
-      updateStatusFile(projectName, nextAppName, 'success');
+      updateStatusFile(projectName, nextAppName!, 'success');
       AppLogger.info('Next.js application created successfully.', true);
       return true;
     } catch (error) {
       AppLogger.error(`Failed to create Next.js app: ${error}`, true);
-      updateStatusFile(projectName, nextAppName, 'fail');
+      updateStatusFile(projectName, nextAppName!, 'fail');
       fs.rmdirSync(`${applicationPath}`, { recursive: true });
       process.exit(1);
     }
   };
 
   // create React application
-  createReactApp = async (configObject: any) => {
+  createReactApp = async (configObject: CommonConfig) => {
     const projectConfig = SystemConfig.getInstance().getConfig();
     const { appName, projectName } = configObject;
     const reactAppName =
-      this.config.command === 'create' ? projectConfig.service_name : appName;
+      this.config.command === 'create'
+        ? (projectConfig.service_name as string)
+        : appName;
     let copyFilePath;
     let createFilePath;
     let applicationPath;
@@ -486,7 +501,7 @@ export default class CreateApplication extends BaseProject {
         3,
       );
       AppLogger.info('React app created successfully.', true);
-      updateStatusFile(projectName, reactAppName, 'success');
+      updateStatusFile(projectName, reactAppName!, 'success');
       return true;
     } catch (error) {
       AppLogger.error(`Failed to create React app:${error}`, true);
@@ -494,19 +509,20 @@ export default class CreateApplication extends BaseProject {
         `Error occured, cleaning up the ${reactAppName} directory...`,
         true,
       );
-      updateStatusFile(projectName, reactAppName, 'fail');
+      updateStatusFile(projectName, reactAppName!, 'fail');
       fs.rmdirSync(`${applicationPath}`, { recursive: true });
       process.exit(1);
     }
   };
 
   //create GenAI aplication
-  createGenAIApp = async (configObject: any) => {
+  createGenAIApp = async (configObject: ProjectConfig) => {
     const projectConfig = SystemConfig.getInstance().getConfig();
-    const { genAI_app_name, projectName } = configObject;
+    const genAI_app_name = configObject.genAI_app_name as string;
+    const projectName = configObject.projectName as string;
     const genAIAppName =
       this.config.command === 'create'
-        ? projectConfig.service_name
+        ? (projectConfig.service_name as string)
         : genAI_app_name;
     let copyFilePath;
     let createFilePath;
@@ -543,7 +559,7 @@ export default class CreateApplication extends BaseProject {
       updateStatusFile(projectName, genAIAppName, 'success');
       AppLogger.info('Gen AI service setup is done.', true);
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       updateStatusFile(projectName, genAIAppName, 'fail');
       AppLogger.error(`Failed to setup the gen AI service: ${error}`, true);
       process.exit(1);
@@ -551,14 +567,12 @@ export default class CreateApplication extends BaseProject {
   };
 
   //Setup Gitops
-  async setupGitops(projectConfig: any) {
+  async setupGitops(projectConfig: ProjectConfig) {
     const filePath = process.cwd();
     const appName = 'gitops';
-    const {
-      project_name: projectName,
-      frontend_app_type,
-      environment,
-    } = projectConfig;
+    const projectName = projectConfig.project_name as string;
+    const frontend_app_type = projectConfig.frontend_app_type;
+    const environment = projectConfig.environment as string;
     try {
       const gitopsFiles = ['deployment.yml', 'ingress.yml', 'service.yml'];
       const gitopsKeycloakFiles = [
@@ -651,14 +665,18 @@ export default class CreateApplication extends BaseProject {
   async handleAppCreation(
     appType: string,
     configObject: FullConfigObject,
-    projectConfig: any,
+    projectConfig: ProjectConfig,
   ) {
     try {
       const appConfig = this.appTypeMap[appType];
       if (appConfig) {
         // store app-specific values under the `common` section to match types
-        configObject.common.appName = projectConfig[appConfig.appNameKey];
-        configObject.common.appType = projectConfig[appConfig.appTypeKey];
+        configObject.common.appName = projectConfig[appConfig.appNameKey] as
+          | string
+          | undefined;
+        configObject.common.appType = projectConfig[appConfig.appTypeKey] as
+          | string
+          | undefined;
         const appStatus = await appConfig.createAppFunction(
           configObject.common,
         );

@@ -62,16 +62,16 @@ export default class AzureAKSProject
       true,
     );
     this.createFile(
-      `${this.config.environment}-config.tfvars`,
+      `${this.getConfigString('environment')}-config.tfvars`,
       `${path}/dist/templates/azure/environments/dev/backend-config.tfvars.liquid`,
       '/infrastructure',
       true,
     );
     this.createProviderFileAzure(path);
     this.createCommon(path);
-    gitOpsInstance.createGitOps(this.path, this.name);
-    repositoryInstance.createrepository(this.path, this.name);
-    argocdInstance.argoCdProject(this.path, this.name);
+    gitOpsInstance.createGitOps(this.path!, this.name!);
+    repositoryInstance.createrepository(this.path!, this.name!);
+    argocdInstance.argoCdProject(this.path!, this.name!);
   }
 
   async createProviderFileAzure(path?: string): Promise<void> {

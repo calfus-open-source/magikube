@@ -9,15 +9,15 @@ import { dotMagikubeConfig } from './projectConfigReader-utils.js';
 import AzurePolicies from '../azure/azure-iam.js';
 
 export async function handlePrompts(
-  args: any,
-  commandName?: any,
-  template?: any,
+  args: Record<string, unknown>,
+  commandName?: string,
+  template?: string,
   moduleType?: string,
   _serviceName?: string,
 ): Promise<Answers> {
-  let responses: any =
+  let responses: Answers =
     commandName === 'module' || commandName === 'create'
-      ? ''
+      ? {}
       : {
           project_name: args.name,
           project_id: uuidv4(),
@@ -89,7 +89,9 @@ export async function handlePrompts(
 
         if (loginResp === false) {
           AppLogger.error('Azure login failed!', true);
-          throw new Error('Azure login failed. Cannot proceed without authentication.');
+          throw new Error(
+            'Azure login failed. Cannot proceed without authentication.',
+          );
         } else {
           AppLogger.info('Azure login successful!', true);
           responses = { ...responses, ...loginResp };
@@ -134,7 +136,7 @@ export async function handlePrompts(
       if (
         !vpcArray ||
         vpcArray.length === 0 ||
-        vpcArray.every((vpc: any) => vpc === null)
+        vpcArray.every((vpc: unknown) => vpc === null)
       ) {
         AppLogger.error(
           'Error: No valid VPCs found. Please configure VPCs before proceeding with the RDS module.',

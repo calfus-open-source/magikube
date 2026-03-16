@@ -129,7 +129,10 @@ export default class AWSPolicies {
 
     // const status = await readStatusFile(projectName)
     const projectConfig = SystemConfig.getInstance().getConfig();
-    const readFile = readStatusFile(projectConfig, projectConfig.command);
+    const readFile = readStatusFile(
+      projectConfig,
+      projectConfig.command != null ? String(projectConfig.command) : undefined,
+    );
     if (
       readFile.services['policy'] === 'pending' ||
       readFile.services['policy'] === 'fail'
@@ -167,8 +170,11 @@ export default class AWSPolicies {
           AppLogger.info(`Policy ${policyName} created successfully`, true);
           updateStatusFile(projectName, 'policy', 'success');
         }
-      } catch (error: any) {
-        AppLogger.error(`Error in creating the policy: ${error.message}`, true);
+      } catch (error: unknown) {
+        AppLogger.error(
+          `Error in creating the policy: ${error instanceof Error ? error.message : String(error)}`,
+          true,
+        );
         updateStatusFile(projectName, 'policy', 'fail');
         process.exit(1);
       }

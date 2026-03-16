@@ -22,7 +22,7 @@ jest.mock('../../src/core/aws/aws-eks-nodegroup.js', () =>
 );
 
 describe('RestartTerraformProject.getProject', () => {
-  let mockCommand: any;
+  let mockCommand: { error: jest.Mock };
 
   beforeEach(() => {
     mockCommand = { error: jest.fn() };

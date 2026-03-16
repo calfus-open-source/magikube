@@ -1,5 +1,5 @@
 import { AppLogger } from '../../logger/appLogger.js';
-import { execSync, execFileSync, spawn } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { AzureSubscriptionInfo, AzureAccountInfo } from '../interface.js';
 
 /**
@@ -106,7 +106,7 @@ export async function loginWithServicePrincipal(
 
     // Use environment variable for secret to avoid shell exposure
     const loginCommand = `az login --service-principal --username "${clientId}" --password "$AZURE_SP_SECRET" --tenant "${tenantId}"`;
-    
+
     await azExecAsync(loginCommand, {
       env: { ...process.env, AZURE_SP_SECRET: clientSecret },
       timeout: 120000, // 2 minutes timeout for login
@@ -145,7 +145,7 @@ export async function logout(): Promise<boolean> {
 
 /**
  * Execute Azure CLI command asynchronously with timeout support.
- * 
+ *
  * @param command - Full Azure CLI command string (e.g., "az group create --name mygroup --location eastus")
  * @param options - Execution options
  * @param options.timeout - Timeout in milliseconds (default: 300000 = 5 minutes)
@@ -154,17 +154,17 @@ export async function logout(): Promise<boolean> {
  * @param options.signal - AbortSignal for cancellation support
  * @returns Promise resolving to stdout string (empty if stdio='inherit')
  * @throws AzureCommandError if command fails, times out, or is cancelled
- * 
+ *
  * @example
  * // With output capture (default)
  * const output = await azExecAsync('az account show --output json');
- * 
+ *
  * // With streaming output for long operations
- * await azExecAsync('az group delete --name mygroup --yes', { 
+ * await azExecAsync('az group delete --name mygroup --yes', {
  *   stdio: 'inherit',
  *   timeout: 300000 // 5 minutes
  * });
- * 
+ *
  * // With custom environment and timeout
  * await azExecAsync('az login --service-principal --username $CLIENT_ID --password $SECRET', {
  *   env: { ...process.env, CLIENT_ID: id, SECRET: secret },
@@ -190,7 +190,7 @@ export async function azExecAsync(
   return new Promise((resolve, reject) => {
     // Parse command into executable and args
     const args = command.split(/\s+/).slice(1); // Remove 'az' from command
-    
+
     const child = spawn('az', args, {
       env,
       stdio: stdio === 'inherit' ? 'inherit' : ['ignore', 'pipe', 'pipe'],

@@ -22,7 +22,7 @@ export interface CloudProject {
   runTerraformDestroyTemplate(
     projectPath: string,
     varFile?: string,
-    statusFile?: any,
+    statusFile?: { modules: Record<string, string> },
   ): Promise<void>;
 
   // SSH operations

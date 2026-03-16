@@ -1,4 +1,7 @@
-import { azExecAsync, AzureCommandError } from '../../../src/core/utils/azure-utils.js';
+import {
+  azExecAsync,
+  AzureCommandError,
+} from '../../../src/core/utils/azure-utils.js';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 
@@ -7,19 +10,27 @@ jest.mock('child_process');
 
 describe('azExecAsync', () => {
   let mockSpawn: jest.MockedFunction<typeof spawn>;
-  let mockChildProcess: any;
+  let mockChildProcess: EventEmitter & {
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+    kill: jest.Mock;
+    killed: boolean;
+  };
 
   beforeEach(() => {
     mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
-    
-    // Create a mock child process that extends EventEmitter
-    mockChildProcess = new EventEmitter();
-    mockChildProcess.stdout = new EventEmitter();
-    mockChildProcess.stderr = new EventEmitter();
-    mockChildProcess.kill = jest.fn();
-    mockChildProcess.killed = false;
 
-    mockSpawn.mockReturnValue(mockChildProcess as any);
+    // Create a mock child process that extends EventEmitter
+    const proc = new EventEmitter() as typeof mockChildProcess;
+    proc.stdout = new EventEmitter();
+    proc.stderr = new EventEmitter();
+    proc.kill = jest.fn();
+    proc.killed = false;
+    mockChildProcess = proc;
+
+    mockSpawn.mockReturnValue(
+      mockChildProcess as unknown as ReturnType<typeof spawn>,
+    );
   });
 
   afterEach(() => {
@@ -32,17 +43,26 @@ describe('azExecAsync', () => {
 
       // Simulate successful execution
       setTimeout(() => {
-        mockChildProcess.stdout.emit('data', Buffer.from('{"id": "test-subscription"}'));
+        mockChildProcess.stdout.emit(
+          'data',
+          Buffer.from('{"id": "test-subscription"}'),
+        );
         mockChildProcess.emit('close', 0);
       }, 10);
 
       const result = await promise;
       expect(result).toBe('{"id": "test-subscription"}');
-      expect(mockSpawn).toHaveBeenCalledWith('az', ['account', 'show', '--output', 'json'], expect.any(Object));
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'az',
+        ['account', 'show', '--output', 'json'],
+        expect.any(Object),
+      );
     });
 
     it('should return empty string when stdio is inherit', async () => {
-      const promise = azExecAsync('az group delete --name test --yes', { stdio: 'inherit' });
+      const promise = azExecAsync('az group delete --name test --yes', {
+        stdio: 'inherit',
+      });
 
       setTimeout(() => {
         mockChildProcess.emit('close', 0);
@@ -67,9 +87,12 @@ describe('azExecAsync', () => {
     });
 
     it('should pass custom environment variables', async () => {
-      const promise = azExecAsync('az login --service-principal --username test --password "$SECRET"', {
-        env: { ...process.env, SECRET: 'my-secret' },
-      });
+      const promise = azExecAsync(
+        'az login --service-principal --username test --password "$SECRET"',
+        {
+          env: { ...process.env, SECRET: 'my-secret' },
+        },
+      );
 
       setTimeout(() => {
         mockChildProcess.emit('close', 0);
@@ -89,10 +112,15 @@ describe('azExecAsync', () => {
 
   describe('Failure cases', () => {
     it('should reject with AzureCommandError on non-zero exit code', async () => {
-      const promise = azExecAsync('az group create --name test --location eastus');
+      const promise = azExecAsync(
+        'az group create --name test --location eastus',
+      );
 
       setTimeout(() => {
-        mockChildProcess.stderr.emit('data', Buffer.from('Resource already exists'));
+        mockChildProcess.stderr.emit(
+          'data',
+          Buffer.from('Resource already exists'),
+        );
         mockChildProcess.emit('close', 1);
       }, 10);
 
@@ -125,8 +153,14 @@ describe('azExecAsync', () => {
       const promise = azExecAsync('az storage account create --name test');
 
       setTimeout(() => {
-        mockChildProcess.stdout.emit('data', Buffer.from('Creating storage account...'));
-        mockChildProcess.stderr.emit('data', Buffer.from('Error: Invalid name'));
+        mockChildProcess.stdout.emit(
+          'data',
+          Buffer.from('Creating storage account...'),
+        );
+        mockChildProcess.stderr.emit(
+          'data',
+          Buffer.from('Error: Invalid name'),
+        );
         mockChildProcess.emit('close', 1);
       }, 10);
 
@@ -189,7 +223,7 @@ describe('azExecAsync', () => {
       await jest.runAllTimersAsync();
 
       await expect(promise).rejects.toThrow(AzureCommandError);
-      
+
       // Should be called twice: once with SIGTERM, once with SIGKILL
       expect(mockChildProcess.kill).toHaveBeenCalledTimes(2);
       expect(mockChildProcess.kill).toHaveBeenNthCalledWith(1, 'SIGTERM');
@@ -264,12 +298,15 @@ describe('azExecAsync', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(AzureCommandError);
         const azError = error as AzureCommandError;
-        
+
         // Error should contain the secret in stderr
         expect(azError.stderr).toContain(secret);
-        
+
         // Caller can redact it
-        const sanitized = azError.stderr.replace(new RegExp(secret, 'g'), '[REDACTED]');
+        const sanitized = azError.stderr.replace(
+          new RegExp(secret, 'g'),
+          '[REDACTED]',
+        );
         expect(sanitized).not.toContain(secret);
         expect(sanitized).toContain('[REDACTED]');
       }
@@ -330,13 +367,24 @@ describe('azExecAsync', () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'az',
-        ['group', 'create', '--name', 'my-rg', '--location', 'eastus', '--tags', 'env=prod'],
+        [
+          'group',
+          'create',
+          '--name',
+          'my-rg',
+          '--location',
+          'eastus',
+          '--tags',
+          'env=prod',
+        ],
         expect.any(Object),
       );
     });
 
     it('should handle commands with quoted arguments', async () => {
-      const promise = azExecAsync('az group create --name "my resource group" --location eastus');
+      const promise = azExecAsync(
+        'az group create --name "my resource group" --location eastus',
+      );
 
       process.nextTick(() => {
         mockChildProcess.emit('close', 0);
@@ -346,7 +394,16 @@ describe('azExecAsync', () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'az',
-        ['group', 'create', '--name', '"my', 'resource', 'group"', '--location', 'eastus'],
+        [
+          'group',
+          'create',
+          '--name',
+          '"my',
+          'resource',
+          'group"',
+          '--location',
+          'eastus',
+        ],
         expect.any(Object),
       );
     });

@@ -10,8 +10,9 @@ import {
   awsSupportedRegions,
   azureSupportedRegions,
 } from '../core/constants/constants.js';
+import { DistinctQuestion } from 'inquirer';
 
-const productionPrompts: any[] = [
+const productionPrompts: DistinctQuestion[] = [
   {
     choices: ['production', 'sandbox'],
     message: 'Select Lifecycle(s):',
@@ -20,7 +21,7 @@ const productionPrompts: any[] = [
   },
 ];
 
-const nonProductionPrompts: any[] = [
+const nonProductionPrompts: DistinctQuestion[] = [
   {
     choices: ['dev', 'test', 'uat'],
     message: 'Select Lifecycle(s):',
@@ -28,7 +29,7 @@ const nonProductionPrompts: any[] = [
     type: 'checkbox',
   },
 ];
-const awsRegion: any[] = [
+const awsRegion: DistinctQuestion[] = [
   {
     message: 'Select a Region: ',
     name: 'aws_region',
@@ -47,7 +48,7 @@ const awsRegion: any[] = [
   },
 ];
 
-const awsProfile: any[] = [
+const awsProfile: DistinctQuestion[] = [
   {
     message: 'Enter AWS profile to use: ',
     name: 'aws_profile',
@@ -55,7 +56,7 @@ const awsProfile: any[] = [
     default: 'sample',
   },
 ];
-const awsPrompts: any[] = [
+const awsPrompts: DistinctQuestion[] = [
   {
     message: 'Select a Region: ',
     name: 'aws_region',
@@ -98,7 +99,7 @@ const awsPrompts: any[] = [
       SystemConfig.getInstance().getConfig().source_code_repository,
   },
 ];
-const sourceCodeRepositories: any[] = [
+const sourceCodeRepositories: DistinctQuestion[] = [
   {
     message: 'Source code repository: ',
     name: 'source_code_repository',
@@ -114,7 +115,7 @@ const sourceCodeRepositories: any[] = [
   },
 ];
 
-const k8sPrompts: any[] = [
+const k8sPrompts: DistinctQuestion[] = [
   {
     message: 'Enter the type of worker instance: ',
     name: 'instance_type',
@@ -141,7 +142,7 @@ const k8sPrompts: any[] = [
   },
 ];
 
-const githubPrompts: any[] = [
+const githubPrompts: DistinctQuestion[] = [
   {
     message: 'Enter GitHub Organization Name: ',
     name: 'github_owner',
@@ -168,7 +169,7 @@ const githubPrompts: any[] = [
   },
 ];
 
-const _codeCommitPrompts: any[] = [
+const _codeCommitPrompts: DistinctQuestion[] = [
   {
     message: 'Enter Name for Frontend Repo: ',
     name: 'frontend_repo_codecommit',
@@ -183,7 +184,7 @@ const _codeCommitPrompts: any[] = [
   },
 ];
 
-const _vpcPrompt: any[] = [
+const _vpcPrompt: DistinctQuestion[] = [
   {
     choices: [],
     message: 'Select the Vpc:',
@@ -192,7 +193,7 @@ const _vpcPrompt: any[] = [
   },
 ];
 
-const cidrPrompt: any[] = [
+const cidrPrompt: DistinctQuestion[] = [
   {
     message: 'Enter the CIDR Block (e.g., 10.0.0.0/16): ',
     name: 'cidrBlock',
@@ -224,7 +225,7 @@ const cidrPrompt: any[] = [
   },
 ];
 
-const domainPrompt: any[] = [
+const domainPrompt: DistinctQuestion[] = [
   {
     message: 'Enter the Domain Name: ',
     name: 'domain',
@@ -232,7 +233,7 @@ const domainPrompt: any[] = [
   },
 ];
 
-const serviceNamePrompt: any[] = [
+const serviceNamePrompt: DistinctQuestion[] = [
   {
     message: 'Enter the Service Name: ',
     name: 'service_name',
@@ -246,7 +247,7 @@ const serviceNamePrompt: any[] = [
   },
 ];
 
-const microServicePrompts: any[] = [
+const microServicePrompts: DistinctQuestion[] = [
   {
     choices: [
       'frontend-service',
@@ -261,7 +262,7 @@ const microServicePrompts: any[] = [
   },
 ];
 
-const openAIApiKeyPrompt: any[] = [
+const openAIApiKeyPrompt: DistinctQuestion[] = [
   {
     message: 'Enter Open AI API key: ',
     name: 'open_ai_api_key',
@@ -277,7 +278,7 @@ enum ApplicationType {
   NODE = 'node',
 }
 
-const azureRegion: any[] = [
+const azureRegion: DistinctQuestion[] = [
   {
     message: 'Select an Azure Location: ',
     name: 'azure_location',
@@ -296,7 +297,7 @@ const azureRegion: any[] = [
   },
 ];
 
-const azureProfile: any[] = [
+const azureProfile: DistinctQuestion[] = [
   {
     message: 'Enter Azure profile to use: ',
     name: 'azure_profile',
@@ -305,7 +306,7 @@ const azureProfile: any[] = [
   },
 ];
 
-const azurePrompts: any[] = [
+const azurePrompts: DistinctQuestion[] = [
   {
     message: 'Select an Azure Location: ',
     name: 'azure_location',
@@ -340,7 +341,7 @@ const azurePrompts: any[] = [
 ];
 
 export default class PromptGenerator {
-  getCloudProvider(): any[] {
+  getCloudProvider(): DistinctQuestion[] {
     return [
       {
         choices: [
@@ -356,7 +357,7 @@ export default class PromptGenerator {
     ];
   }
 
-  getEnvironment(): any[] {
+  getEnvironment(): DistinctQuestion[] {
     return [
       {
         choices: [Environment.NON_PRODUCTION, Environment.PRODUCTION],
@@ -367,33 +368,33 @@ export default class PromptGenerator {
     ];
   }
 
-  getLifecycles(environment: Environment): any[] {
+  getLifecycles(environment: Environment): DistinctQuestion[] {
     return environment === Environment.PRODUCTION
       ? productionPrompts
       : nonProductionPrompts;
   }
 
-  getRegion(): any[] {
+  getRegion(): DistinctQuestion[] {
     return awsRegion;
   }
 
-  getAwsProfile(): any[] {
+  getAwsProfile(): DistinctQuestion[] {
     return awsProfile;
   }
 
-  getAzureRegion(): any[] {
+  getAzureRegion(): DistinctQuestion[] {
     return azureRegion;
   }
 
-  getAzureProfile(): any[] {
+  getAzureProfile(): DistinctQuestion[] {
     return azureProfile;
   }
 
-  getMicroService(): any[] {
+  getMicroService(): DistinctQuestion[] {
     return microServicePrompts;
   }
 
-  getCreatedServices(services: string[]): any[] {
+  getCreatedServices(services: string[]): DistinctQuestion[] {
     return [
       {
         type: 'list',
@@ -410,7 +411,7 @@ export default class PromptGenerator {
     ];
   }
 
-  getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
+  getCloudProviderPrompts(cloudProvider: CloudProvider): DistinctQuestion[] {
     if (cloudProvider === CloudProvider.AWS) {
       return awsPrompts;
     } else if (cloudProvider === CloudProvider.AZURE) {
@@ -433,11 +434,11 @@ export default class PromptGenerator {
     return sourceCodeRepositories;
   }
 
-  getClusterPrompts(clusterType: string): any[] {
+  getClusterPrompts(clusterType: string): DistinctQuestion[] {
     return clusterType === 'k8s' ? k8sPrompts : [];
   }
 
-  getVersionControlPrompts(versionControl: string): any[] {
+  getVersionControlPrompts(versionControl: string): DistinctQuestion[] {
     if (versionControl === VersionControl.GITHUB) {
       return githubPrompts;
     } else if (versionControl === VersionControl.CODECOMMIT) {
@@ -456,14 +457,14 @@ export default class PromptGenerator {
     }
   }
 
-  getCIDRPrompt(): any[] {
+  getCIDRPrompt(): DistinctQuestion[] {
     return cidrPrompt;
   }
 
-  // getVPCPrompt(): any[] {
+  // getVPCPrompt(): DistinctQuestion[] {
   //   return vpcPrompt;
   // }
-  getVPCPrompt(vpcChoices: string[]): any[] {
+  getVPCPrompt(vpcChoices: string[]): DistinctQuestion[] {
     return [
       {
         type: 'list',
@@ -480,11 +481,11 @@ export default class PromptGenerator {
     ];
   }
 
-  getDomainPrompt(): any[] {
+  getDomainPrompt(): DistinctQuestion[] {
     return domainPrompt;
   }
 
-  getFrontendApplicationType(): any[] {
+  getFrontendApplicationType(): DistinctQuestion[] {
     return [
       {
         choices: [ApplicationType.REACT, ApplicationType.NEXT],
@@ -495,7 +496,7 @@ export default class PromptGenerator {
     ];
   }
 
-  getBackendApplicationType(): any[] {
+  getBackendApplicationType(): DistinctQuestion[] {
     return [
       {
         choices: [
@@ -510,11 +511,11 @@ export default class PromptGenerator {
     ];
   }
 
-  getgenAIApplication(): any[] {
+  getgenAIApplication(): DistinctQuestion[] {
     return openAIApiKeyPrompt;
   }
 
-  getServiceName(): any[] {
+  getServiceName(): DistinctQuestion[] {
     return serviceNamePrompt;
   }
 }

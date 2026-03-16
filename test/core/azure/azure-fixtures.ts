@@ -1,6 +1,6 @@
 /**
  * Azure Test Fixtures
- * 
+ *
  * Centralized mock data and utilities for Azure-related tests.
  * Azure implementation uses Azure CLI commands via execSync rather than SDK clients,
  * so these fixtures focus on CLI command responses and utility function mocking.
@@ -178,7 +178,7 @@ export function createMockAzureLoginResponse(): string {
 /**
  * Creates a mock execSync implementation that returns Azure CLI-like responses
  * based on the command executed.
- * 
+ *
  * @param commandMap - Map of command patterns to responses
  * @returns Mock function that can be passed to jest.mock
  */
@@ -234,7 +234,9 @@ export function createMockAzureUtils() {
 /**
  * Helper to create a mock Azure project configuration
  */
-export function createMockAzureProjectConfig(override?: any) {
+export function createMockAzureProjectConfig(
+  override?: Record<string, unknown>,
+) {
   return {
     project_name: 'test-project',
     command: 'new',
@@ -264,7 +266,7 @@ export function createMockAzureTerraformBackend() {
 /**
  * Helper to create mock Azure AKS cluster configuration
  */
-export function createMockAzureAKSConfig(override?: any) {
+export function createMockAzureAKSConfig(override?: Record<string, unknown>) {
   return {
     name: 'test-aks-cluster',
     resourceGroup: 'test-aks-rg',
@@ -284,7 +286,7 @@ export function createMockAzureAKSConfig(override?: any) {
 export function assertAzureCliCommandCalled(
   mockExecSync: jest.Mock,
   commandPattern: string | RegExp,
-  options?: any,
+  options?: Record<string, unknown>,
 ): void {
   const calls = mockExecSync.mock.calls;
   const found = calls.some((call) => {

@@ -1,7 +1,8 @@
 import fs from 'fs';
+import { ProjectConfig } from '../core/interface.js';
 
 class UserConfig {
-  private config: any = {};
+  private config: ProjectConfig = {};
 
   load(path: string): void {
     //load JSON from system.json form the path into this.config
@@ -9,7 +10,7 @@ class UserConfig {
     this.config = JSON.parse(data);
   }
 
-  getConfig(): any {
+  getConfig(): ProjectConfig {
     return this.config;
   }
 

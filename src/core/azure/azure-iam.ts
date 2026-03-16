@@ -62,9 +62,10 @@ export default class AzurePolicies {
             true,
           );
 
-          clientId = clientId || configClientId;
-          clientSecret = clientSecret || configClientSecret;
-          tenantId = tenantId || configTenantId;
+          clientId = clientId || (configClientId as string | undefined);
+          clientSecret =
+            clientSecret || (configClientSecret as string | undefined);
+          tenantId = tenantId || (configTenantId as string | undefined);
         }
 
         AppLogger.info('Final credential check:', true);

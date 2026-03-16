@@ -63,7 +63,7 @@ describe('setupAndPushServices', () => {
       genai_app_type: 'my-genAI-app',
       environment: 'dev',
     };
-    const configObject: any = {
+    const configObject: Record<string, Record<string, unknown>> = {
       common: {},
     };
 
@@ -101,7 +101,9 @@ describe('setupAndPushServices', () => {
       backend_app_type: 'my-node-app',
       node_app_name: 'node-app',
     };
-    const configObject: any = { common: {} };
+    const configObject: Record<string, Record<string, unknown>> = {
+      common: {},
+    };
 
     await setupAndPushServices(projectConfig, configObject);
 
@@ -120,7 +122,9 @@ describe('setupAndPushServices', () => {
       service_type: 'frontend-service',
       frontend_app_type: 'my-frontend-app',
     };
-    const configObject: any = { common: {} };
+    const configObject: Record<string, Record<string, unknown>> = {
+      common: {},
+    };
 
     await setupAndPushServices(projectConfig, configObject);
 
@@ -134,7 +138,9 @@ describe('setupAndPushServices', () => {
 
   it('should log error if setupService fails', async () => {
     const projectConfig = { command: 'new' };
-    const configObject: any = { common: {} };
+    const configObject: Record<string, Record<string, unknown>> = {
+      common: {},
+    };
 
     mockReadStatusFile.mockResolvedValue({
       services: { 'auth-service': '' },
@@ -158,7 +164,7 @@ describe('setupAndPushServices', () => {
       backend_app_type: 'node-app',
       node_app_name: 'node-app',
     };
-    const configObject: any = {
+    const configObject: Record<string, Record<string, unknown>> = {
       common: {},
     };
 

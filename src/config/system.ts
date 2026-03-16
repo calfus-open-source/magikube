@@ -1,8 +1,9 @@
 import fs from 'fs';
 import UserConfig from './user.js';
+import { ProjectConfig } from '../core/interface.js';
 
 class SystemConfig {
-  private config: any = {};
+  private config: ProjectConfig = {};
   private static _instance: SystemConfig;
   static getInstance(): SystemConfig {
     if (!SystemConfig._instance) {
@@ -38,7 +39,7 @@ class SystemConfig {
     }
   }
 
-  mergeConfigs(config: any): void {
+  mergeConfigs(config: ProjectConfig): void {
     const systemConfig = this.getConfig();
     for (const key in config) {
       if (Object.prototype.hasOwnProperty.call(config, key)) {
@@ -53,7 +54,7 @@ class SystemConfig {
     this.config = JSON.parse(data);
   }
 
-  getConfig(): any {
+  getConfig(): ProjectConfig {
     return this.config;
   }
 

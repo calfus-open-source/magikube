@@ -3,35 +3,45 @@ import { ManageRepository } from '../manage-repository.js';
 import CreateApplication from '../setup-application.js';
 import { readStatusFile } from './statusUpdater-utils.js';
 import { AppLogger } from '../../logger/appLogger.js';
+import { FullConfigObject, ProjectConfig } from '../interface.js';
+
+interface StatusFile {
+  services: Record<string, string>;
+  modules: Record<string, string>;
+}
 
 export async function setupAndPushServices(
-  projectConfig: any,
-  configObject: any,
+  projectConfig: ProjectConfig,
+  configObject: FullConfigObject,
 ) {
   let command: BaseCommand | undefined;
   const createApp = new CreateApplication(
     command as BaseCommand,
     projectConfig,
   );
-  const status = await readStatusFile(projectConfig, projectConfig.command);
+  const status = await readStatusFile(
+    projectConfig,
+    typeof projectConfig.command === 'string'
+      ? projectConfig.command
+      : undefined,
+  );
   try {
     if (projectConfig.command === 'new' || projectConfig.command === 'resume') {
       await setupServices(projectConfig, configObject, createApp, status);
     } else if (projectConfig.command === 'create') {
       await createService(projectConfig, configObject, createApp);
     }
-  } catch (error: any) {
-    AppLogger.error(
-      `An error occurred during the setup process:: ${error.message}`,
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    AppLogger.error(`An error occurred during the setup process:: ${message}`);
   }
 }
 
 async function setupServices(
-  projectConfig: any,
-  configObject: any,
+  projectConfig: ProjectConfig,
+  configObject: FullConfigObject,
   createApp: CreateApplication,
-  status: any,
+  status: StatusFile,
 ) {
   if (status.services['auth-service'] !== 'success') {
     await setupService(
@@ -63,8 +73,8 @@ async function setupServices(
     status.services['my-node-app'] !== 'success'
   ) {
     await handleServiceCreation(
-      projectConfig['backend_app_type'],
-      projectConfig['node_app_name'],
+      projectConfig['backend_app_type'] as string,
+      projectConfig['node_app_name'] as string,
       projectConfig,
       configObject,
       createApp,
@@ -72,7 +82,7 @@ async function setupServices(
   }
 
   if (projectConfig['frontend_app_type']) {
-    const frontendAppType = projectConfig['frontend_app_type'];
+    const frontendAppType = projectConfig['frontend_app_type'] as string;
     if (status.services[frontendAppType] !== 'success') {
       await handleServiceCreation(
         frontendAppType,
@@ -95,8 +105,8 @@ async function setupServices(
 }
 
 async function createService(
-  projectConfig: any,
-  configObject: any,
+  projectConfig: ProjectConfig,
+  configObject: FullConfigObject,
   createApp: CreateApplication,
 ) {
   if (projectConfig.service_type === 'auth-service') {
@@ -134,8 +144,8 @@ async function createService(
     projectConfig.service_type === 'backend-service'
   ) {
     await handleServiceCreation(
-      projectConfig['backend_app_type'],
-      projectConfig['node_app_name'],
+      projectConfig['backend_app_type'] as string,
+      projectConfig['node_app_name'] as string,
       projectConfig,
       configObject,
       createApp,
@@ -146,7 +156,7 @@ async function createService(
     projectConfig['frontend_app_type'] &&
     projectConfig.service_type === 'frontend-service'
   ) {
-    const frontendAppType = projectConfig['frontend_app_type'];
+    const frontendAppType = projectConfig['frontend_app_type'] as string;
     await handleServiceCreation(
       frontendAppType,
       frontendAppType,
@@ -161,7 +171,7 @@ async function setupService(
   serviceName: string,
   appType: string,
   setupFunction: () => Promise<boolean>,
-  configObject: any,
+  configObject: FullConfigObject,
   appName?: string,
 ) {
   try {
@@ -179,8 +189,8 @@ async function setupService(
 async function handleServiceCreation(
   appType: string,
   appName: string,
-  projectConfig: any,
-  configObject: any,
+  projectConfig: ProjectConfig,
+  configObject: FullConfigObject,
   createApp: CreateApplication,
 ) {
   try {

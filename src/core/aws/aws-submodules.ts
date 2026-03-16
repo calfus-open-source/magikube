@@ -15,8 +15,10 @@ export default class CommonSubModuleProject extends AWSProject {
     this.createMainFile(projectConfig);
   }
 
-  async createMainFile(projectConfig: any): Promise<void> {
-    const moduleTypesArray = Object.keys(projectConfig.modules);
+  async createMainFile(projectConfig: Record<string, unknown>): Promise<void> {
+    const moduleTypesArray = Object.keys(
+      projectConfig.modules as Record<string, unknown>,
+    );
     let lastModuleType = moduleTypesArray[moduleTypesArray.length - 1];
     const originalLastModule = lastModuleType;
 
@@ -33,7 +35,10 @@ export default class CommonSubModuleProject extends AWSProject {
       parentPath,
       'dist/templates/aws/predefined/submodule',
     );
-    const status = await readStatusFile(this.config, this.config.command);
+    const status = await readStatusFile(
+      this.config,
+      this.getConfigStringOrUndefined('command'),
+    );
 
     await this.createProviderFile(parentPath);
     const moduleStatus = status.modules[originalLastModule];

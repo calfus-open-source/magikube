@@ -1,12 +1,9 @@
 jest.setTimeout(30000);
 
-const originalSetImmediate = global.setImmediate;
 // Mock setImmediate to execute callbacks immediately
-const mockSetImmediate = (global.setImmediate = jest.fn(
-  (callback: (...args: unknown[]) => void) => {
-    callback();
-  },
-) as unknown as typeof setImmediate);
+global.setImmediate = jest.fn((callback: (...args: unknown[]) => void) => {
+  callback();
+}) as unknown as typeof setImmediate;
 
 // Mock child_process
 const mockSpawn = jest.fn();
@@ -23,21 +20,20 @@ jest.mock('../../../src/core/base-project.js', () => {
     __esModule: true,
     default: (() => {
       class BaseProjectMock {
-        constructor(command: any, config: any) {
-          (this as any).config = config;
-          (this as any).command = command;
+        config: Record<string, unknown>;
+        command: Record<string, unknown>;
+        constructor(
+          command: Record<string, unknown>,
+          config: Record<string, unknown>,
+        ) {
+          this.config = config;
+          this.command = command;
         }
+        createProject = jest.fn(() => Promise.resolve(true));
+        destroyProject = jest.fn(() => Promise.resolve(true));
+        createFile = jest.fn();
+        deleteFolder = jest.fn(() => Promise.resolve());
       }
-      (BaseProjectMock.prototype as any).createProject = jest.fn(() =>
-        Promise.resolve(true),
-      );
-      (BaseProjectMock.prototype as any).destroyProject = jest.fn(() =>
-        Promise.resolve(true),
-      );
-      (BaseProjectMock.prototype as any).createFile = jest.fn();
-      (BaseProjectMock.prototype as any).deleteFolder = jest.fn(() =>
-        Promise.resolve(),
-      );
       return BaseProjectMock;
     })(),
   };
@@ -118,27 +114,17 @@ jest.mock('fs', () => ({
 
 import AzureProject from '../../../src/core/azure/azure-project.js';
 import { AppLogger } from '../../../src/logger/appLogger.js';
-import { updateStatusFile } from '../../../src/core/utils/statusUpdater-utils.js';
 import SystemConfig from '../../../src/config/system.js';
-import AzureTerraformBackend from '../../../src/core/azure/azure-tf-backend.js';
-import AzurePolicies from '../../../src/core/azure/azure-iam.js';
-import { EventEmitter } from 'events';
-import {
-  createMockTerraformProcess,
-  simulateTerraformSuccess,
-  simulateTerraformError,
-  simulateTerraformProgress,
-  simulateSpawnError,
-} from '../../utils/terraformMock-utils.js';
+import { createMockTerraformProcess } from '../../utils/terraformMock-utils.js';
 import ProgressBar from '../../../src/logger/progressLogger.js';
 
 const mockExit = jest
   .spyOn(process, 'exit')
-  .mockImplementation((() => {}) as any);
+  .mockImplementation((() => {}) as unknown as (code?: number) => never);
 
 describe('AzureProject', () => {
-  let azureProject: any;
-  let mockCommand: any;
+  let azureProject: InstanceType<typeof AzureProject>;
+  let mockCommand: { id: string };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -634,9 +620,7 @@ describe('AzureProject', () => {
       const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
-      const destroyPromise = azureProject.runTerraformDestroy(
-        '/custom/path',
-      );
+      const destroyPromise = azureProject.runTerraformDestroy('/custom/path');
 
       setTimeout(() => {
         mockProcess.emit('close', 0);

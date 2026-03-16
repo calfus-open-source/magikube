@@ -87,11 +87,11 @@ jest.mock('../../../src/prompts/constants.js', () => ({
 import NewModule from '../../../src/commands/subCommands/module-command/index.js';
 
 describe('NewModule Command', () => {
-  let originalExit: any;
+  let originalExit: typeof process.exit;
 
   beforeEach(() => {
     originalExit = process.exit;
-    process.exit = jest.fn() as any;
+    process.exit = jest.fn() as unknown as typeof process.exit;
     jest.clearAllMocks();
   });
 
@@ -233,7 +233,7 @@ describe('NewModule Command', () => {
     });
 
     test('should set command to module in config', () => {
-      const config: any = { project_name: 'myapp' };
+      const config: Record<string, string> = { project_name: 'myapp' };
       config.command = 'module';
 
       expect(config.command).toBe('module');
@@ -273,7 +273,7 @@ describe('NewModule Command', () => {
     test('should warn when vpc module lacks cidrBlock', () => {
       const { AppLogger } = require('../../../src/logger/appLogger.js');
       const moduleType = 'vpc';
-      const responses: any = {};
+      const responses: Record<string, string> = {};
 
       if (moduleType === 'vpc' && !responses?.cidrBlock) {
         AppLogger.warn(`No cidrBlock provided for vpc module test`, true);
@@ -283,7 +283,7 @@ describe('NewModule Command', () => {
     });
 
     test('should handle domain responses from prompts', () => {
-      const config: any = { project_name: 'myapp' };
+      const config: Record<string, unknown> = { project_name: 'myapp' };
       const responses = { domain: 'example.com' };
 
       if (responses?.domain) {
@@ -419,7 +419,7 @@ describe('NewModule Command', () => {
 
       const terraform = await SubModuleTemplateProject.getProject({}, '');
       jest.clearAllMocks();
-      const config: any = { cloud_provider: 'gcp' };
+      const config: Record<string, string> = { cloud_provider: 'gcp' };
 
       if (config.cloud_provider === 'aws') {
         await terraform.AWSProfileActivate(config.aws_profile);
@@ -719,9 +719,9 @@ describe('NewModule Command', () => {
 
       try {
         throw new Error(error);
-      } catch (e: any) {
+      } catch (e: unknown) {
         AppLogger.error(
-          `Error applying Terraform for module: my-vpc, ${e.message}`,
+          `Error applying Terraform for module: my-vpc, ${(e as Error).message}`,
           true,
         );
       }
@@ -874,7 +874,7 @@ describe('NewModule Command', () => {
 
   describe('Domain Handling', () => {
     test('should initialize domains array if not present', () => {
-      const config: any = {};
+      const config: Record<string, unknown> = {};
       const responses = { domain: 'example.com' };
 
       if (responses?.domain) {
@@ -888,7 +888,7 @@ describe('NewModule Command', () => {
     });
 
     test('should add domain to existing domains array', () => {
-      const config: any = { domains: ['test.com'] };
+      const config: Record<string, unknown> = { domains: ['test.com'] };
       const responses = { domain: 'example.com' };
 
       if (responses?.domain) {
@@ -909,9 +909,9 @@ describe('NewModule Command', () => {
 
       try {
         throw error;
-      } catch (e: any) {
+      } catch (e: unknown) {
         AppLogger.error(
-          `Error applying Terraform for module: my-vpc, ${e.message}`,
+          `Error applying Terraform for module: my-vpc, ${(e as Error).message}`,
           true,
         );
       }
@@ -925,9 +925,9 @@ describe('NewModule Command', () => {
 
       try {
         throw error;
-      } catch (e: any) {
+      } catch (e: unknown) {
         AppLogger.error(
-          `An error occurred during the module creation process: ${e.message}`,
+          `An error occurred during the module creation process: ${(e as Error).message}`,
           true,
         );
       }

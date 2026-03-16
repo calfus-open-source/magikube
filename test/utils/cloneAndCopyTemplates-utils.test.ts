@@ -32,7 +32,7 @@ describe('cloneAndCopyTemplates', () => {
   });
 
   it('should clone and copy when dist and template dirs do NOT exist', async () => {
-    mockFs.existsSync.mockImplementation((_path: any) => false);
+    mockFs.existsSync.mockImplementation((_path: string) => false);
 
     await cloneAndCopyTemplates(undefined, 'aws');
     expect(mockExec).toHaveBeenCalledTimes(8); // mkdir + clone/copy/rm operations
@@ -48,7 +48,7 @@ describe('cloneAndCopyTemplates', () => {
   });
 
   it('should skip mkdir and clone if folders already exist', async () => {
-    mockFs.existsSync.mockImplementation((path: any) => {
+    mockFs.existsSync.mockImplementation((path: string) => {
       if (path === dist || path === dirInfra || path === dirTemplates)
         return true;
       return false;
@@ -82,8 +82,10 @@ describe('cloneAndCopyTemplates', () => {
     );
 
     expect(AppLogger.error).toHaveBeenCalledWith(
-      'An error occurred during the cloning and copying process:',
-      expect.any(Error),
+      expect.stringContaining(
+        'An error occurred during the cloning and copying process:',
+      ),
+      true,
     );
   });
 });

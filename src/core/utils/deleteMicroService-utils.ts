@@ -2,7 +2,10 @@ import { AppLogger } from '../../logger/appLogger.js';
 import { executeCommandWithRetry } from './executeCommandWithRetry-utils.js';
 import { deleteArrayProperty } from './updateDotMagikube-utils.js';
 
-export async function deleteMicroservice(resp: any, createdServiceResp: any) {
+export async function deleteMicroservice(
+  resp: Record<string, string | string[]>,
+  createdServiceResp: Record<string, string>,
+) {
   try {
     const repoName = `${resp.project_name}-${createdServiceResp.service_Name}-app`;
     const team = `${createdServiceResp.service_Name}-team`;
@@ -32,7 +35,10 @@ export async function deleteMicroservice(resp: any, createdServiceResp: any) {
     AppLogger.info(`Deleting repository: ${repoName}`, true);
     await executeCommandWithRetry(deleteRepoCommand, { cwd: process.cwd() }, 1);
     AppLogger.info(`Repository ${repoName} deleted successfully.`, true);
-    deleteArrayProperty(resp.service_names, createdServiceResp.service_Name);
+    deleteArrayProperty(
+      resp.service_names as string[],
+      createdServiceResp.service_Name,
+    );
     return resp;
   } catch (error) {
     AppLogger.error(

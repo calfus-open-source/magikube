@@ -2,7 +2,10 @@ import AzureTerraformBackend from '../../../src/core/azure/azure-tf-backend.js';
 import { AppLogger } from '../../../src/logger/appLogger.js';
 import { execSync } from 'child_process';
 import { executeCommandWithRetry } from '../../../src/core/utils/executeCommandWithRetry-utils.js';
-import { checkAzureLogin, azExecAsync } from '../../../src/core/utils/azure-utils.js';
+import {
+  checkAzureLogin,
+  azExecAsync,
+} from '../../../src/core/utils/azure-utils.js';
 
 jest.mock('child_process', () => ({
   execSync: jest.fn(),
@@ -27,12 +30,18 @@ jest.mock('../../../src/core/utils/azure-utils.js', () => ({
 }));
 
 describe('AzureTerraformBackend', () => {
-  let mockProject: any;
+  let mockProject: {
+    generateContent: jest.Mock;
+    createFile: jest.Mock;
+    config: Record<string, string>;
+  };
   const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
   const mockCheckAzureLogin = checkAzureLogin as jest.MockedFunction<
     typeof checkAzureLogin
   >;
-  const mockAzExecAsync = azExecAsync as jest.MockedFunction<typeof azExecAsync>;
+  const mockAzExecAsync = azExecAsync as jest.MockedFunction<
+    typeof azExecAsync
+  >;
   const mockExecuteCommandWithRetry =
     executeCommandWithRetry as jest.MockedFunction<
       typeof executeCommandWithRetry
@@ -53,27 +62,29 @@ describe('AzureTerraformBackend', () => {
 
     mockCheckAzureLogin.mockReturnValue(true);
     mockAzExecAsync.mockResolvedValue('Success');
-    mockExecSync.mockImplementation((command: string, options?: any) => {
-      if (typeof command === 'string') {
-        // "Exists?" checks should throw to trigger the create path
-        if (
-          command.includes('az group show') ||
-          command.includes('az storage account show') ||
-          command.includes('az storage container show')
-        ) {
-          throw new Error('Resource not found');
+    mockExecSync.mockImplementation(
+      (command: string, options?: Record<string, unknown>) => {
+        if (typeof command === 'string') {
+          // "Exists?" checks should throw to trigger the create path
+          if (
+            command.includes('az group show') ||
+            command.includes('az storage account show') ||
+            command.includes('az storage container show')
+          ) {
+            throw new Error('Resource not found');
+          }
+          // Storage key retrieval (needs .trim())
+          if (command.includes('az storage account keys list')) {
+            return 'mock-storage-key-value';
+          }
+          // Create commands with encoding: utf8 return strings
+          if (options?.encoding === 'utf8') {
+            return 'Success';
+          }
         }
-        // Storage key retrieval (needs .trim())
-        if (command.includes('az storage account keys list')) {
-          return 'mock-storage-key-value';
-        }
-        // Create commands with encoding: utf8 return strings
-        if (options?.encoding === 'utf8') {
-          return 'Success';
-        }
-      }
-      return Buffer.from('{}');
-    });
+        return Buffer.from('{}');
+      },
+    );
     mockExecuteCommandWithRetry.mockResolvedValue(undefined);
   });
 
@@ -225,8 +236,7 @@ describe('AzureTerraformBackend', () => {
         if (command.includes('az storage account show'))
           throw new Error('Not found');
         if (command.includes('az storage account create')) return 'Success';
-        if (command.includes('az storage account keys list'))
-          return 'mock-key';
+        if (command.includes('az storage account keys list')) return 'mock-key';
         if (command.includes('az storage container show'))
           throw new Error('Not found');
         if (command.includes('az storage container create'))

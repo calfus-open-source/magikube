@@ -82,10 +82,10 @@ export async function cloneAndCopyTemplates(
       1,
     );
     AppLogger.info('Templates cloned and copied successfully.', true);
-  } catch (error: any) {
+  } catch (error: unknown) {
     AppLogger.error(
-      'An error occurred during the cloning and copying process:',
-      error,
+      `An error occurred during the cloning and copying process: ${error}`,
+      true,
     );
     throw error; // Re-throw the error for further handling if needed
   }

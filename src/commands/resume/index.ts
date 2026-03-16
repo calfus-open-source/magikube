@@ -76,9 +76,11 @@ export default class RestartProject extends BaseCommand {
 
         // Activate the AWS profile
         if (project_config.cloud_provider === 'aws') {
-          await (terraform as any).AWSProfileActivate(
-            project_config.aws_profile,
-          );
+          await (
+            terraform as unknown as {
+              AWSProfileActivate(profile: string): Promise<void>;
+            }
+          ).AWSProfileActivate(project_config.aws_profile as string);
         }
 
         // Setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
@@ -91,7 +93,15 @@ export default class RestartProject extends BaseCommand {
           await new Promise((resolve) => setTimeout(resolve, 15000));
 
           // Initialize terraform
-          await (terraform as any).runTerraformInit(
+          await (
+            terraform as unknown as {
+              runTerraformInit(
+                path: string,
+                backend: string,
+                name: string,
+              ): Promise<void>;
+            }
+          ).runTerraformInit(
             `${process.cwd()}/${projectName}/infrastructure`,
             `${project_config['environment']}-config.tfvars`,
             projectName,
@@ -141,7 +151,15 @@ export default class RestartProject extends BaseCommand {
 
                   updateStatusFile(projectName, module, 'fail');
 
-                  await (terraform as any).runTerraformApply(
+                  await (
+                    terraform as unknown as {
+                      runTerraformApply(
+                        path: string,
+                        module: string,
+                        varFile: string,
+                      ): Promise<void>;
+                    }
+                  ).runTerraformApply(
                     `${process.cwd()}/${projectName}/infrastructure`,
                     module,
                     'terraform.tfvars',
@@ -172,16 +190,14 @@ export default class RestartProject extends BaseCommand {
           }
         }
 
-        const {
-          github_access_token: token,
-          git_user_name: userName,
-          github_owner: orgName,
-          source_code_repository: sourceCodeRepo,
-          aws_region: _region,
-          aws_access_key_id: _awsAccessKey,
-          aws_secret_access_key: _awsSecretKey,
-          environment: environment,
-        } = project_config;
+        const token = project_config.github_access_token as string;
+        const userName = project_config.git_user_name as string;
+        const orgName = project_config.github_owner as string;
+        const sourceCodeRepo = project_config.source_code_repository as string;
+        const _region = project_config.aws_region as string;
+        const _awsAccessKey = project_config.aws_access_key_id as string;
+        const _awsSecretKey = project_config.aws_secret_access_key as string;
+        const environment = project_config.environment as string;
 
         const configObject: FullConfigObject = {
           common: {

@@ -2,10 +2,10 @@ import { LoggerGenerator } from './LoggerGenerator.js';
 import fs from 'fs';
 import path from 'path';
 import 'winston-daily-rotate-file';
-import winston, { createLogger } from 'winston';
+import winston, { createLogger, Logger } from 'winston';
 export class AppLogger {
-  private static fileLogger: any;
-  private static consoleLogger: any;
+  private static fileLogger: Logger;
+  private static consoleLogger: Logger;
   private static logDirectory: string;
 
   private static createLogFolderIfNotExists() {
@@ -115,28 +115,28 @@ export class AppLogger {
     });
   }
 
-  public static debug(value: any, enableConsole: boolean = false) {
+  public static debug(value: string, enableConsole: boolean = false) {
     this.fileLogger.log('debug', value);
     if (enableConsole) {
       this.consoleLogger.log('debug', value);
     }
   }
 
-  public static error(value: any, enableConsole: boolean = true) {
+  public static error(value: string, enableConsole: boolean = true) {
     this.fileLogger.log('error', value);
     if (enableConsole) {
       this.consoleLogger.log('error', value);
     }
   }
 
-  public static warn(value: any, enableConsole: boolean = false) {
+  public static warn(value: string, enableConsole: boolean = false) {
     this.fileLogger.log('warn', value);
     if (enableConsole) {
       this.consoleLogger.log('warn', value);
     }
   }
 
-  public static info(value: any, enableConsole: boolean = false) {
+  public static info(value: string, enableConsole: boolean = false) {
     this.fileLogger.log('info', value);
     if (enableConsole) {
       this.consoleLogger.log('info', value);

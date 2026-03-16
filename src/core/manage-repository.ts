@@ -23,16 +23,14 @@ export class ManageRepository {
     } = configObject.common;
 
     const projectConfig = SystemConfig.getInstance().getConfig();
-    const {
-      aws_region,
-      cloud_provider,
-      aws_access_key_id,
-      aws_secret_access_key,
-      azure_tenant_id,
-      azure_subscription_id,
-      azure_client_id,
-      azure_client_secret,
-    } = projectConfig;
+    const aws_region = projectConfig.aws_region as string;
+    const cloud_provider = projectConfig.cloud_provider as string;
+    const aws_access_key_id = projectConfig.aws_access_key_id as string;
+    const aws_secret_access_key = projectConfig.aws_secret_access_key as string;
+    const azure_tenant_id = projectConfig.azure_tenant_id as string;
+    const azure_subscription_id = projectConfig.azure_subscription_id as string;
+    const azure_client_id = projectConfig.azure_client_id as string;
+    const azure_client_secret = projectConfig.azure_client_secret as string;
 
     let repoSetupError = false;
 

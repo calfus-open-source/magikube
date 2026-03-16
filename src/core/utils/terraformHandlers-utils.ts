@@ -4,13 +4,23 @@ import { aws_modules, azure_modules } from '../../core/constants/constants.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { ManageRepository } from '../manage-repository.js';
 import { playbooks } from '../../core/constants/constants.js';
+import { CloudProject } from '../interfaces/cloud-project.js';
+import { FullConfigObject } from '../interface.js';
+
+interface TerraformWithExtras extends CloudProject {
+  startSSHProcess(): Promise<void>;
+  stopSSHProcess(): Promise<void>;
+  getMasterIp?(projectPath: string): Promise<string>;
+  editKubeConfigFile(path: string): Promise<void>;
+  runAnsiblePlaybook(playbook: string, projectPath: string): Promise<void>;
+}
 
 export const handleEKSandAKS = async (
   projectName: string,
-  responses: any,
-  terraform: any,
-  setupGitopsServiceStatus: any,
-  configObject: any,
+  responses: Record<string, string>,
+  terraform: TerraformWithExtras | null,
+  setupGitopsServiceStatus: boolean,
+  configObject: FullConfigObject,
 ) => {
   await new Promise((resolve) => setTimeout(resolve, 15000));
   await terraform?.runTerraformInit(
@@ -59,10 +69,10 @@ export const handleEKSandAKS = async (
 
 export const handleK8s = async (
   projectName: string,
-  responses: any,
-  terraform: any,
-  setupGitopsServiceStatus: any,
-  configObject: any,
+  responses: Record<string, string>,
+  terraform: TerraformWithExtras | null,
+  setupGitopsServiceStatus: boolean,
+  configObject: FullConfigObject,
 ) => {
   await new Promise((resolve) => setTimeout(resolve, 20000));
   await terraform?.runTerraformInit(
@@ -97,7 +107,7 @@ export const handleK8s = async (
     await terraform?.runAnsiblePlaybook(playbook, projectPath);
   }
 
-  const masterIP = await terraform?.getMasterIp(
+  const masterIP = await terraform?.getMasterIp?.(
     process.cwd() + '/' + projectName + '/infrastructure',
   );
   await terraform?.editKubeConfigFile(

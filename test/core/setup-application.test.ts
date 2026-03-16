@@ -23,11 +23,11 @@ jest.mock('path', () => ({
 
 // Mock process.exit to prevent tests from crashing the environment
 const _originalExit = process.exit;
-process.exit = jest.fn() as any;
+process.exit = jest.fn() as unknown as typeof process.exit;
 const mockExit = process.exit as jest.Mock;
 
 // --- Test Setup ---
-const MockCommand = {} as any;
+const MockCommand = {} as Record<string, unknown>;
 const mockBaseProjectConfig = {
   project_name: 'test-project',
   environment: 'dev',
@@ -46,7 +46,7 @@ SystemConfig.getInstance = jest.fn().mockReturnValue({
   getConfig: mockSystemConfigGetConfig,
 });
 
-let createApplicationInstance: any;
+let createApplicationInstance: InstanceType<typeof CreateApplication>;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -166,7 +166,7 @@ describe('CreateApplication.setupKeyCloak', () => {
     // call for the Dockerfile exists among the recorded calls instead
     // of relying on call order.
     const dockerCalled = createApplicationInstance.createFile.mock.calls.some(
-      (call: any) =>
+      (call: [string, string, string, boolean]) =>
         call[0] === 'Dockerfile' &&
         String(call[1]).includes('dist/keycloak/Dockerfile.liquid') &&
         call[2] === createPathPrefix &&
@@ -439,7 +439,10 @@ describe('CreateApplication.setupGitops', () => {
 // handleAppCreation()
 // ----------------------------------------------------
 describe('CreateApplication.handleAppCreation', () => {
-  const mockConfigObject: any = { projectId: 1, common: {} };
+  const mockConfigObject: Record<string, unknown> = {
+    projectId: 1,
+    common: {},
+  };
 
   beforeEach(() => {
     (ManageRepository.pushCode as jest.Mock).mockResolvedValue(null);

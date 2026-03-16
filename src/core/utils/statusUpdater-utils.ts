@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { AppLogger } from '../../logger/appLogger.js';
 import SystemConfig from '../../config/system.js';
+import { ProjectConfig } from '../interface.js';
 
 export function initializeStatusFile(
   projectName: string,
@@ -16,8 +17,8 @@ export function initializeStatusFile(
   }
 
   let statusData: {
-    modules: { [key: string]: any };
-    services: { [key: string]: any };
+    modules: { [key: string]: string };
+    services: { [key: string]: string };
   } = {
     modules: {},
     services: {},
@@ -62,7 +63,7 @@ export function updateStatusFile(
   } else {
     statusFilePath = path.join(
       process.cwd(),
-      projectConfig.project_name,
+      projectConfig.project_name as string,
       'status.json',
     );
   }
@@ -99,14 +100,14 @@ export function updateStatusFile(
 }
 
 // To reade the status.json file
-export function readStatusFile(projectConfig: any, command?: any) {
+export function readStatusFile(projectConfig: ProjectConfig, command?: string) {
   let statusFilePath;
   if (command === 'module' || command === 'create') {
     statusFilePath = path.join(process.cwd(), 'status.json');
   } else {
     statusFilePath = path.join(
       process.cwd(),
-      projectConfig.project_name,
+      projectConfig.project_name as string,
       'status.json',
     );
   }

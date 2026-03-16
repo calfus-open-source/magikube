@@ -27,7 +27,9 @@ describe('UserConfig', () => {
   });
 
   test('getConfig() should return the current config', () => {
-    (instance as any).config = { key: 'value' };
+    (instance as unknown as { config: Record<string, string> }).config = {
+      key: 'value',
+    };
 
     expect(instance.getConfig()).toEqual({ key: 'value' });
   });

@@ -5,7 +5,6 @@ import {
   MOCK_AZURE_SUBSCRIPTION,
   createMockAzureAccountShowResponse,
   createMockAzureValidateSubscriptionResponse,
-  createMockAzureUtils,
 } from './azure-fixtures.js';
 
 jest.mock('child_process', () => ({
@@ -37,7 +36,10 @@ import AzureAccount from '../../../src/core/azure/azure-account.js';
 import * as azureUtils from '../../../src/core/utils/azure-utils.js';
 
 describe('AzureAccount', () => {
-  let mockProject: any;
+  let mockProject: {
+    generateContent: jest.Mock;
+    config: Record<string, string>;
+  };
   const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
   beforeEach(() => {
@@ -69,11 +71,17 @@ describe('AzureAccount', () => {
 
     mockExecSync.mockImplementation((command: string) => {
       if (typeof command === 'string') {
-        if (command.includes('az account show') && command.includes('--query')) {
+        if (
+          command.includes('az account show') &&
+          command.includes('--query')
+        ) {
           // validateSubscription path expects {Name, State} JSON string
           return createMockAzureValidateSubscriptionResponse();
         }
-        if (command.includes('az account show') && command.includes('--output tsv')) {
+        if (
+          command.includes('az account show') &&
+          command.includes('--output tsv')
+        ) {
           // setActiveSubscription verification returns subscription ID string
           return MOCK_AZURE_ACCOUNT.subscriptionId + '\n';
         }
@@ -297,9 +305,7 @@ describe('AzureAccount', () => {
     });
 
     test('should expose listSubscriptions utility', () => {
-      expect(AzureAccount.listSubscriptions).toBe(
-        azureUtils.listSubscriptions,
-      );
+      expect(AzureAccount.listSubscriptions).toBe(azureUtils.listSubscriptions);
     });
 
     test('should expose getAccountInfo utility', () => {

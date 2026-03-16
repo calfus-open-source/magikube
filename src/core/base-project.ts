@@ -10,16 +10,40 @@ import {
   azure_destroy_modules,
 } from './constants/constants.js';
 import { appendUniqueLines } from './utils/appendUniqueLines-utils.js';
+import { ProjectConfig } from './interface.js';
 
 export default abstract class BaseProject {
-  protected config: any = {};
+  protected config: ProjectConfig = {};
   public command: BaseCommand;
   protected engine = new Liquid();
   protected projectPath: string = '';
 
-  constructor(command: BaseCommand, config: any) {
+  constructor(command: BaseCommand, config: ProjectConfig) {
     this.config = config;
     this.command = command;
+  }
+
+  protected getConfigString(key: string): string {
+    const val = this.config[key];
+    return typeof val === 'string' ? val : String(val ?? '');
+  }
+
+  protected getConfigStringOrUndefined(key: string): string | undefined {
+    const val = this.config[key];
+    return typeof val === 'string' ? val : undefined;
+  }
+
+  protected getConfigArray(key: string): string[] {
+    const val = this.config[key];
+    return Array.isArray(val) ? val : [];
+  }
+
+  protected getConfigAsRecord(): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const [k, v] of Object.entries(this.config)) {
+      if (typeof v === 'string') result[k] = v;
+    }
+    return result;
   }
 
   async destroyProject(projectName: string, path: string): Promise<void> {
@@ -46,7 +70,8 @@ export default abstract class BaseProject {
 
     // Initialize modules with a default value
     const modules =
-      this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup'
+      this.config.cluster_type === 'eks-fargate' ||
+      this.config.cluster_type === 'eks-nodegroup'
         ? aws_destroy_modules
         : this.config.cluster_type === 'aks'
           ? azure_destroy_modules
@@ -62,7 +87,10 @@ export default abstract class BaseProject {
         projectName,
       );
 
-      const readFile = readStatusFile(this.config, this.config.command);
+      const readFile = readStatusFile(
+        this.config,
+        this.getConfigStringOrUndefined('command'),
+      );
 
       // Destroy modules one by one
       for (const module of modules) {
@@ -193,7 +221,12 @@ export default abstract class BaseProject {
     AppLogger.debug(`Creating or appending to ${filename} file`);
 
     const project_config = SystemConfig.getInstance().getConfig();
-    const _status = readStatusFile(project_config, project_config.command);
+    const _status = readStatusFile(
+      project_config,
+      typeof project_config.command === 'string'
+        ? project_config.command
+        : undefined,
+    );
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
@@ -229,9 +262,9 @@ export default abstract class BaseProject {
     const filePath = join(folderPath, filename);
 
     let _lastModule;
-    if (project_config.moduleType !== undefined) {
-      _lastModule =
-        project_config.moduleType[project_config.moduleType.length - 1];
+    const moduleType = project_config.moduleType;
+    if (Array.isArray(moduleType)) {
+      _lastModule = moduleType[moduleType.length - 1];
     }
 
     if (
@@ -254,7 +287,7 @@ export default abstract class BaseProject {
     }
   }
 
-  async generateContent(templateFilename: string): Promise<any> {
+  async generateContent(templateFilename: string): Promise<string> {
     AppLogger.debug(`Creating content from ${templateFilename}`);
     const templateFile = fs.readFileSync(join(templateFilename), 'utf8');
     return await this.engine.parseAndRender(templateFile, { ...this.config });

@@ -1,4 +1,5 @@
 import SystemConfig from '../../config/system.js';
+import { ProjectConfig } from '../interface.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import AWSAccount from '../aws/aws-account.js';
 import { executeCommandWithRetry } from './executeCommandWithRetry-utils.js';
@@ -10,6 +11,7 @@ import {
   vpceksNodegroupIngressModules,
 } from '../constants/constants.js';
 import TemplateTerraformProject from '../templatesTerraform-projects.js';
+import BaseCommand from '../../commands/base.js';
 import {
   initializeStatusFile,
   updateStatusFile,
@@ -27,14 +29,17 @@ import {
 } from '../constants/systemDefaults.js';
 
 export async function handleTemplateFlag(
-  args: any,
-  commandName?: any,
-  template?: any,
+  args: { name: string },
+  command?: BaseCommand | string,
+  template?: string,
 ) {
+  const commandName = typeof command === 'string' ? command : command?.id;
   const currentDir = process.cwd();
   const responses = dotMagikubeConfig(args.name, currentDir);
   if (!responses) {
-    throw new Error(`Failed to read .magikube configuration for project '${args.name}'`);
+    throw new Error(
+      `Failed to read .magikube configuration for project '${args.name}'`,
+    );
   }
   const moduleType = '';
   const domain =
@@ -58,7 +63,7 @@ export async function handleTemplateFlag(
   }
 
   //Conditionally using default system config values
-  const combinedConfig: any =
+  const combinedConfig: ProjectConfig | undefined =
     responses.template === 'eks-fargate-vpc'
       ? { ...KUBERNITIES_SYSTEM_CONFIG, ...responses }
       : responses.template === 'eks-nodegroup-vpc'
@@ -83,19 +88,19 @@ export async function handleTemplateFlag(
                   ...responses,
                 }
               : undefined;
-  SystemConfig.getInstance().mergeConfigs(combinedConfig);
+  SystemConfig.getInstance().mergeConfigs(combinedConfig!);
 
   const projectConfig = SystemConfig.getInstance().getConfig();
   AppLogger.info(
     `Setting up Infrastructure using template :'${template}'.`,
     true,
   );
-  const terraform = await TemplateTerraformProject.getProject(commandName);
-  const {
-    aws_region: region,
-    aws_access_key_id: awsAccessKey,
-    aws_secret_access_key: awsSecretKey,
-  } = projectConfig;
+  const terraform = await TemplateTerraformProject.getProject(
+    command as BaseCommand,
+  );
+  const region = projectConfig.aws_region as string;
+  const awsAccessKey = projectConfig.aws_access_key_id as string;
+  const awsSecretKey = projectConfig.aws_secret_access_key as string;
 
   const accountId = await AWSAccount.getAccountId(
     awsAccessKey,
@@ -108,7 +113,12 @@ export async function handleTemplateFlag(
   if (terraform) {
     await terraform.createProject(projectName, currentDir);
     if (responses['cloud_provider'] === 'aws') {
-      await (terraform as any).AWSProfileActivate(responses['aws_profile']);
+      if (
+        'AWSProfileActivate' in terraform &&
+        typeof terraform.AWSProfileActivate === 'function'
+      ) {
+        await terraform.AWSProfileActivate(responses['aws_profile']);
+      }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -119,7 +129,7 @@ export async function handleTemplateFlag(
       projectName,
     );
 
-    const modules: any =
+    const modules: string[] | undefined =
       projectConfig.template === 'eks-fargate-vpc'
         ? eksFargateVpcModules
         : projectConfig.template === 'eks-nodegroup-vpc'
@@ -133,9 +143,9 @@ export async function handleTemplateFlag(
                 : undefined;
     let allModulesAppliedSuccessfully = true;
 
-    initializeStatusFile(projectName, modules);
+    initializeStatusFile(projectName, modules ?? []);
 
-    for (const module of modules) {
+    for (const module of modules ?? []) {
       const moduleName = '';
       try {
         updateStatusFile(projectName, 'terraform-apply', 'fail');

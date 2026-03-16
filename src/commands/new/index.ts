@@ -134,7 +134,7 @@ export default class CreateProject extends BaseCommand {
         flags.template &&
         this.predefinedTemplates.includes(flags.template.trim())
       ) {
-        await handleTemplateFlag(args, this.id, flags.template);
+        await handleTemplateFlag(args, this, flags.template);
         process.exit(0);
       }
 
@@ -210,27 +210,25 @@ export default class CreateProject extends BaseCommand {
         projectConfig.cloud_provider === 'azure'
           ? [
               ...services.filter((s) => s !== 'policy'),
-              projectConfig.frontend_app_type,
+              projectConfig.frontend_app_type as string,
             ]
-          : [...services, projectConfig.frontend_app_type],
+          : [...services, projectConfig.frontend_app_type as string],
       );
 
       // Extracting required config values
-      const {
-        github_access_token: token,
-        git_user_name: userName,
-        github_owner: orgName,
-        source_code_repository: sourceCodeRepo,
-        aws_region: region,
-        aws_access_key_id: awsAccessKey,
-        aws_secret_access_key: awsSecretKey,
-        azure_location: azureLocation,
-        azure_client_id: azureClientId,
-        azure_client_secret: azureClientSecret,
-        azure_tenant_id: azureTenantId,
-        azure_subscription_id: azureSubscriptionId,
-        environment,
-      } = projectConfig;
+      const token = projectConfig.github_access_token as string;
+      const userName = projectConfig.git_user_name as string;
+      const orgName = projectConfig.github_owner as string;
+      const sourceCodeRepo = projectConfig.source_code_repository as string;
+      const region = projectConfig.aws_region as string;
+      const awsAccessKey = projectConfig.aws_access_key_id as string;
+      const awsSecretKey = projectConfig.aws_secret_access_key as string;
+      const azureLocation = projectConfig.azure_location as string;
+      const azureClientId = projectConfig.azure_client_id as string;
+      const azureClientSecret = projectConfig.azure_client_secret as string;
+      const azureTenantId = projectConfig.azure_tenant_id as string;
+      const azureSubscriptionId = projectConfig.azure_subscription_id as string;
+      const environment = projectConfig.environment as string;
 
       // Building a structured config object
       const configObject: FullConfigObject = {
@@ -284,7 +282,11 @@ export default class CreateProject extends BaseCommand {
 
         // Activate AWS profile if applicable
         if (responses.cloud_provider === 'aws') {
-          await (terraform as any).AWSProfileActivate(responses.aws_profile);
+          await (
+            terraform as unknown as {
+              AWSProfileActivate(profile: string): Promise<void>;
+            }
+          ).AWSProfileActivate(responses.aws_profile as string);
         }
 
         // Conditional handling for Kubernetes cluster setup
@@ -296,7 +298,7 @@ export default class CreateProject extends BaseCommand {
           await handleEKSandAKS(
             projectName,
             responses,
-            terraform,
+            terraform as unknown as Parameters<typeof handleEKSandAKS>[2],
             setupGitopsServiceStatus,
             configObject,
           );
@@ -307,7 +309,7 @@ export default class CreateProject extends BaseCommand {
           await handleK8s(
             projectName,
             responses,
-            terraform,
+            terraform as unknown as Parameters<typeof handleK8s>[2],
             setupGitopsServiceStatus,
             configObject,
           );

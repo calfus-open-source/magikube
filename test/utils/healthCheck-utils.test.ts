@@ -38,27 +38,31 @@ jest.mock('../../src/logger/appLogger.js', () => ({
 }));
 
 // Speed up tests by mocking timeout
-jest.spyOn(global, 'setTimeout').mockImplementation((cb: any) => {
+jest.spyOn(global, 'setTimeout').mockImplementation((cb: () => void) => {
   cb();
-  return undefined as any;
+  return undefined as unknown as NodeJS.Timeout;
 });
 
 describe('checkServiceStatus', () => {
   it('returns true when statusCode is 200', async () => {
-    mockHttp.get.mockImplementation((_url: string, cb: any) => {
-      cb({ statusCode: 200 });
-      return { on: jest.fn() };
-    });
+    mockHttp.get.mockImplementation(
+      (_url: string, cb: (res: { statusCode: number }) => void) => {
+        cb({ statusCode: 200 });
+        return { on: jest.fn() };
+      },
+    );
 
     const result = await checkServiceStatus('http://test.com');
     expect(result).toBe(true);
   });
 
   it('returns false when statusCode is not 200', async () => {
-    mockHttp.get.mockImplementation((_url: string, cb: any) => {
-      cb({ statusCode: 503 });
-      return { on: jest.fn() };
-    });
+    mockHttp.get.mockImplementation(
+      (_url: string, cb: (res: { statusCode: number }) => void) => {
+        cb({ statusCode: 503 });
+        return { on: jest.fn() };
+      },
+    );
 
     const result = await checkServiceStatus('http://test.com');
     expect(result).toBe(false);
@@ -67,7 +71,8 @@ describe('checkServiceStatus', () => {
   it('returns false when request errors', async () => {
     mockHttp.get.mockImplementation(() => {
       return {
-        on: (_: string, handler: any) => handler(new Error('Network Error')),
+        on: (_: string, handler: (err: Error) => void) =>
+          handler(new Error('Network Error')),
       };
     });
 

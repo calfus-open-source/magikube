@@ -441,12 +441,12 @@ describe('CreateProject Command', () => {
   });
 
   describe('Run Method - Integration Tests', () => {
-    let originalExit: any;
+    let originalExit: typeof process.exit;
 
     beforeEach(() => {
       // Mock process.exit to prevent test termination
       originalExit = process.exit;
-      process.exit = jest.fn() as any;
+      process.exit = jest.fn() as unknown as typeof process.exit;
       jest.clearAllMocks();
     });
 

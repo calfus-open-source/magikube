@@ -85,8 +85,8 @@ export default class AWSK8SProject extends AWSProject {
         '/infrastructure',
         true,
       ),
-      gitOpsInstance.createGitOps(this.path, this.projectName),
-      repositoryInstance.createrepository(this.path, this.projectName),
+      gitOpsInstance.createGitOps(this.path!, this.projectName),
+      repositoryInstance.createrepository(this.path!, this.projectName),
     ]);
   }
   async createSecurityGroup(projectPath: string): Promise<void> {

@@ -140,19 +140,19 @@ import { setupAndPushServices } from '../../../src/core/utils/setupAndPushServic
 import { updateProjectConfigArrays } from '../../../src/core/utils/updateDotMagikube-utils.js';
 
 describe('Microservice Command', () => {
-  let originalExit: any;
-  let command: any;
+  let originalExit: typeof process.exit;
+  let command: InstanceType<typeof Microservice>;
   const mockfs = fs as jest.Mocked<typeof fs>;
   const mockPath = path as jest.Mocked<typeof path>;
 
   beforeEach(() => {
     originalExit = process.exit;
-    process.exit = jest.fn() as any;
+    process.exit = jest.fn() as unknown as typeof process.exit;
     jest.clearAllMocks();
     // Mock setTimeout to resolve immediately (avoids 15s delay in source)
-    jest.spyOn(global, 'setTimeout').mockImplementation((fn: any) => {
+    jest.spyOn(global, 'setTimeout').mockImplementation((fn: () => void) => {
       fn();
-      return 0 as any;
+      return 0 as unknown as NodeJS.Timeout;
     });
 
     mockfs.existsSync = jest.fn(() => true);
@@ -347,7 +347,7 @@ describe('Microservice Command', () => {
     });
 
     test('should activate AWS profile for AWS provider', async () => {
-      const mockTerraform: any = {
+      const mockTerraform = {
         createProject: jest.fn(() => Promise.resolve()),
         AWSProfileActivate: jest.fn(() => Promise.resolve()),
         runTerraformInit: jest.fn(() => Promise.resolve()),
@@ -363,7 +363,7 @@ describe('Microservice Command', () => {
     });
 
     test('should run terraform init and apply', async () => {
-      const mockTerraform: any = {
+      const mockTerraform = {
         createProject: jest.fn(() => Promise.resolve()),
         AWSProfileActivate: jest.fn(() => Promise.resolve()),
         runTerraformInit: jest.fn(() => Promise.resolve()),
@@ -380,7 +380,7 @@ describe('Microservice Command', () => {
     });
 
     test('should update status file before and after terraform apply', async () => {
-      const mockTerraform: any = {
+      const mockTerraform = {
         createProject: jest.fn(() => Promise.resolve()),
         AWSProfileActivate: jest.fn(() => Promise.resolve()),
         runTerraformInit: jest.fn(() => Promise.resolve()),
@@ -493,7 +493,7 @@ describe('Microservice Command', () => {
     });
 
     test('should include current directory in .magikube error message', async () => {
-      mockfs.existsSync = jest.fn((path: any) => {
+      mockfs.existsSync = jest.fn((path: fs.PathLike) => {
         if (typeof path === 'string' && path.includes('.magikube')) {
           return false;
         }
@@ -559,7 +559,7 @@ describe('Microservice Command', () => {
     });
 
     test('should handle errors from terraform operations', async () => {
-      const mockTerraform: any = {
+      const mockTerraform = {
         createProject: jest.fn(() =>
           Promise.reject(new Error('Terraform failed')),
         ),
@@ -584,7 +584,7 @@ describe('Microservice Command', () => {
       (setupAndPushServices as jest.Mock).mockRejectedValue(
         new Error('Service setup failed'),
       );
-      const mockTerraform: any = {
+      const mockTerraform = {
         createProject: jest.fn(() => Promise.resolve()),
         AWSProfileActivate: jest.fn(() => Promise.resolve()),
         runTerraformInit: jest.fn(() => Promise.resolve()),
@@ -606,7 +606,7 @@ describe('Microservice Command', () => {
 
   describe('AWS Provider Handling', () => {
     test('should skip AWS profile activation for non-AWS providers', async () => {
-      const mockConfig: any = {
+      const mockConfig = {
         github_access_token: 'test-token',
         git_user_name: 'testuser',
         github_owner: 'testorg',
@@ -623,7 +623,7 @@ describe('Microservice Command', () => {
         mockConfig,
       );
 
-      const mockTerraform: any = {
+      const mockTerraform = {
         createProject: jest.fn(() => Promise.resolve()),
         AWSProfileActivate: jest.fn(() => Promise.resolve()),
         runTerraformInit: jest.fn(() => Promise.resolve()),

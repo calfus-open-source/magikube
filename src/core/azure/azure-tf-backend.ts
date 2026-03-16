@@ -4,7 +4,6 @@
 import BaseProject from '../base-project.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { execSync } from 'child_process';
-import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
 import { checkAzureLogin, azExecAsync } from '../utils/azure-utils.js';
 
 export default class AzureTerraformBackend {

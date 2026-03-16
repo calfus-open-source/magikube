@@ -92,7 +92,7 @@ export default class Microservice extends BaseCommand {
         `Creating new Magikube project named in the current directory`,
         true,
       );
-      const serviceConfig: any =
+      const serviceConfig: Record<string, unknown> | undefined =
         responses.frontend_app_type === 'react'
           ? { ...REACT_APP_CONFIG }
           : responses.frontend_app_type === 'next'
@@ -113,16 +113,14 @@ export default class Microservice extends BaseCommand {
       );
       const terraform = await MicroserviceProject.getProject(this);
       initializeStatusFile('', [], [responses.service_name]);
-      const {
-        github_access_token: token,
-        git_user_name: userName,
-        github_owner: orgName,
-        source_code_repository: sourceCodeRepo,
-        aws_region: _region,
-        aws_access_key_id: _awsAccessKey,
-        aws_secret_access_key: _awsSecretKey,
-        environment,
-      } = projectConfig;
+      const token = projectConfig.github_access_token as string;
+      const userName = projectConfig.git_user_name as string;
+      const orgName = projectConfig.github_owner as string;
+      const sourceCodeRepo = projectConfig.source_code_repository as string;
+      const _region = projectConfig.aws_region as string;
+      const _awsAccessKey = projectConfig.aws_access_key_id as string;
+      const _awsSecretKey = projectConfig.aws_secret_access_key as string;
+      const environment = projectConfig.environment as string;
 
       const configObject: FullConfigObject = {
         common: {
@@ -130,7 +128,7 @@ export default class Microservice extends BaseCommand {
           userName,
           orgName,
           sourceCodeRepo,
-          projectName: projectConfig.project_name,
+          projectName: projectConfig.project_name as string,
           environment,
         },
       };
@@ -140,7 +138,9 @@ export default class Microservice extends BaseCommand {
         await terraform.createProject(projectName, process.cwd(), this.id);
         //Activate AWS Profile
         if (projectConfig['cloud_provider'] === 'aws') {
-          await terraform.AWSProfileActivate(projectConfig['aws_profile']);
+          await terraform.AWSProfileActivate(
+            projectConfig['aws_profile'] as string,
+          );
         }
         // Add delay of 15 sec
         await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -156,7 +156,7 @@ export default class Microservice extends BaseCommand {
             true,
           );
           updateStatusFile(
-            projectConfig.project_name,
+            projectConfig.project_name as string,
             `terraform-apply`,
             'fail',
           );
@@ -168,7 +168,7 @@ export default class Microservice extends BaseCommand {
             'terraform.tfvars',
           );
           updateStatusFile(
-            projectConfig.project_name,
+            projectConfig.project_name as string,
             `terraform-apply`,
             'success',
           );
@@ -184,7 +184,10 @@ export default class Microservice extends BaseCommand {
         }
 
         // Create the microservice
-        await setupAndPushServices(projectConfig, configObject);
+        await setupAndPushServices(
+          projectConfig as unknown as Record<string, string>,
+          configObject,
+        );
         process.exit(0);
       }
     } catch (error) {

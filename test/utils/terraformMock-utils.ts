@@ -2,20 +2,26 @@ import { EventEmitter } from 'events';
 
 /**
  * Terraform Mock Utilities
- * 
+ *
  * Centralized utilities for mocking Terraform spawn() processes in tests.
  * Provides factory functions to create mock processes with EventEmitter-based
  * stdout/stderr streams for simulating Terraform CLI behavior.
  */
 
+/** Mock process shape returned by createMockTerraformProcess */
+export interface MockTerraformProcess extends EventEmitter {
+  stdout: EventEmitter;
+  stderr: EventEmitter;
+}
+
 /**
  * Creates a mock Terraform process with EventEmitter-based stdout/stderr streams.
  * This is the standard pattern for mocking child_process.spawn() in Terraform tests.
- * 
+ *
  * @returns Mock process object with stdout, stderr, and event emitters
  */
-export function createMockTerraformProcess(): any {
-  const mockProcess = new EventEmitter() as any;
+export function createMockTerraformProcess(): MockTerraformProcess {
+  const mockProcess = new EventEmitter() as MockTerraformProcess;
   mockProcess.stdout = new EventEmitter();
   mockProcess.stderr = new EventEmitter();
   return mockProcess;
@@ -23,13 +29,13 @@ export function createMockTerraformProcess(): any {
 
 /**
  * Simulates a successful Terraform operation by emitting a close event with exit code 0.
- * 
+ *
  * @param mockProcess - The mock process created by createMockTerraformProcess()
  * @param delay - Delay in milliseconds before emitting close event (default: 10ms)
  * @param stdoutData - Optional stdout data to emit before closing
  */
 export function simulateTerraformSuccess(
-  mockProcess: any,
+  mockProcess: MockTerraformProcess,
   delay: number = 10,
   stdoutData?: string,
 ): void {
@@ -43,7 +49,7 @@ export function simulateTerraformSuccess(
 
 /**
  * Simulates a Terraform error by emitting stderr data and/or non-zero exit code.
- * 
+ *
  * @param mockProcess - The mock process created by createMockTerraformProcess()
  * @param options - Error simulation options
  * @param options.stderrData - Error message to emit on stderr
@@ -52,7 +58,7 @@ export function simulateTerraformSuccess(
  * @param options.emitClose - Whether to emit close event after stderr (default: false for AWS immediate rejection, true for Azure)
  */
 export function simulateTerraformError(
-  mockProcess: any,
+  mockProcess: MockTerraformProcess,
   options: {
     stderrData?: string;
     exitCode?: number;
@@ -80,7 +86,7 @@ export function simulateTerraformError(
 /**
  * Simulates Terraform progress by emitting stdout data with resource creation patterns.
  * Useful for testing progress bar tracking and stdout parsing.
- * 
+ *
  * @param mockProcess - The mock process created by createMockTerraformProcess()
  * @param options - Progress simulation options
  * @param options.resourceCount - Number of resources to simulate creating/destroying
@@ -89,7 +95,7 @@ export function simulateTerraformError(
  * @param options.includeClose - Whether to emit close(0) after progress (default: true)
  */
 export function simulateTerraformProgress(
-  mockProcess: any,
+  mockProcess: MockTerraformProcess,
   options: {
     resourceCount?: number;
     pattern?: 'creation' | 'destruction';
@@ -113,7 +119,7 @@ export function simulateTerraformProgress(
     } else if (pattern === 'destruction') {
       // First emit plan summary
       mockProcess.stdout.emit('data', `Plan: ${resourceCount} to destroy.\n`);
-      
+
       // Then emit destruction completion for each resource
       for (let i = 1; i <= resourceCount; i++) {
         const output = `module.resource_${i}: Destroying... [id=resource-${i}-id]\nmodule.resource_${i}: Destruction complete after ${i}s\n`;
@@ -129,13 +135,13 @@ export function simulateTerraformProgress(
 
 /**
  * Simulates a spawn error (e.g., command not found) by emitting an error event.
- * 
+ *
  * @param mockProcess - The mock process created by createMockTerraformProcess()
  * @param errorMessage - Error message (default: 'spawn ENOENT')
  * @param delay - Delay in milliseconds before emitting error (default: 10ms)
  */
 export function simulateSpawnError(
-  mockProcess: any,
+  mockProcess: MockTerraformProcess,
   errorMessage: string = 'spawn ENOENT',
   delay: number = 10,
 ): void {
@@ -146,7 +152,7 @@ export function simulateSpawnError(
 
 /**
  * Helper to assert spawn() was called with expected Terraform arguments.
- * 
+ *
  * @param mockSpawn - The mocked spawn function (from jest.mock('child_process'))
  * @param expectedArgs - Expected arguments array or partial matcher
  * @param expectedOptions - Expected spawn options (cwd, stdio, etc.)
@@ -154,7 +160,7 @@ export function simulateSpawnError(
 export function assertTerraformSpawnCalled(
   mockSpawn: jest.Mock,
   expectedArgs?: string[],
-  expectedOptions?: any,
+  expectedOptions?: Record<string, unknown>,
 ): void {
   expect(mockSpawn).toHaveBeenCalledWith(
     'terraform',
@@ -166,7 +172,7 @@ export function assertTerraformSpawnCalled(
 /**
  * Helper to create a fully configured mock process with automatic success simulation.
  * This is a convenience wrapper that combines createMockTerraformProcess() and simulateTerraformSuccess().
- * 
+ *
  * @param stdoutData - Optional stdout data to emit
  * @param delay - Delay before completing (default: 10ms)
  * @returns Configured mock process that will auto-complete successfully
@@ -174,7 +180,7 @@ export function assertTerraformSpawnCalled(
 export function createSuccessfulMockProcess(
   stdoutData?: string,
   delay: number = 10,
-): any {
+): MockTerraformProcess {
   const mockProcess = createMockTerraformProcess();
   simulateTerraformSuccess(mockProcess, delay, stdoutData);
   return mockProcess;
@@ -183,7 +189,7 @@ export function createSuccessfulMockProcess(
 /**
  * Helper to create a fully configured mock process with automatic error simulation.
  * This is a convenience wrapper that combines createMockTerraformProcess() and simulateTerraformError().
- * 
+ *
  * @param stderrData - Error message to emit
  * @param exitCode - Non-zero exit code (default: 1)
  * @param delay - Delay before emitting error (default: 10ms)
@@ -195,7 +201,7 @@ export function createFailingMockProcess(
   exitCode: number = 1,
   delay: number = 10,
   emitClose: boolean = false,
-): any {
+): MockTerraformProcess {
   const mockProcess = createMockTerraformProcess();
   simulateTerraformError(mockProcess, {
     stderrData,

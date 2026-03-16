@@ -57,6 +57,7 @@ export default tseslint.config(
       'node_modules/**',
       'coverage/**',
       '*.js',
+      '*.cjs',
       'bin/**',
     ],
   }

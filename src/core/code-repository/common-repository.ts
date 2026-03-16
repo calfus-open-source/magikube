@@ -3,7 +3,7 @@ import BaseProject from '../base-project.js';
 import path from 'path';
 
 export default class repositoryProject extends BaseProject {
-  async createrepository(repoPath: any, name: any): Promise<void> {
+  async createrepository(repoPath: string, name: string): Promise<void> {
     this.projectPath = join(repoPath, name);
 
     if (this.config.source_code_repository === 'github') {

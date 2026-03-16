@@ -3,12 +3,17 @@ import BaseCommand from '../../commands/base.js';
 import SystemConfig from '../../config/system.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { join } from 'path';
+import { ProjectConfig } from '../interface.js';
 
 export default class AzureTemplateProject extends AzureProject {
   private templatePath: string;
-  private projectConfig: any;
+  private projectConfig: ProjectConfig;
 
-  constructor(command: BaseCommand, config: any, templatePath?: string) {
+  constructor(
+    command: BaseCommand,
+    config: ProjectConfig,
+    templatePath?: string,
+  ) {
     super(command, config);
     this.templatePath = templatePath || '';
     this.projectConfig = SystemConfig.getInstance().getConfig();

@@ -13,7 +13,7 @@ jest.mock('../../src/logger/appLogger.js', () => ({
 }));
 
 describe('updateProjectConfigArrays', () => {
-  let config: any;
+  let config: Record<string, unknown>;
 
   beforeEach(() => {
     config = {};
@@ -111,7 +111,7 @@ describe('deleteArrayProperty', () => {
   });
 
   it('logs not found when the service does not exist', () => {
-    const arr: any[] = ['svc1'];
+    const arr: string[] = ['svc1'];
 
     deleteArrayProperty(arr, 'svc2');
 
@@ -124,7 +124,7 @@ describe('deleteArrayProperty', () => {
   });
 
   it('warns when invalid array or serviceName missing', () => {
-    deleteArrayProperty(null as any, '');
+    deleteArrayProperty(null as unknown as string[], '');
 
     expect(AppLogger.warn).toHaveBeenCalledTimes(1);
     expect(AppLogger.warn).toHaveBeenCalledWith(

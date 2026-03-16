@@ -17,7 +17,7 @@ jest.mock('../../src/config/user.js', () => {
 import SystemConfig from '../../src/config/system.js';
 
 describe('SystemConfig', () => {
-  let instance: any;
+  let instance: InstanceType<typeof SystemConfig>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -25,7 +25,10 @@ describe('SystemConfig', () => {
     process.env.HOME = '/home/test';
 
     jest
-      .spyOn(SystemConfig.prototype as any, 'init')
+      .spyOn(
+        SystemConfig.prototype as unknown as Record<string, jest.Mock>,
+        'init',
+      )
       .mockImplementation(async () => {});
 
     instance = SystemConfig.getInstance();
@@ -64,7 +67,9 @@ describe('SystemConfig', () => {
   });
 
   test('init() should load and merge user.json when it exists', async () => {
-    (SystemConfig.prototype as any).init.mockRestore();
+    (
+      SystemConfig.prototype as unknown as Record<string, jest.Mock>
+    ).init.mockRestore();
 
     (fs.existsSync as jest.Mock)
       .mockReturnValueOnce(false)

@@ -54,7 +54,7 @@ jest.mock('../../src/core/utils/executeCommandWithRetry-utils.js', () => ({
 }));
 
 describe('ManageRepository.pushCode', () => {
-  const mockConfigObject: any = {
+  const mockConfigObject = {
     common: {
       token: 'FAKE_TOKEN',
       userName: 'rohit',
@@ -77,7 +77,7 @@ describe('ManageRepository.pushCode', () => {
       data: { key: 'PUBLIC_KEY', key_id: 'KEY_ID' },
     });
 
-    (sodium.ready as any) = Promise.resolve();
+    (sodium as unknown as { ready: Promise<void> }).ready = Promise.resolve();
     sodium.from_base64 = jest.fn(() => 'B64_KEY');
     sodium.from_string = jest.fn(() => 'STRING_KEY');
     sodium.crypto_box_seal = jest.fn(() => 'ENCRYPTED_BINARY');

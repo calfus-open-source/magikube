@@ -82,7 +82,7 @@ export default class NewModule extends BaseCommand {
     try {
       const template = '';
       const responses: Answers = await handlePrompts(
-        '',
+        {} as Record<string, unknown>,
         this.id,
         template,
         moduleType,
@@ -147,9 +147,11 @@ export default class NewModule extends BaseCommand {
       if (terraform) {
         await terraform.createProject('', currentDir);
         if (projectConfig['cloud_provider'] === 'aws') {
-          await (terraform as any).AWSProfileActivate(
-            projectConfig['aws_profile'],
-          );
+          await (
+            terraform as unknown as {
+              AWSProfileActivate(profile: string): Promise<void>;
+            }
+          ).AWSProfileActivate(projectConfig['aws_profile'] as string);
         }
         // Delay of 15 seconds
         await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -169,14 +171,22 @@ export default class NewModule extends BaseCommand {
             `Starting Terraform apply for module: ${moduleType}`,
             true,
           );
-          updateStatusFile(projectConfig.project_name, moduleType, 'fail');
+          updateStatusFile(
+            projectConfig.project_name as string,
+            moduleType,
+            'fail',
+          );
           await terraform?.runTerraformApply(
             `${currentDir}/infrastructure`,
             moduleType,
             moduleName,
             'terraform.tfvars',
           );
-          updateStatusFile(projectConfig.project_name, moduleType, 'success');
+          updateStatusFile(
+            projectConfig.project_name as string,
+            moduleType,
+            'success',
+          );
           AppLogger.debug(
             `Successfully applied Terraform for module: ${moduleType}`,
             true,

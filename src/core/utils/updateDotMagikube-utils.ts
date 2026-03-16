@@ -1,26 +1,35 @@
 import { AppLogger } from '../../logger/appLogger.js';
 
+interface VpcEntry {
+  name: string;
+  cidr_blocks?: string[];
+}
+
+interface ModuleEntry {
+  name: string;
+}
+
 export function updateProjectConfigArrays(
-  config: { [key: string]: any },
+  config: { [key: string]: unknown },
   moduleType: string,
   moduleName: string,
   cidrBlock?: string,
 ) {
-  config.modules = config.modules || {};
+  const modules = (config.modules || {}) as Record<string, unknown>;
+  config.modules = modules;
 
   // Handle VPC logic with nested structure
   if (moduleType === 'vpc') {
-    if (!Array.isArray(config.modules.vpc)) {
-      config.modules.vpc = [];
+    if (!Array.isArray(modules.vpc)) {
+      modules.vpc = [];
     }
 
-    const existing = config.modules.vpc.find(
-      (mod: any) => mod.name === moduleName,
-    );
+    const vpcArray = modules.vpc as VpcEntry[];
+    const existing = vpcArray.find((mod: VpcEntry) => mod.name === moduleName);
     if (!existing) {
-      const newVpc: any = { name: moduleName };
+      const newVpc: VpcEntry = { name: moduleName };
       if (cidrBlock) newVpc['cidr_blocks'] = [cidrBlock];
-      config.modules.vpc.push(newVpc);
+      vpcArray.push(newVpc);
     } else if (cidrBlock && !existing.cidr_blocks?.includes(cidrBlock)) {
       existing.cidr_blocks = existing.cidr_blocks || [];
       existing.cidr_blocks.push(cidrBlock);
@@ -28,36 +37,37 @@ export function updateProjectConfigArrays(
 
     // Sync root-level vpcNames and cidr_blocks
     config.vpcNames = Array.isArray(config.vpcNames) ? config.vpcNames : [];
-    if (!config.vpcNames.includes(moduleName)) {
-      config.vpcNames.push(moduleName);
+    if (!(config.vpcNames as string[]).includes(moduleName)) {
+      (config.vpcNames as string[]).push(moduleName);
     }
 
     config.cidr_blocks = Array.isArray(config.cidr_blocks)
       ? config.cidr_blocks
       : [];
-    const allCidrBlocks = config.modules.vpc.flatMap(
-      (v: any) => v.cidr_blocks || [],
+    const allCidrBlocks = vpcArray.flatMap(
+      (v: VpcEntry) => v.cidr_blocks || [],
     );
     config.cidr_blocks = Array.from(
-      new Set([...config.cidr_blocks, ...allCidrBlocks]),
+      new Set([...(config.cidr_blocks as string[]), ...allCidrBlocks]),
     );
   }
 
   // Handle other modules (stored inside `modules` as objects)
   else {
-    if (!Array.isArray(config.modules[moduleType])) {
-      config.modules[moduleType] = [];
+    if (!Array.isArray(modules[moduleType])) {
+      modules[moduleType] = [];
     }
 
-    const alreadyExists = config.modules[moduleType].some(
-      (mod: any) => mod.name === moduleName,
+    const moduleArray = modules[moduleType] as ModuleEntry[];
+    const alreadyExists = moduleArray.some(
+      (mod: ModuleEntry) => mod.name === moduleName,
     );
 
     if (!alreadyExists) {
-      config.modules[moduleType].push({ name: moduleName });
+      moduleArray.push({ name: moduleName });
     }
 
-    // ✅ Remove flat module array from root level if it was added previously
+    // Remove flat module array from root level if it was added previously
     if (Array.isArray(config[moduleType])) {
       delete config[moduleType];
     }
@@ -65,7 +75,7 @@ export function updateProjectConfigArrays(
 }
 
 export function deleteArrayProperty(
-  serviceNamesArray: any[],
+  serviceNamesArray: string[],
   serviceNameToRemove: string,
 ) {
   if (

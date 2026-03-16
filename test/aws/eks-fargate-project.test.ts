@@ -40,7 +40,7 @@ const mockCwd = '/mocked/path';
 jest.spyOn(process, 'cwd').mockReturnValue(mockCwd);
 
 describe('EKSFargateProject', () => {
-  let project: any;
+  let project: InstanceType<typeof EKSFargateProject>;
 
   beforeEach(() => {
     jest.clearAllMocks();

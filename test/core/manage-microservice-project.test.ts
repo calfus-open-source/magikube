@@ -16,8 +16,8 @@ jest.mock('../../src/core/aws/aws-microservice', () => {
 });
 
 describe('MicroserviceProject.getProject', () => {
-  let mockCommand: any;
-  let mockConfig: any;
+  let mockCommand: { error: jest.Mock };
+  let mockConfig: Record<string, string>;
 
   beforeEach(() => {
     mockCommand = {

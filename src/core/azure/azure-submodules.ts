@@ -1,6 +1,7 @@
 import AzureProject from './azure-project.js';
 import BaseCommand from '../../commands/base.js';
 import { AppLogger } from '../../logger/appLogger.js';
+import { ProjectConfig } from '../interface.js';
 
 export default class AzureSubmodules extends AzureProject {
   private submoduleName: string;
@@ -8,7 +9,7 @@ export default class AzureSubmodules extends AzureProject {
 
   constructor(
     command: BaseCommand,
-    config: any,
+    config: ProjectConfig,
     submoduleName: string,
     submoduleType: string,
   ) {

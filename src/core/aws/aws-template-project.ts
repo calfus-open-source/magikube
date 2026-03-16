@@ -1,20 +1,18 @@
 import AWSProject from './aws-project.js';
 import BaseCommand from '../../commands/base.js';
-import SystemConfig from '../../config/system.js';
 
 export default class AWSTemplateProject extends AWSProject {
   private path: string | undefined;
   private name: string | undefined;
 
   async createProject(name: string, path: string): Promise<void> {
-    const config = SystemConfig.getInstance().getConfig();
     this.path = path;
     this.name = name;
     super.createProject(name, path);
-    this.createMainFile(config);
+    this.createMainFile(this.getConfigAsRecord());
   }
 
-  async createMainFile(config: any): Promise<void> {
+  async createMainFile(config: Record<string, string>): Promise<void> {
     const path = process.cwd();
     let _command: BaseCommand | undefined;
     this.createFile(
@@ -79,7 +77,7 @@ export default class AWSTemplateProject extends AWSProject {
     }
   }
 
-  async createSSHKeyPair(config: any) {
+  async createSSHKeyPair(config: Record<string, string>) {
     this.createFile(
       'main.tf',
       `${process.cwd()}/dist/templates/${config.cloud_provider}/modules/ssh-key/main.tf.liquid`,
@@ -94,7 +92,7 @@ export default class AWSTemplateProject extends AWSProject {
     );
   }
 
-  async createBastionHost(config: any) {
+  async createBastionHost(config: Record<string, string>) {
     this.createFile(
       'main.tf',
       `${process.cwd()}/dist/templates/${config.cloud_provider}/modules/bastion/main.tf.liquid`,
@@ -109,7 +107,7 @@ export default class AWSTemplateProject extends AWSProject {
     );
   }
 
-  async createMasterNode(config: any) {
+  async createMasterNode(config: Record<string, string>) {
     this.createFile(
       'main.tf',
       `${process.cwd()}/dist/templates/${config.cloud_provider}/modules/master/main.tf.liquid`,
@@ -124,7 +122,7 @@ export default class AWSTemplateProject extends AWSProject {
     );
   }
 
-  async createSecurityGroup(config: any): Promise<void> {
+  async createSecurityGroup(config: Record<string, string>): Promise<void> {
     this.createFile(
       'main.tf',
       `${process.cwd()}/dist/templates/${config.cloud_provider}/modules/security-groups/main.tf.liquid`,

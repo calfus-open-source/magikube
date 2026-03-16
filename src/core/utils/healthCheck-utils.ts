@@ -1,4 +1,5 @@
 import pkg from 'follow-redirects';
+import { IncomingMessage } from 'http';
 import { AppLogger } from '../../logger/appLogger.js';
 import ora from 'ora';
 import { executeCommandWithRetry } from './executeCommandWithRetry-utils.js';
@@ -8,7 +9,7 @@ const { http } = pkg;
 // Function to check if service is up
 export function checkServiceStatus(url: string): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    const req = http.get(url, (res: any) => {
+    const req = http.get(url, (res: IncomingMessage) => {
       resolve(res.statusCode === 200);
     });
     req.on('error', () => {
@@ -20,7 +21,7 @@ export function checkServiceStatus(url: string): Promise<boolean> {
 // Function to wait until the Keycloak service is up
 export async function waitForServiceToUP(
   serviceURL: string,
-  AppName: any,
+  AppName: string,
 ): Promise<boolean> {
   const retries = 20;
   const delay = 20000;
@@ -47,9 +48,9 @@ export async function waitForServiceToUP(
 }
 
 export async function serviceHealthCheck(
-  args: any,
-  responses: any,
-  projectConfig: any,
+  args: { name: string },
+  responses: Record<string, unknown>,
+  projectConfig: Record<string, unknown>,
 ) {
   const keycloakConfigPath = `${process.cwd()}/${args.name}/keycloak/config.sh`;
   const keycloakUrl = `http://${responses.domain}/keycloak`;
@@ -70,7 +71,7 @@ export async function serviceHealthCheck(
     );
   }
 
-  const frontendAppType = projectConfig.frontend_app_type;
+  const frontendAppType = projectConfig.frontend_app_type as string;
   const isArgoCDUp = await waitForServiceToUP(argocdURL, 'argocd');
   const isFrontendUp = await waitForServiceToUP(frontendURL, frontendAppType);
 

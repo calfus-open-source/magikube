@@ -65,7 +65,10 @@ let project: BaseProject;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  project = new (class extends BaseProject {})(mockCommand as any, mockConfig);
+  project = new (class extends BaseProject {})(
+    mockCommand as unknown as Record<string, unknown>,
+    mockConfig,
+  );
 });
 
 // -------------------- TESTS --------------------
@@ -79,7 +82,9 @@ describe('BaseProject.createFolder()', () => {
 
     await project.createFolder();
 
-    expect(fs.mkdirSync).toHaveBeenCalledWith((project as any).projectPath);
+    expect(fs.mkdirSync).toHaveBeenCalledWith(
+      (project as unknown as { projectPath: string }).projectPath,
+    );
     expect(AppLogger.debug).toHaveBeenCalled();
   });
 

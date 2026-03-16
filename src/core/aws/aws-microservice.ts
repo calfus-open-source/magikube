@@ -50,6 +50,6 @@ export default class CreateMicroserviceProject extends AWSProject {
       '/infrastructure',
       true,
     );
-    repositoryInstance.createrepository(this.path, this.name);
+    repositoryInstance.createrepository(this.path!, this.name!);
   }
 }

@@ -52,6 +52,16 @@ export interface AzureProfileEntry {
   state?: string;
 }
 
+export interface ProjectConfig {
+  [key: string]:
+    | string
+    | string[]
+    | boolean
+    | number
+    | undefined
+    | ProjectConfig;
+}
+
 export interface AppTypeMap {
   [key: string]: {
     appNameKey: string;

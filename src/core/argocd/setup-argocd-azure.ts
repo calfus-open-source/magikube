@@ -2,7 +2,7 @@ import BaseProject from '../base-project.js';
 import { join } from 'path';
 
 export default class argoCdProjectAzure extends BaseProject {
-  async argoCdProject(path: any, name: any): Promise<void> {
+  async argoCdProject(path: string, name: string): Promise<void> {
     this.projectPath = join(path, name);
     this.createFile(
       'main.tf',

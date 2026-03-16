@@ -57,9 +57,9 @@ export default class EKSFargateProject extends AWSProject {
     this.createProviderFile(path);
     this.createCommon(path);
     this.createEKS();
-    gitOpsInstance.createGitOps(this.path, this.name);
-    repositoryInstance.createrepository(this.path, this.name);
-    argocdInstance.argoCdProject(this.path, this.name);
+    gitOpsInstance.createGitOps(this.path!, this.name!);
+    repositoryInstance.createrepository(this.path!, this.name!);
+    argocdInstance.argoCdProject(this.path!, this.name!);
   }
 
   async createEKS(): Promise<void> {

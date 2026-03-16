@@ -4,7 +4,11 @@ import path from 'path';
 import { AppLogger } from '../../logger/appLogger.js';
 
 export default class AWSProfile {
-  static getProfiles(): any {
+  static getProfiles(): {
+    profileName: string;
+    awsAccessKey: string;
+    awsSecretAccessKey: string;
+  }[] {
     const credentialsFilePath = `${os.homedir()}/.aws/credentials`;
     AppLogger.debug(`Getting AWS profiles from ${credentialsFilePath}`);
 

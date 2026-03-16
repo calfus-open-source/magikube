@@ -3,8 +3,9 @@ import AWSProfile from '../core/aws/aws-profile.js';
 import { CloudProvider } from './constants.js';
 import { AppLogger } from '../logger/appLogger.js';
 import AzureProfile from '../core/azure/azure-profile.js';
+import { DistinctQuestion, Answers } from 'inquirer';
 
-const awsCreds: any[] = [
+const awsCreds: DistinctQuestion[] = [
   {
     message: 'Enter AWS Access Key ID: ',
     name: 'aws_access_key_id',
@@ -23,7 +24,7 @@ const awsCreds: any[] = [
   },
 ];
 
-const azureCreds: any[] = [
+const azureCreds: DistinctQuestion[] = [
   {
     message: 'Enter Azure Client ID: ',
     name: 'azure_client_id',
@@ -59,25 +60,26 @@ const azureCreds: any[] = [
 ];
 
 export default class CredentialsPrompts {
-  getCredentialsPrompts(cloudProvider: string, responses: any): any[] {
+  getCredentialsPrompts(
+    cloudProvider: string,
+    responses: Answers,
+  ): DistinctQuestion[] {
     if (cloudProvider === CloudProvider.AWS) {
       const profiles = AWSProfile.getProfiles();
       if (
         profiles.some(
-          (profile: { profileName: any }) =>
+          (profile: { profileName: string }) =>
             profile.profileName === responses['aws_profile'],
         )
       ) {
         // AWS profile exists and set the keys from the file
         AppLogger.debug(`AWS Profile "${responses['aws_profile']}" exists`);
-        responses['aws_access_key_id'] = profiles.find(
-          (profile: { profileName: any }) =>
+        const matchedProfile = profiles.find(
+          (profile: { profileName: string }) =>
             profile.profileName === responses['aws_profile'],
-        ).awsAccessKey;
-        responses['aws_secret_access_key'] = profiles.find(
-          (profile: { profileName: any }) =>
-            profile.profileName === responses['aws_profile'],
-        ).awsSecretAccessKey;
+        );
+        responses['aws_access_key_id'] = matchedProfile!.awsAccessKey;
+        responses['aws_secret_access_key'] = matchedProfile!.awsSecretAccessKey;
       } else {
         return awsCreds;
       }
@@ -85,14 +87,14 @@ export default class CredentialsPrompts {
       const profiles = AzureProfile.getProfiles();
       if (
         profiles.some(
-          (profile: { profileName: any }) =>
+          (profile: { profileName: string }) =>
             profile.profileName === responses['azure_profile'],
         )
       ) {
         // Azure profile exists and set the credentials from the file
         AppLogger.debug(`Azure Profile "${responses['azure_profile']}" exists`);
         const profile = profiles.find(
-          (profile: { profileName: any }) =>
+          (profile: { profileName: string }) =>
             profile.profileName === responses['azure_profile'],
         );
         if (!profile) return [];
@@ -108,7 +110,7 @@ export default class CredentialsPrompts {
     return [];
   }
 
-  saveCredentials(responses: any) {
+  saveCredentials(responses: Answers) {
     if (responses['cloud_provider'] == CloudProvider.AWS) {
       AWSProfile.addProfile(
         responses['aws_profile'],

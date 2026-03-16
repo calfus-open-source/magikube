@@ -195,7 +195,7 @@ export default class AzureProfile {
       const config = JSON.parse(configJson);
 
       const locationConfig = config.find(
-        (item: any) => item.name === 'location',
+        (item: { name: string; value: string }) => item.name === 'location',
       );
       return locationConfig ? locationConfig.value : null;
     } catch (_error) {
@@ -260,14 +260,21 @@ export default class AzureProfile {
       );
       const subs = JSON.parse(subscriptions);
 
-      return subs.map((sub: any) => ({
-        profileName: sub.profileName,
-        subscriptionId: sub.subscriptionId,
-        tenantId: sub.tenantId,
-        state: sub.state,
-        clientId: '',
-        clientSecret: '',
-      }));
+      return subs.map(
+        (sub: {
+          profileName: string;
+          subscriptionId: string;
+          tenantId: string;
+          state: string;
+        }) => ({
+          profileName: sub.profileName,
+          subscriptionId: sub.subscriptionId,
+          tenantId: sub.tenantId,
+          state: sub.state,
+          clientId: '',
+          clientSecret: '',
+        }),
+      );
     } catch (_error) {
       AppLogger.debug(
         'Could not retrieve Azure CLI account list, returning empty profiles',
@@ -310,7 +317,7 @@ export default class AzureProfile {
     }
 
     const existingProfileIndex = profiles.findIndex(
-      (p: any) => p.profileName === profileName,
+      (p: AzureProfileEntry) => p.profileName === profileName,
     );
     const newProfile = {
       profileName,

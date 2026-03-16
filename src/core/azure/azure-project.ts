@@ -1,6 +1,6 @@
 import BaseProject from '../base-project.js';
 import AzureTerraformBackend from './azure-tf-backend.js';
-import { spawn, execSync } from 'child_process';
+import { ChildProcess, spawn, execSync } from 'child_process';
 import fs from 'fs';
 import * as jsyaml from 'js-yaml';
 import * as os from 'os';
@@ -11,9 +11,21 @@ import { join } from 'path';
 import SystemConfig from '../../config/system.js';
 import { CloudProject } from '../interfaces/cloud-project.js';
 import { azure_destroy_modules } from '../constants/constants.js';
+import { AzureProfileEntry } from '../interface.js';
+
+interface KubeConfigObject {
+  clusters?: Array<{ name: string; cluster: Record<string, unknown> }>;
+  contexts?: Array<{ name: string; context: Record<string, unknown> }>;
+  users?: Array<{ name: string; user: Record<string, unknown> }>;
+  'current-context'?: string;
+}
+
+interface DestroyStatus {
+  modules: Record<string, string>;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-let sshProcess: any;
+let sshProcess: ChildProcess | null;
 
 export default class AzureProject extends BaseProject implements CloudProject {
   async createProject(
@@ -27,12 +39,12 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
     await AzureTerraformBackend.create(
       this,
-      this.config.project_name,
-      this.config.azure_location,
-      this.config.azure_client_id,
-      this.config.azure_client_secret,
-      this.config.azure_tenant_id,
-      this.config.azure_subscription_id,
+      this.getConfigString('project_name'),
+      this.getConfigString('azure_location'),
+      this.getConfigString('azure_client_id'),
+      this.getConfigString('azure_client_secret'),
+      this.getConfigString('azure_tenant_id'),
+      this.getConfigString('azure_subscription_id'),
     );
   }
 
@@ -322,7 +334,9 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async getCreds(profileName: string) {
     const AzureProfile = (await import('./azure-profile.js')).default;
     const profiles = AzureProfile.getProfiles();
-    const profile = profiles.find((p: any) => p.profileName === profileName);
+    const profile = profiles.find(
+      (p: AzureProfileEntry) => p.profileName === profileName,
+    );
 
     if (!profile) {
       throw new Error(`Azure profile '${profileName}' not found`);
@@ -602,14 +616,14 @@ export default class AzureProject extends BaseProject implements CloudProject {
   async runTerraformDestroyTemplate(
     infrastructureFilePath: string,
     varFile?: string,
-    status?: any,
+    status?: DestroyStatus,
   ): Promise<void> {
     try {
       if (azure_destroy_modules && azure_destroy_modules.length > 0) {
         for (const module of azure_destroy_modules) {
           if (
-            status.modules[module] === 'fail' ||
-            status.modules[module] === 'success'
+            status?.modules[module] === 'fail' ||
+            status?.modules[module] === 'success'
           ) {
             const args = [
               'destroy',
@@ -693,15 +707,15 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
     const azureBackendStatus = await AzureTerraformBackend.delete(
       this,
-      this.config.project_name,
-      this.config.azure_location,
-      this.config.azure_client_id,
-      this.config.azure_client_secret,
-      this.config.azure_tenant_id,
-      this.config.azure_subscription_id,
+      this.getConfigString('project_name'),
+      this.getConfigString('azure_location'),
+      this.getConfigString('azure_client_id'),
+      this.getConfigString('azure_client_secret'),
+      this.getConfigString('azure_tenant_id'),
+      this.getConfigString('azure_subscription_id'),
     );
     if (azureBackendStatus) {
-      await this.deleteFolder(this.config.project_name);
+      await this.deleteFolder(this.getConfigString('project_name'));
     }
   }
 
@@ -712,54 +726,58 @@ export default class AzureProject extends BaseProject implements CloudProject {
 
       if (fs.existsSync(newClusterConfigPath)) {
         const newConfig = fs.readFileSync(newClusterConfigPath, 'utf8');
-        const newConfigObj = jsyaml.load(newConfig) as any;
+        const newConfigObj = jsyaml.load(newConfig) as KubeConfigObject;
 
-        let existingConfigObj: any = { clusters: [], contexts: [], users: [] };
+        let existingConfigObj: KubeConfigObject = {
+          clusters: [],
+          contexts: [],
+          users: [],
+        };
 
         if (fs.existsSync(kubeConfigPath)) {
           const existingConfig = fs.readFileSync(kubeConfigPath, 'utf8');
-          existingConfigObj = jsyaml.load(existingConfig) as any;
+          existingConfigObj = jsyaml.load(existingConfig) as KubeConfigObject;
         }
 
         // Merge configurations
         if (newConfigObj.clusters) {
           existingConfigObj.clusters = existingConfigObj.clusters || [];
-          newConfigObj.clusters.forEach((cluster: any) => {
-            const existingIndex = existingConfigObj.clusters.findIndex(
-              (c: any) => c.name === cluster.name,
+          newConfigObj.clusters.forEach((cluster) => {
+            const existingIndex = existingConfigObj.clusters!.findIndex(
+              (c) => c.name === cluster.name,
             );
             if (existingIndex >= 0) {
-              existingConfigObj.clusters[existingIndex] = cluster;
+              existingConfigObj.clusters![existingIndex] = cluster;
             } else {
-              existingConfigObj.clusters.push(cluster);
+              existingConfigObj.clusters!.push(cluster);
             }
           });
         }
 
         if (newConfigObj.contexts) {
           existingConfigObj.contexts = existingConfigObj.contexts || [];
-          newConfigObj.contexts.forEach((context: any) => {
-            const existingIndex = existingConfigObj.contexts.findIndex(
-              (c: any) => c.name === context.name,
+          newConfigObj.contexts.forEach((context) => {
+            const existingIndex = existingConfigObj.contexts!.findIndex(
+              (c) => c.name === context.name,
             );
             if (existingIndex >= 0) {
-              existingConfigObj.contexts[existingIndex] = context;
+              existingConfigObj.contexts![existingIndex] = context;
             } else {
-              existingConfigObj.contexts.push(context);
+              existingConfigObj.contexts!.push(context);
             }
           });
         }
 
         if (newConfigObj.users) {
           existingConfigObj.users = existingConfigObj.users || [];
-          newConfigObj.users.forEach((user: any) => {
-            const existingIndex = existingConfigObj.users.findIndex(
-              (u: any) => u.name === user.name,
+          newConfigObj.users.forEach((user) => {
+            const existingIndex = existingConfigObj.users!.findIndex(
+              (u) => u.name === user.name,
             );
             if (existingIndex >= 0) {
-              existingConfigObj.users[existingIndex] = user;
+              existingConfigObj.users![existingIndex] = user;
             } else {
-              existingConfigObj.users.push(user);
+              existingConfigObj.users!.push(user);
             }
           });
         }

@@ -28,7 +28,7 @@ jest.mock('../../src/prompts/prompt-generator.js', () => {
     getEnvironment: () => [{ name: 'environment' }],
     getDomainPrompt: () => [{ name: 'domain' }],
     getCIDRPrompt: () => [{ name: 'cidr' }],
-    getVPCPrompt: (_vpcArray: any) => [{ name: 'vpc' }],
+    getVPCPrompt: (_vpcArray: string[]) => [{ name: 'vpc' }],
     getFrontendApplicationType: () => [{ name: 'frontend_type' }],
     getBackendApplicationType: () => [{ name: 'backend_type' }],
     getgenAIApplication: () => [{ name: 'genai' }],
@@ -45,8 +45,10 @@ jest.mock('../../src/prompts/prompt-generator.js', () => {
 
 jest.mock('../../src/prompts/credentials-prompts.js', () => {
   return jest.fn().mockImplementation(() => ({
-    getCredentialsPrompts: (provider: string, _responses: any) =>
-      provider === 'aws' ? [{ name: 'access_key' }] : [],
+    getCredentialsPrompts: (
+      provider: string,
+      _responses: Record<string, unknown>,
+    ) => (provider === 'aws' ? [{ name: 'access_key' }] : []),
     saveCredentials: jest.fn(),
   }));
 });
@@ -91,30 +93,32 @@ describe('handlePrompts', () => {
     jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     jest.spyOn(fs, 'readFileSync').mockImplementation(() => Buffer.from('{}'));
 
-    mockedInquirer.prompt.mockImplementation(async (prompt: any) => {
-      const name = prompt.name;
-      const mapping: Record<string, any> = {
-        project_name: 'my-project',
-        cloud_provider: 'aws',
-        region: 'us-west-2',
-        aws_profile: 'default',
-        access_key: 'AKIA_FAKE',
-        environment: 'dev',
-        domain: 'example.com',
-        cidr: '10.0.0.0/16',
-        vpc: 'vpc-1',
-        frontend_type: 'react',
-        backend_type: 'express',
-        genai: 'none',
-        aws_extra: 'aws-extra',
-        source_code_repository: 'github',
-        vc: 'github-token',
-        lifecycle: 'daily',
-        service_type: 'backend-service',
-        service_name: 'my-backend-service',
-      };
-      return { [name]: mapping[name] ?? 'unknown' };
-    });
+    mockedInquirer.prompt.mockImplementation(
+      async (prompt: { name: string }) => {
+        const name = prompt.name;
+        const mapping: Record<string, string> = {
+          project_name: 'my-project',
+          cloud_provider: 'aws',
+          region: 'us-west-2',
+          aws_profile: 'default',
+          access_key: 'AKIA_FAKE',
+          environment: 'dev',
+          domain: 'example.com',
+          cidr: '10.0.0.0/16',
+          vpc: 'vpc-1',
+          frontend_type: 'react',
+          backend_type: 'express',
+          genai: 'none',
+          aws_extra: 'aws-extra',
+          source_code_repository: 'github',
+          vc: 'github-token',
+          lifecycle: 'daily',
+          service_type: 'backend-service',
+          service_name: 'my-backend-service',
+        };
+        return { [name]: mapping[name] ?? 'unknown' };
+      },
+    );
   });
 
   afterEach(() => {
@@ -167,7 +171,7 @@ describe('handlePrompts', () => {
 
     const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit:1');
-    }) as any);
+    }) as unknown as (code?: number) => never);
 
     await expect(handlePrompts({}, 'module', undefined, 'rds')).rejects.toThrow(
       'process.exit:1',

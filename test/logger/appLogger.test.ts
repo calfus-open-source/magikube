@@ -78,7 +78,9 @@ describe('AppLogger', () => {
     mockFs.existsSync.mockReturnValue(true);
     // Mock readdir to return existing log files
     const date = new Date().toISOString().split('T')[0];
-    mockFs.readdirSync.mockReturnValue([`test-project-${date}.log`] as any);
+    mockFs.readdirSync.mockReturnValue([
+      `test-project-${date}.log`,
+    ] as unknown as fs.Dirent[]);
 
     // Mock renameSync
     mockFs.renameSync.mockImplementation(() => {});

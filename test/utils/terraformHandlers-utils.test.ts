@@ -64,7 +64,7 @@ const mockTerraform = {
 describe('handleEKS', () => {
   const projectName = 'demo';
   const responses = { environment: 'dev', cloud_provider: 'aws' };
-  const configObject: any = { common: {} };
+  const configObject: Record<string, Record<string, unknown>> = { common: {} };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -136,7 +136,7 @@ describe('handleEKS', () => {
 describe('handleK8s', () => {
   const projectName = 'demo';
   const responses = { environment: 'dev', aws_profile: 'default' };
-  const configObject: any = { common: {} };
+  const configObject: Record<string, Record<string, unknown>> = { common: {} };
 
   beforeEach(() => {
     jest.clearAllMocks();

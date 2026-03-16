@@ -3,7 +3,7 @@ import { AppLogger } from '../../logger/appLogger.js';
 import SystemConfig from '../../config/system.js';
 
 export async function appendUniqueLines(
-  output: any,
+  output: string,
   sourceFile: string,
   destFile: string,
 ): Promise<string> {

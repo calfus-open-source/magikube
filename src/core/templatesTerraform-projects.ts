@@ -13,13 +13,13 @@ export default abstract class TemplateTerraformProject {
     const config = SystemConfig.getInstance().getConfig();
 
     if (config.cloud_provider === 'aws') {
-      if (supportedTemplates.includes(config.template)) {
+      if (supportedTemplates.includes(config.template as string)) {
         return new AWSTemplateProject(command, config) as BaseProject &
           CloudProject;
       }
       command.error(`Template '${config.template}' not supported`);
     } else if (config.cloud_provider === 'azure') {
-      if (supportedTemplates.includes(config.template)) {
+      if (supportedTemplates.includes(config.template as string)) {
         return new AzureTemplateProject(command, config) as BaseProject &
           CloudProject;
       }

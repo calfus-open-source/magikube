@@ -23,23 +23,21 @@ jest.mock('../../../src/core/base-project.js', () => {
     __esModule: true,
     default: (() => {
       class BaseProjectMock {
-        constructor(command: any, config: any) {
+        config: Record<string, unknown>;
+        command: Record<string, unknown>;
+        constructor(
+          command: Record<string, unknown>,
+          config: Record<string, unknown>,
+        ) {
           // mimic original BaseProject behaviour
-          (this as any).config = config;
-          (this as any).command = command;
+          this.config = config;
+          this.command = command;
         }
+        createProject = jest.fn(() => Promise.resolve(true));
+        destroyProject = jest.fn(() => Promise.resolve(true));
+        createFile = jest.fn();
+        deleteFolder = jest.fn(() => Promise.resolve());
       }
-      // Provide prototype-level mocks so they can be spied on without shadowing subclass methods
-      (BaseProjectMock.prototype as any).createProject = jest.fn(() =>
-        Promise.resolve(true),
-      );
-      (BaseProjectMock.prototype as any).destroyProject = jest.fn(() =>
-        Promise.resolve(true),
-      );
-      (BaseProjectMock.prototype as any).createFile = jest.fn();
-      (BaseProjectMock.prototype as any).deleteFolder = jest.fn(() =>
-        Promise.resolve(),
-      );
       return BaseProjectMock;
     })(),
   };
@@ -125,23 +123,16 @@ import { executeCommandWithRetry } from '../../../src/core/utils/executeCommandW
 import SystemConfig from '../../../src/config/system.js';
 import AWSTerraformBackend from '../../../src/core/aws/aws-tf-backend.js';
 import AWSPolicies from '../../../src/core/aws/aws-iam.js';
-import { EventEmitter } from 'events';
-import {
-  createMockTerraformProcess,
-  simulateTerraformSuccess,
-  simulateTerraformError,
-  simulateTerraformProgress,
-  simulateSpawnError,
-} from '../../utils/terraformMock-utils.js';
+import { createMockTerraformProcess } from '../../utils/terraformMock-utils.js';
 import ProgressBar from '../../../src/logger/progressLogger.js';
 
 const mockExit = jest
   .spyOn(process, 'exit')
-  .mockImplementation((() => {}) as any);
+  .mockImplementation((() => {}) as unknown as (code?: number) => never);
 
 describe('AWSProject', () => {
-  let awsProject: any;
-  let mockCommand: any;
+  let awsProject: InstanceType<typeof AWSProject>;
+  let mockCommand: { id: string };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -177,7 +168,7 @@ describe('AWSProject', () => {
 
       await expect(
         awsProject.createProject('test-project', '/path', 'create'),
-      ).resolves.toBeUndefined();
+      ).resolves.toBe(true);
     });
   });
 
@@ -240,9 +231,7 @@ describe('AWSProject', () => {
 
   describe('runTerraformInit', () => {
     test('should successfully initialize terraform', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const initPromise = awsProject.runTerraformInit(
@@ -251,7 +240,7 @@ describe('AWSProject', () => {
         'test-project',
       );
       setTimeout(() => {
-        (mockProcess as any).emit('close', 0);
+        mockProcess.emit('close', 0);
       }, 10);
 
       await initPromise;
@@ -264,9 +253,7 @@ describe('AWSProject', () => {
     });
 
     test('should fail terraform init with non-zero exit code', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const initPromise = awsProject.runTerraformInit(
@@ -277,7 +264,7 @@ describe('AWSProject', () => {
 
       // Simulate failure
       setTimeout(() => {
-        (mockProcess as any).emit('close', 1);
+        mockProcess.emit('close', 1);
       }, 10);
 
       await expect(initPromise).rejects.toThrow(
@@ -292,9 +279,7 @@ describe('AWSProject', () => {
     });
 
     test('should handle stderr during terraform init', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const initPromise = awsProject.runTerraformInit(
@@ -305,16 +290,14 @@ describe('AWSProject', () => {
 
       // Simulate stderr
       setTimeout(() => {
-        (mockProcess.stderr as any).emit('data', 'Error initializing');
+        mockProcess.stderr.emit('data', 'Error initializing');
       }, 10);
 
       await expect(initPromise).rejects.toThrow('Error initializing');
     });
 
     test('should track terraform init progress from stdout', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const initPromise = awsProject.runTerraformInit(
@@ -325,12 +308,12 @@ describe('AWSProject', () => {
 
       // Simulate progress updates
       setTimeout(() => {
-        (mockProcess.stdout as any).emit('data', 'Initializing modules');
-        (mockProcess.stdout as any).emit(
+        mockProcess.stdout.emit('data', 'Initializing modules');
+        mockProcess.stdout.emit(
           'data',
           'Terraform has been successfully initialized!',
         );
-        (mockProcess as any).emit('close', 0);
+        mockProcess.emit('close', 0);
       }, 10);
 
       await initPromise;
@@ -369,9 +352,7 @@ describe('AWSProject', () => {
 
   describe('runTerraformApply', () => {
     test('should successfully apply terraform', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const applyPromise = awsProject.runTerraformApply(
@@ -380,7 +361,7 @@ describe('AWSProject', () => {
       );
 
       setTimeout(() => {
-        (mockProcess as any).emit('close', 0);
+        mockProcess.emit('close', 0);
       }, 10);
 
       await applyPromise;
@@ -393,9 +374,7 @@ describe('AWSProject', () => {
     });
 
     test('should handle terraform apply with module target for new command', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
       (SystemConfig.getInstance().getConfig as jest.Mock).mockReturnValue({
         command: 'new',
@@ -408,7 +387,7 @@ describe('AWSProject', () => {
       );
 
       setTimeout(() => {
-        (mockProcess as any).emit('close', 0);
+        mockProcess.emit('close', 0);
       }, 10);
 
       await applyPromise;
@@ -421,9 +400,7 @@ describe('AWSProject', () => {
     });
 
     test('should fail terraform apply on stderr', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const applyPromise = awsProject.runTerraformApply(
@@ -431,16 +408,14 @@ describe('AWSProject', () => {
       );
 
       setTimeout(() => {
-        (mockProcess.stderr as any).emit('data', 'Terraform error');
+        mockProcess.stderr.emit('data', 'Terraform error');
       }, 10);
 
       await expect(applyPromise).rejects.toThrow('Terraform apply error');
     });
 
     test('should fail terraform apply on non-zero exit code', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const applyPromise = awsProject.runTerraformApply(
@@ -448,7 +423,7 @@ describe('AWSProject', () => {
       );
 
       setTimeout(() => {
-        (mockProcess as any).emit('close', 1);
+        mockProcess.emit('close', 1);
       }, 10);
 
       await expect(applyPromise).rejects.toThrow(
@@ -457,9 +432,7 @@ describe('AWSProject', () => {
     });
 
     test('should include var file in terraform apply command', async () => {
-      const mockProcess = new EventEmitter() as any;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
+      const mockProcess = createMockTerraformProcess();
       mockSpawn.mockReturnValue(mockProcess);
 
       const applyPromise = awsProject.runTerraformApply(
@@ -470,7 +443,7 @@ describe('AWSProject', () => {
       );
 
       setTimeout(() => {
-        (mockProcess as any).emit('close', 0);
+        mockProcess.emit('close', 0);
       }, 10);
 
       await applyPromise;

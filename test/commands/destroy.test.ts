@@ -376,7 +376,7 @@ describe('DestroyProject Command', () => {
     });
 
     test('should merge dryrun flag into config', () => {
-      const responses: any = {};
+      const responses: Record<string, boolean> = {};
       const flags = { dryrun: true };
       responses.dryrun = flags.dryrun || false;
       expect(responses.dryrun).toBe(true);
@@ -410,11 +410,11 @@ describe('DestroyProject Command', () => {
   });
 
   describe('Run Method - Integration Tests', () => {
-    let originalExit: any;
+    let originalExit: typeof process.exit;
 
     beforeEach(() => {
       originalExit = process.exit;
-      process.exit = jest.fn() as any;
+      process.exit = jest.fn() as unknown as typeof process.exit;
       jest.clearAllMocks();
     });
 
@@ -764,7 +764,7 @@ describe('DestroyProject Command', () => {
       const PromptGenerator =
         require('../../src/prompts/prompt-generator.js').default;
       const originalExit = process.exit;
-      process.exit = jest.fn() as any;
+      process.exit = jest.fn() as unknown as typeof process.exit;
 
       const DestroyProject =
         require('../../src/commands/destroy/index.js').default;
@@ -857,7 +857,7 @@ describe('DestroyProject Command', () => {
     test('should handle microservice deletion error gracefully', async () => {
       const { AppLogger } = require('../../src/logger/appLogger.js');
       const originalExit = process.exit;
-      process.exit = jest.fn() as any;
+      process.exit = jest.fn() as unknown as typeof process.exit;
 
       const DestroyProject =
         require('../../src/commands/destroy/index.js').default;
@@ -967,7 +967,7 @@ describe('DestroyProject Command', () => {
     });
 
     test('should merge dryrun flag into responses', () => {
-      const responses: any = {};
+      const responses: Record<string, boolean> = {};
       const flags = { dryrun: true };
       responses.dryrun = flags.dryrun || false;
       expect(responses.dryrun).toBe(true);
@@ -975,11 +975,11 @@ describe('DestroyProject Command', () => {
   });
 
   describe('Comprehensive Destroy Flow', () => {
-    let originalExit: any;
+    let originalExit: typeof process.exit;
 
     beforeEach(() => {
       originalExit = process.exit;
-      process.exit = jest.fn() as any;
+      process.exit = jest.fn() as unknown as typeof process.exit;
     });
 
     afterEach(() => {
