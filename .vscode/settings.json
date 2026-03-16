@@ -12,6 +12,7 @@
         "javascriptreact",
         "typescript",
         "typescriptreact"
-    ]
+    ],
+    "makefile.configureOnOpen": false
 }
 

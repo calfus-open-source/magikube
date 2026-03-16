@@ -1,6 +1,27 @@
 import { AppLogger } from '../../logger/appLogger.js';
-import { execSync, execFileSync } from 'child_process';
+import { execSync, execFileSync, spawn } from 'child_process';
 import { AzureSubscriptionInfo, AzureAccountInfo } from '../interface.js';
+
+/**
+ * Custom error class for Azure CLI command failures.
+ * Provides structured error information including command, exit code, and output.
+ */
+export class AzureCommandError extends Error {
+  constructor(
+    public command: string,
+    public exitCode: number | null,
+    public stderr: string,
+    public stdout: string,
+    public timedOut: boolean = false,
+  ) {
+    super(
+      timedOut
+        ? `Azure CLI command timed out: ${command}`
+        : `Azure CLI command failed with exit code ${exitCode}: ${command}`,
+    );
+    this.name = 'AzureCommandError';
+  }
+}
 
 export function checkAzureLogin(): boolean {
   try {
@@ -83,19 +104,19 @@ export async function loginWithServicePrincipal(
   try {
     AppLogger.info('Logging in with service principal...', true);
 
-    execFileSync('az', [
-      'login', '--service-principal',
-      '--username', clientId,
-      '--password', clientSecret,
-      '--tenant', tenantId,
-    ], {
-      encoding: 'utf8',
+    // Use environment variable for secret to avoid shell exposure
+    const loginCommand = `az login --service-principal --username "${clientId}" --password "$AZURE_SP_SECRET" --tenant "${tenantId}"`;
+    
+    await azExecAsync(loginCommand, {
+      env: { ...process.env, AZURE_SP_SECRET: clientSecret },
+      timeout: 120000, // 2 minutes timeout for login
       stdio: 'pipe',
     });
 
     AppLogger.info('Successfully logged in with service principal', true);
     return true;
   } catch (error) {
+    // Redact secret from error messages
     const sanitizedError = String(error).replace(
       new RegExp(clientSecret, 'g'),
       '[REDACTED]',
@@ -120,4 +141,138 @@ export async function logout(): Promise<boolean> {
     AppLogger.error(`Failed to logout: ${error}`, true);
     return false;
   }
+}
+
+/**
+ * Execute Azure CLI command asynchronously with timeout support.
+ * 
+ * @param command - Full Azure CLI command string (e.g., "az group create --name mygroup --location eastus")
+ * @param options - Execution options
+ * @param options.timeout - Timeout in milliseconds (default: 300000 = 5 minutes)
+ * @param options.env - Environment variables to pass to the command
+ * @param options.stdio - How to handle stdio ('pipe' returns output, 'inherit' streams to console)
+ * @param options.signal - AbortSignal for cancellation support
+ * @returns Promise resolving to stdout string (empty if stdio='inherit')
+ * @throws AzureCommandError if command fails, times out, or is cancelled
+ * 
+ * @example
+ * // With output capture (default)
+ * const output = await azExecAsync('az account show --output json');
+ * 
+ * // With streaming output for long operations
+ * await azExecAsync('az group delete --name mygroup --yes', { 
+ *   stdio: 'inherit',
+ *   timeout: 300000 // 5 minutes
+ * });
+ * 
+ * // With custom environment and timeout
+ * await azExecAsync('az login --service-principal --username $CLIENT_ID --password $SECRET', {
+ *   env: { ...process.env, CLIENT_ID: id, SECRET: secret },
+ *   timeout: 120000 // 2 minutes
+ * });
+ */
+export async function azExecAsync(
+  command: string,
+  options: {
+    timeout?: number;
+    env?: NodeJS.ProcessEnv;
+    stdio?: 'pipe' | 'inherit';
+    signal?: AbortSignal;
+  } = {},
+): Promise<string> {
+  const {
+    timeout = 300000, // Default 5 minutes for Azure operations
+    env = process.env,
+    stdio = 'pipe',
+    signal,
+  } = options;
+
+  return new Promise((resolve, reject) => {
+    // Parse command into executable and args
+    const args = command.split(/\s+/).slice(1); // Remove 'az' from command
+    
+    const child = spawn('az', args, {
+      env,
+      stdio: stdio === 'inherit' ? 'inherit' : ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let timedOut = false;
+    let timeoutHandle: NodeJS.Timeout | null = null;
+
+    // Set up timeout
+    if (timeout > 0) {
+      timeoutHandle = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGTERM');
+        // Force kill after 5 seconds if graceful termination fails
+        setTimeout(() => {
+          if (!child.killed) {
+            child.kill('SIGKILL');
+          }
+        }, 5000);
+      }, timeout);
+    }
+
+    // Set up cancellation via AbortSignal
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        child.kill('SIGTERM');
+        setTimeout(() => {
+          if (!child.killed) {
+            child.kill('SIGKILL');
+          }
+        }, 5000);
+      });
+    }
+
+    // Collect output if stdio is 'pipe'
+    if (stdio === 'pipe') {
+      child.stdout?.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr?.on('data', (data) => {
+        stderr += data.toString();
+      });
+    }
+
+    child.on('error', (error) => {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+      reject(
+        new AzureCommandError(command, null, error.message, stdout, timedOut),
+      );
+    });
+
+    child.on('close', (code) => {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+
+      if (timedOut) {
+        reject(
+          new AzureCommandError(
+            command,
+            code,
+            stderr || 'Command timed out',
+            stdout,
+            true,
+          ),
+        );
+      } else if (signal?.aborted) {
+        reject(
+          new AzureCommandError(
+            command,
+            code,
+            stderr || 'Command was cancelled',
+            stdout,
+            false,
+          ),
+        );
+      } else if (code === 0) {
+        resolve(stdio === 'inherit' ? '' : stdout.trim());
+      } else {
+        reject(new AzureCommandError(command, code, stderr, stdout, false));
+      }
+    });
+  });
 }

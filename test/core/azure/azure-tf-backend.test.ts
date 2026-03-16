@@ -2,7 +2,7 @@ import AzureTerraformBackend from '../../../src/core/azure/azure-tf-backend.js';
 import { AppLogger } from '../../../src/logger/appLogger.js';
 import { execSync } from 'child_process';
 import { executeCommandWithRetry } from '../../../src/core/utils/executeCommandWithRetry-utils.js';
-import { checkAzureLogin } from '../../../src/core/utils/azure-utils.js';
+import { checkAzureLogin, azExecAsync } from '../../../src/core/utils/azure-utils.js';
 
 jest.mock('child_process', () => ({
   execSync: jest.fn(),
@@ -23,6 +23,7 @@ jest.mock('../../../src/core/utils/executeCommandWithRetry-utils.js', () => ({
 
 jest.mock('../../../src/core/utils/azure-utils.js', () => ({
   checkAzureLogin: jest.fn().mockReturnValue(true),
+  azExecAsync: jest.fn().mockResolvedValue('Success'),
 }));
 
 describe('AzureTerraformBackend', () => {
@@ -31,6 +32,7 @@ describe('AzureTerraformBackend', () => {
   const mockCheckAzureLogin = checkAzureLogin as jest.MockedFunction<
     typeof checkAzureLogin
   >;
+  const mockAzExecAsync = azExecAsync as jest.MockedFunction<typeof azExecAsync>;
   const mockExecuteCommandWithRetry =
     executeCommandWithRetry as jest.MockedFunction<
       typeof executeCommandWithRetry
@@ -50,6 +52,7 @@ describe('AzureTerraformBackend', () => {
     };
 
     mockCheckAzureLogin.mockReturnValue(true);
+    mockAzExecAsync.mockResolvedValue('Success');
     mockExecSync.mockImplementation((command: string, options?: any) => {
       if (typeof command === 'string') {
         // "Exists?" checks should throw to trigger the create path
@@ -256,7 +259,7 @@ describe('AzureTerraformBackend', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockExecSync).toHaveBeenCalledWith(
+      expect(mockAzExecAsync).toHaveBeenCalledWith(
         expect.stringContaining('westus2'),
         expect.any(Object),
       );
@@ -322,15 +325,13 @@ describe('AzureTerraformBackend', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockExecuteCommandWithRetry).toHaveBeenCalledWith(
+      expect(mockAzExecAsync).toHaveBeenCalledWith(
         expect.stringContaining('test-project-rg'),
         expect.any(Object),
-        expect.any(Number),
       );
-      expect(mockExecuteCommandWithRetry).toHaveBeenCalledWith(
+      expect(mockAzExecAsync).toHaveBeenCalledWith(
         expect.stringContaining('az group delete'),
         expect.any(Object),
-        expect.any(Number),
       );
     });
 
@@ -352,7 +353,7 @@ describe('AzureTerraformBackend', () => {
   });
 
   describe('createResourceGroup', () => {
-    test('should call executeCommandWithRetry with correct parameters', async () => {
+    test('should call azExecAsync with correct parameters', async () => {
       const result = await AzureTerraformBackend.createResourceGroup(
         mockProject,
         'test-rg',
@@ -360,7 +361,7 @@ describe('AzureTerraformBackend', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockExecSync).toHaveBeenCalledWith(
+      expect(mockAzExecAsync).toHaveBeenCalledWith(
         expect.stringContaining('az group create'),
         expect.any(Object),
       );
@@ -381,7 +382,7 @@ describe('AzureTerraformBackend', () => {
   });
 
   describe('createStorageAccount', () => {
-    test('should call executeCommandWithRetry with correct parameters', async () => {
+    test('should call azExecAsync with correct parameters', async () => {
       const result = await AzureTerraformBackend.createStorageAccount(
         mockProject,
         'teststorage',
@@ -390,7 +391,7 @@ describe('AzureTerraformBackend', () => {
       );
 
       expect(result).toBe(true);
-      expect(mockExecSync).toHaveBeenCalledWith(
+      expect(mockAzExecAsync).toHaveBeenCalledWith(
         expect.stringContaining('az storage account create'),
         expect.any(Object),
       );
@@ -404,7 +405,7 @@ describe('AzureTerraformBackend', () => {
         'eastus',
       );
 
-      expect(mockExecSync).toHaveBeenCalledWith(
+      expect(mockAzExecAsync).toHaveBeenCalledWith(
         expect.stringContaining('Standard_LRS'),
         expect.any(Object),
       );

@@ -5,7 +5,7 @@ import BaseProject from '../base-project.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { execSync } from 'child_process';
 import { executeCommandWithRetry } from '../utils/executeCommandWithRetry-utils.js';
-import { checkAzureLogin } from '../utils/azure-utils.js';
+import { checkAzureLogin, azExecAsync } from '../utils/azure-utils.js';
 
 export default class AzureTerraformBackend {
   static async create(
@@ -109,7 +109,9 @@ export default class AzureTerraformBackend {
         );
 
         const createCommand = `az group create --name "${resourceGroupName}" --location "${location}" --output table`;
-        const result = execSync(createCommand, { encoding: 'utf8' });
+        const result = await azExecAsync(createCommand, {
+          timeout: 180000, // 3 minutes timeout for resource group creation
+        });
 
         AppLogger.info(
           `Resource group ${resourceGroupName} created successfully`,
@@ -156,7 +158,9 @@ export default class AzureTerraformBackend {
         );
 
         const createCommand = `az storage account create --name "${storageAccountName}" --resource-group "${resourceGroupName}" --location "${location}" --sku Standard_LRS --output table`;
-        execSync(createCommand, { encoding: 'utf8' });
+        await azExecAsync(createCommand, {
+          timeout: 240000, // 4 minutes timeout for storage account creation
+        });
 
         AppLogger.info(
           `Storage account ${storageAccountName} created successfully`,
@@ -241,42 +245,33 @@ export default class AzureTerraformBackend {
           true,
         );
 
-        await executeCommandWithRetry(
+        // Use azExecAsync with streaming output and extended timeout
+        // az group delete is the slowest Azure operation, can take several minutes
+        await azExecAsync(
           `az group delete --name "${resourceGroupName}" --yes`,
-          { cwd: process.cwd(), stdio: 'inherit' },
-          1,
+          {
+            timeout: 300000, // 5 minutes timeout for resource group deletion
+            stdio: 'inherit', // Stream progress to console
+          },
         );
 
-        // Poll until the resource group is fully deleted
-        const maxRetries = 20;
-        const delayMs = 10000; // 10 seconds
-        let retryCount = 0;
-
-        while (retryCount < maxRetries) {
-          try {
-            execSync(`az group show --name "${resourceGroupName}"`, {
-              stdio: 'pipe',
-            });
-            AppLogger.info(
-              `Waiting for resource group ${resourceGroupName} to be deleted...`,
-              true,
-            );
-            await new Promise((res) => setTimeout(res, delayMs));
-            retryCount++;
-          } catch {
-            AppLogger.info(
-              `Resource group ${resourceGroupName} successfully deleted.`,
-              true,
-            );
-            return true;
-          }
+        // Verify deletion completed
+        try {
+          execSync(`az group show --name "${resourceGroupName}"`, {
+            stdio: 'pipe',
+          });
+          AppLogger.error(
+            `Resource group ${resourceGroupName} still exists after deletion command.`,
+            true,
+          );
+          return false;
+        } catch {
+          AppLogger.info(
+            `Resource group ${resourceGroupName} successfully deleted.`,
+            true,
+          );
+          return true;
         }
-
-        AppLogger.error(
-          `Timed out waiting for resource group ${resourceGroupName} to delete.`,
-          true,
-        );
-        return false;
       } catch {
         AppLogger.info(
           `Resource group ${resourceGroupName} does not exist or already deleted.`,

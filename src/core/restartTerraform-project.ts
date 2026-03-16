@@ -1,4 +1,5 @@
 import BaseCommand from '../commands/base.js';
+import { AppLogger } from '../logger/appLogger.js';
 import EKSFargateProject from './aws/aws-eks-fargate.js';
 import AWSK8SProject from './aws/aws-k8s.js';
 import EKSNodeGroupProject from './aws/aws-eks-nodegroup.js';
@@ -13,6 +14,13 @@ export default abstract class RestartTerraformProject {
     projectName: string,
   ): Promise<BaseProject | null> {
     const project_config = dotMagikubeConfig(projectName, process.cwd());
+    if (!project_config) {
+      AppLogger.error(
+        `The .magikube configuration file is missing for project '${projectName}'. Please ensure the project was created successfully before running this command.`,
+        true,
+      );
+      return null;
+    }
     if (project_config.cloud_provider === 'aws') {
       if (project_config.cluster_type === 'eks-fargate')
         return new EKSFargateProject(command, project_config);

@@ -3,7 +3,11 @@ import { AppLogger } from '../../logger/appLogger.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import SystemConfig from '../../config/system.js';
-import { checkAzureLogin, getCurrentTenantId } from '../utils/azure-utils.js';
+import {
+  checkAzureLogin,
+  getCurrentTenantId,
+  azExecAsync,
+} from '../utils/azure-utils.js';
 
 export default class AzurePolicies {
   static async getAzureLogin(): Promise<
@@ -81,10 +85,10 @@ export default class AzurePolicies {
 
           try {
             const actualCommand = `az login --service-principal --username ${clientId} --password "$AZURE_SP_SECRET" --tenant ${tenantId}`;
-            const output = execSync(actualCommand, {
-              stdio: 'pipe',
-              encoding: 'utf8',
+            const output = await azExecAsync(actualCommand, {
               env: { ...process.env, AZURE_SP_SECRET: clientSecret },
+              timeout: 120000, // 2 minutes timeout for login
+              stdio: 'pipe',
             });
             AppLogger.info('Service principal login output:', true);
             AppLogger.info(output, true);

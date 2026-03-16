@@ -41,6 +41,13 @@ export default class RestartProject extends BaseCommand {
 
     // Read the .magikube file
     const responses = dotMagikubeConfig(args.name, process.cwd());
+    if (!responses) {
+      AppLogger.error(
+        `The .magikube configuration file is missing for project '${args.name}'. Please ensure the project was created successfully before running this command.`,
+        true,
+      );
+      process.exit(1);
+    }
     responses.command = this.id;
     SystemConfig.getInstance().mergeConfigs(responses);
 

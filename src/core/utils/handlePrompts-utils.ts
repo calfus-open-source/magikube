@@ -220,6 +220,13 @@ export async function handlePrompts(
   }
   if (commandName === 'create') {
     const resp = dotMagikubeConfig('', process.cwd());
+    if (!resp) {
+      AppLogger.error(
+        'The .magikube configuration file is missing in the current directory. Please ensure you are inside a valid Magikube project.',
+        true,
+      );
+      process.exit(1);
+    }
     for (const microServicePrompts of promptGenerator.getMicroService()) {
       const microServiceResp = await inquirer.prompt(microServicePrompts);
       responses = { ...responses, ...microServiceResp };

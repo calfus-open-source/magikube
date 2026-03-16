@@ -50,6 +50,13 @@ export default class DestroyProject extends BaseCommand {
         // Initialize configuration and logger
         const promptGenerator = new PromptGenerator();
         const config = dotMagikubeConfig('', process.cwd());
+        if (!config) {
+          AppLogger.error(
+            'The .magikube configuration file is missing in the current directory. Please ensure you are inside a valid Magikube project.',
+            true,
+          );
+          process.exit(1);
+        }
         AppLogger.configureLogger(config.project_name, this.id, false);
 
         // Prompt for microservice creation
@@ -102,6 +109,13 @@ export default class DestroyProject extends BaseCommand {
     AppLogger.configureLogger(args.name, this.id, false);
 
     const responses = dotMagikubeConfig(args.name, process.cwd());
+    if (!responses) {
+      AppLogger.error(
+        `The .magikube configuration file is missing for project '${args.name}'. Please ensure the project was created successfully before running this command.`,
+        true,
+      );
+      process.exit(1);
+    }
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, 'infrastructure');
     responses.dryrun = flags.dryrun || false;
