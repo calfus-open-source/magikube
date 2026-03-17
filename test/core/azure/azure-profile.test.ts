@@ -42,6 +42,7 @@ jest.mock('../../../src/core/utils/azure-utils.js', () => ({
 }));
 
 import AzureProfile from '../../../src/core/azure/azure-profile.js';
+import BaseProject from '../../../src/core/base-project.js';
 import { AppLogger } from '../../../src/logger/appLogger.js';
 import {
   checkAzureLogin,
@@ -61,7 +62,7 @@ const mockedLoginWithSP = loginWithServicePrincipal as jest.MockedFunction<
 const mockedFs = fs as jest.Mocked<typeof fs>;
 const _mockedOs = os as jest.Mocked<typeof os>;
 
-const mockProject = {} as any;
+const mockProject = {} as BaseProject;
 const TEST_LOCATION = 'eastus';
 const TEST_CLIENT_ID = 'client-id-12345';
 const TEST_CLIENT_SECRET = 'client-secret-67890';
@@ -191,8 +192,8 @@ describe('AzureProfile', () => {
   describe('setActiveSubscription', () => {
     it('should return true when subscription is set successfully', async () => {
       mockedExecSync
-        .mockReturnValueOnce('' as any) // az account set
-        .mockReturnValueOnce(`${TEST_SUBSCRIPTION_ID}\n` as any); // az account show
+        .mockReturnValueOnce('' as string) // az account set
+        .mockReturnValueOnce(`${TEST_SUBSCRIPTION_ID}\n` as string); // az account show
 
       const result =
         await AzureProfile.setActiveSubscription(TEST_SUBSCRIPTION_ID);
@@ -206,8 +207,8 @@ describe('AzureProfile', () => {
 
     it('should return false when subscription IDs do not match', async () => {
       mockedExecSync
-        .mockReturnValueOnce('' as any)
-        .mockReturnValueOnce('different-sub-id\n' as any);
+        .mockReturnValueOnce('' as string)
+        .mockReturnValueOnce('different-sub-id\n' as string);
 
       const result =
         await AzureProfile.setActiveSubscription(TEST_SUBSCRIPTION_ID);
@@ -350,7 +351,9 @@ describe('AzureProfile', () => {
 
   describe('getDefaultLocation', () => {
     it('should return location when found', async () => {
-      mockedExecSync.mockReturnValueOnce(AZURE_CONFIG_DEFAULTS_RESPONSE as any);
+      mockedExecSync.mockReturnValueOnce(
+        AZURE_CONFIG_DEFAULTS_RESPONSE as string,
+      );
 
       const result = await AzureProfile.getDefaultLocation();
 
@@ -365,7 +368,7 @@ describe('AzureProfile', () => {
           value: 'testproj-rg',
         },
       ]);
-      mockedExecSync.mockReturnValueOnce(noLocationConfig as any);
+      mockedExecSync.mockReturnValueOnce(noLocationConfig as string);
 
       const result = await AzureProfile.getDefaultLocation();
 
@@ -434,7 +437,7 @@ describe('AzureProfile', () => {
   describe('getAzureCLIVersion', () => {
     it('should return first line of version output', () => {
       mockedExecSync.mockReturnValueOnce(
-        'azure-cli                         2.53.0\ncore                              2.53.0' as any,
+        'azure-cli                         2.53.0\ncore                              2.53.0' as string,
       );
 
       const result = AzureProfile.getAzureCLIVersion();
@@ -487,7 +490,7 @@ describe('AzureProfile', () => {
           state: 'Enabled',
         },
       ];
-      mockedExecSync.mockReturnValueOnce(JSON.stringify(cliResponse) as any);
+      mockedExecSync.mockReturnValueOnce(JSON.stringify(cliResponse) as string);
 
       const result = AzureProfile.getProfiles();
 

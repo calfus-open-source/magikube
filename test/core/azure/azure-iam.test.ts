@@ -43,6 +43,7 @@ import {
   azExecAsync,
 } from '../../../src/core/utils/azure-utils.js';
 import SystemConfig from '../../../src/config/system.js';
+import BaseProject from '../../../src/core/base-project.js';
 
 const mockExecSync = execSync as jest.Mock;
 const mockCheckAzureLogin = checkAzureLogin as jest.Mock;
@@ -51,7 +52,7 @@ const mockGetCurrentTenantId = getCurrentTenantId as jest.Mock;
 const mockWriteFileSync = fs.writeFileSync as jest.Mock;
 const mockUnlinkSync = fs.unlinkSync as jest.Mock;
 
-const mockProject = {} as any;
+const mockProject = {} as BaseProject;
 
 // Contract fixture data
 const accountShowResponse = JSON.stringify({
