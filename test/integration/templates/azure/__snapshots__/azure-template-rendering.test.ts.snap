@@ -1,0 +1,2488 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Azure Template Rendering (integration) Azure Kubernetes templates modules/kubernetes/aks/main.tf.liquid renders 1`] = `
+"data "azurerm_client_config" "current" {}
+
+# AKS Cluster
+resource "azurerm_kubernetes_cluster" "aks_cluster" {
+  name                = "testproj-dev-aks-cluster"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  kubernetes_version  = "1.30.10"
+  dns_prefix          = "aksserverlessautoscaling"
+
+  default_node_pool {
+    name                  = "system"
+    node_count            = 1
+    vm_size               = "Standard_DS2_v2"
+    vnet_subnet_id        = var.aks_subnet_id
+    auto_scaling_enabled  = true
+    max_pods              = 110
+    min_count             = 1
+    max_count             = 40
+    type                  = "VirtualMachineScaleSets"
+    os_disk_size_gb       = 40
+    os_sku                = "Ubuntu"
+  }
+
+  ingress_application_gateway {
+    gateway_id = var.app_gateway_id
+  }
+
+  linux_profile {
+    admin_username = "kube"
+
+    ssh_key {
+      key_data = var.k8s_ssh_key
+    }
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  network_profile {
+    network_plugin   = "azure"
+    service_cidr     = "10.96.0.0/12"
+    dns_service_ip   = "10.96.0.10"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      default_node_pool["node_count"]
+    ]
+  }
+
+  tags = merge(
+    var.tags,
+    {}
+  )
+}
+
+# Assign ACRPull Role to the AKS Cluster's Managed Identity for each ACR
+resource "azurerm_role_assignment" "aks_acr_role_assignment" {
+  for_each             = var.acr_registries
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.identity[0].principal_id
+  role_definition_name = "AcrPull"
+  scope                = each.value.id
+  
+  # Ensure AKS cluster is fully ready before creating role assignments
+  depends_on = [
+    azurerm_kubernetes_cluster.aks_cluster
+  ]
+}
+
+
+# Grant Reader access to the current user for the AKS managed resource group
+resource "azurerm_role_assignment" "aks_managed_rg_reader" {
+  scope                = "/subscriptions/\${data.azurerm_client_config.current.subscription_id}/resourceGroups/\${azurerm_kubernetes_cluster.aks_cluster.node_resource_group}"
+  role_definition_name = "Reader"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+# AGIC requires Reader access to the resource group containing the Application Gateway
+resource "azurerm_role_assignment" "agic_resource_group_reader" {
+  scope                = "/subscriptions/\${data.azurerm_client_config.current.subscription_id}/resourceGroups/\${var.resource_group_name}"
+  role_definition_name = "Reader"
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+}
+
+# AGIC requires Contributor access to the Application Gateway itself
+resource "azurerm_role_assignment" "agic_app_gateway_contributor" {
+  scope                = var.app_gateway_id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+}
+
+# AGIC requires Managed Identity Operator access to the Key Vault user-assigned identity
+resource "azurerm_role_assignment" "agic_managed_identity_operator" {
+  scope                = var.kv_user_assigned_identity_id
+  role_definition_name = "Managed Identity Operator"
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+}
+
+# AGIC requires Network Contributor access to the Application Gateway subnet
+resource "azurerm_role_assignment" "agic_subnet_network_contributor" {
+  scope                = var.app_gateway_subnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.aks_cluster.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+}
+
+# OUTPUT: AKS Client Certificate
+output "client_certificate" {
+  value     = azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_certificate
+  sensitive = true
+}"
+`;
+
+exports[`Azure Template Rendering (integration) Azure Kubernetes templates modules/kubernetes/common/main.tf.liquid renders 1`] = `
+"# Generate SSH key pair
+resource "tls_private_key" "k8s_ssh_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "local_sensitive_file" "k8s_private_key" {
+  content         = tls_private_key.k8s_ssh_key.private_key_pem
+  filename        = pathexpand("~/.ssh/$testproj-$dev-k8s.pem")
+  file_permission = "0600"
+}
+
+output "ssh_public_key" {
+  value = tls_private_key.k8s_ssh_key.public_key_openssh
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure environment templates backend-config.tfvars.liquid renders 1`] = `
+"resource_group_name  = "rg-testproj-dev"
+storage_account_name = ""
+container_name       = "tfstate"
+key                  = key = "testproj-dev.tfstate"
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure environment templates main.tf.liquid renders without errors and matches snapshot 1`] = `
+"module "vnet" {
+  source                      = "./modules/vnet"
+  project_name                = var.project_name
+  environment                 = var.environment
+  location                    = var.location
+  resource_group_name         = var.resource_group_name
+  availability_zones          = var.availability_zones
+  vnet_address_space          = var.vnet_address_space
+  private_subnet_offset       = var.private_subnet_offset
+  public_ip_allocation_method = var.public_ip_allocation_method
+  subnet_prefix_length        = var.subnet_prefix_length
+  public_ip_sku               = var.public_ip_sku
+  tags                        = var.tags
+  bastion_nsg_id              = module.nsg.bastion_nsg_id
+  app_gateway_subnet_offset   = var.app_gateway_subnet_offset
+  app_gateway_nsg_id          = module.nsg.app_gateway_nsg_id
+  k8s_asg_id                  = module.nsg.k8s_asg_id
+  k8s_vm_nsg_id               = module.nsg.k8s_vm_nsg_id
+  k8s_private_subnet_offset   = var.k8s_private_subnet_offset
+  public_subnet_offset        = var.public_subnet_offset 
+ }
+
+module "nsg" {
+  source              = "./modules/security_groups"
+  project_name        = var.project_name
+  environment         = var.environment
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  source_bastion_ip   = var.source_bastion_ip
+  tags                = var.tags
+  vnet_address_space         = var.vnet_address_space
+  subnet_prefix_length       = var.subnet_prefix_length
+  app_gateway_subnet_offset  = var.app_gateway_subnet_offset
+  k8s_private_subnet_offset  = var.k8s_private_subnet_offset
+  frontend_subnet_offset     = var.frontend_subnet_offset
+  vpn_client_address_space   = var.vpn_client_address_space
+ }
+
+module "bastion" {
+  source                                = "./modules/bastion"
+  project_name                          = var.project_name
+  resource_group_name                   = var.resource_group_name
+  location                              = var.location
+  environment                           = var.environment
+  bastion_nsg_id                        = module.nsg.bastion_nsg_id
+  bastion_asg_id                        = module.nsg.bastion_asg_id
+  bastion_subnet_id                     = module.vnet.public_subnet_id
+  image_offer                           = var.image_offer
+  bastion_os_disk_size                  = var.bastion_os_disk_size
+  bastion_admin_username                = var.bastion_admin_username
+  image_publisher                       = var.image_publisher
+  image_version                         = var.image_version
+  image_sku                             = var.image_sku
+  bastion_os_disk_storage_account_type  = var.bastion_os_disk_storage_account_type
+  bastion_private_ip_address_allocation = var.bastion_private_ip_address_allocation
+  bastion_public_ip_allocation_method   = var.bastion_public_ip_allocation_method
+  bastion_public_ip_sku                 = var.bastion_public_ip_sku
+  bastion_os_disk_caching               = var.bastion_os_disk_caching
+  bastion_vm_size                       = var.bastion_vm_size
+ }
+
+
+module "agw" {
+  source                            = "./modules/application_gateway"
+  project_name                      = var.project_name
+  environment                       = var.environment
+  location                          = var.location
+  domain_name                       = var.domain_name
+  resource_group_name               = var.resource_group_name
+  tags                              = var.tags
+  public_ip_sku                     = var.public_ip_sku
+  availability_zones                = var.availability_zones
+  public_ip_allocation_method       = var.public_ip_allocation_method
+  app_gateway_subnet_id             = module.vnet.app_gateway_subnet_id
+  azurerm_key_vault_id              = module.kv.key_vault_id
+  appgateway_kv_identity_id         = module.kv.kv_access_identity 
+  azurerm_key_vault_certificate_secret_id = module.kv.certificate_secret_id
+ }
+
+module "kv" {
+  source                      = "./modules/key_vault"
+  project_name                = var.project_name
+  environment                 = var.environment
+  location                    = var.location
+  resource_group_name         = var.resource_group_name
+  availability_zones          = var.availability_zones
+ }
+
+module "k8s_common" {
+  source                            = "./modules/kubernetes/common"
+  project_name                      = var.project_name
+  environment                       = var.environment
+ }
+
+module "acr" {
+  source              = "./modules/acr"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  project_name        = var.project_name
+  acr_repo_names      = var.acr_repo_names
+  tags                = var.tags
+}
+
+module "aks" {
+  source                           = "./modules/kubernetes/aks"
+  project_name                     = var.project_name
+  environment                      = var.environment
+  location                         = var.location
+  resource_group_name              = var.resource_group_name
+  common_resource_group_name       = var.common_resource_group_name
+  aks_subnet_id                    = module.vnet.k8s_private_subnet
+  k8s_ssh_key                      = module.k8s_common.ssh_public_key
+  app_gateway_id                   = module.agw.application_gateway_id
+  kv_user_assigned_identity_id     = module.kv.kv_access_identity
+  app_gateway_subnet_id            = module.vnet.app_gateway_subnet_id
+    acr_registries                 = module.acr.acr_registries
+  tags                             = var.tags
+}
+
+
+module "sql_server" {
+  source              = "./modules/sql_server"
+  project_name        = var.project_name
+  environment         = var.environment
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+  sql_admin_username  = var.sql_admin_username
+  sql_admin_password  = var.sql_admin_password
+  database_name       = var.database_name
+  firewall_rules      = var.sql_firewall_rules
+  allowed_subnet_ids  = [
+    module.vnet.k8s_private_subnet,
+    module.vnet.public_subnet_id
+  ]
+ }
+ 
+# module "vpn_gateway" {
+#   count                        = var.enable_vpn_gateway ? 1 : 0
+#   source                       = "./modules/vpn_gateway"
+#   project_name                 = var.project_name
+#   environment                  = var.environment
+#   location                     = var.location
+#   resource_group_name          = var.resource_group_name
+#   availability_zones           = var.availability_zones
+#   tags                         = var.tags
+#   virtual_network_id           = module.vnet.vnet_id
+#   gateway_subnet_address_prefix = var.gateway_subnet_address_prefix
+#   vpn_client_address_space     = var.vpn_client_address_space
+#   frontend_private_nsg_id      = module.nsg.frontend_private_nsg_id
+#   vnet_address_space           = var.vnet_address_space
+#   subnet_prefix_length         = var.subnet_prefix_length
+#   k8s_private_subnet_offset    = var.k8s_private_subnet_offset
+#   frontend_subnet_offset       = var.frontend_subnet_offset
+# }
+
+# module "ai_foundry" {
+#   source = "./modules/ai_foundry"
+#
+#   project_name              = var.project_name
+#   environment               = var.environment
+#   location                  = var.location
+#   resource_group_name       = var.resource_group_name
+#   openai_location           = var.openai_location
+#   gpt4o_capacity            = var.gpt4o_capacity
+#   o3_mini_capacity          = var.o3_mini_capacity
+#   embedding_capacity        = var.embedding_capacity
+#   existing_key_vault_id     = module.kv.key_vault_id
+#
+#   tags = var.tags
+# }
+
+module "gitops" {
+    source       = "./modules/gitops"
+    name         = var.project_name
+    environment  = var.environment
+    github_token = var.github_access_token
+    github_owner = var.github_owner
+}
+
+module "repository" {
+     source       = "./modules/code-repository"
+     name         = var.project_name
+     appType      = var.appType
+     environment  = var.environment
+     github_token = var.github_access_token 
+     github_owner = var.github_owner
+}"
+`;
+
+exports[`Azure Template Rendering (integration) Azure environment templates outputs.tf.liquid renders 1`] = `
+"output "vnet_id" {
+  description = "The ID of the virtual network."
+  value       = module.vnet.vnet_id
+ }
+
+output "vnet_name" {
+  description = "The name of the virtual network."
+  value       = module.vnet.vnet_name
+ }
+
+output "application_gateway_private_ip" {
+  description = "The private IP address of the Application Gateway (accessible only via VPN)"
+  value       = module.agw.application_gateway_private_ip
+ }
+
+output "application_gateway_public_ip" {
+  description = "The public IP address of the Application Gateway (blocked by NSG - not accessible from internet)"
+  value       = module.agw.application_gateway_public_ip
+ }
+
+# output "sql_server_fqdn" {
+#   description = "The fully qualified domain name of the SQL Server"
+#   value       = module.sql_server.sql_server_fqdn
+#  }
+
+# output "sql_database_name" {
+#   description = "The name of the SQL Database"
+#   value       = module.sql_server.sql_database_name
+#  }
+
+# output "sql_connection_string" {
+#   description = "Connection string for the SQL Database"
+#   value       = module.sql_server.connection_string
+#   sensitive   = true
+#  }
+
+# output "vpn_gateway_public_ip" {
+#   description = "The public IP address of the VPN Gateway"
+#   value       = var.enable_vpn_gateway ? module.vpn_gateway[0].vpn_gateway_public_ip : null
+# }
+
+# output "vpn_client_address_space" {
+#   description = "The address space for VPN clients"
+#   value       = var.enable_vpn_gateway ? module.vpn_gateway[0].vpn_client_address_space : null
+# }
+
+# output "frontend_private_subnet_id" {
+#   description = "The ID of the frontend private subnet"
+#  value       = var.enable_vpn_gateway ? module.vpn_gateway[0].frontend_private_subnet_id : null
+# }
+
+# AI Foundry outputs
+#  output "ai_services_endpoint" {
+#  description = "The endpoint URL of the AI Services account"
+#  value       = var.enable_ai_foundry ? module.ai_foundry.ai_services_endpoint : null
+# } 
+
+# output "ai_services_primary_key" {
+#  description = "The primary access key for the AI Services account"
+#  value       = var.enable_ai_foundry ? module.ai_foundry.ai_services_primary_key : null
+#  sensitive   = true
+# }
+
+# output "ai_foundry_hub_name" {
+#  description = "The name of the AI Foundry hub"
+#  value       = var.enable_ai_foundry ? module.ai_foundry.ai_foundry_hub_name : null
+# }
+
+# output "gpt4o_deployment_name" {
+#  description = "The name of the GPT-4o deployment"
+#  value       = var.enable_ai_foundry ? module.ai_foundry.gpt4o_deployment_name : null
+# }"
+`;
+
+exports[`Azure Template Rendering (integration) Azure environment templates provider.tf.liquid renders 1`] = `
+"terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.53.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    cloudinit = {
+      source  = "hashicorp/cloudinit"
+      version = "2.3.5"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+  resource_provider_registrations = "none"
+  subscription_id                 = var.subscription_id
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure environment templates terraform.tfvars.liquid renders 1`] = `
+"####################### Common Variables #######################
+subscription_id            = ""
+project_name               = "testproj"
+environment                = "dev"
+location                   = "eastus"
+domain_name                = ""
+resource_group_name        = "testproj-rg"
+common_resource_group_name = "testproj-rg"
+# Disable availability zones for West US compatibility
+availability_zones         = []
+tags = {
+  Environment = "dev"
+  Project     = "testproj"
+}
+
+####################### SQL Server Variables #######################
+sql_admin_username = "sqladmin"
+sql_admin_password = "P@ssw0rd123!"  # Consider injecting this securely
+database_name      = "app_database"
+sql_firewall_rules = [
+  {
+    name             = "AllowBastion"
+    start_ip_address = "10.0.0.0"
+    end_ip_address   = "10.0.0.255"
+  }
+]
+
+####################### VNet Variables #######################
+vnet_address_space        = ["10.0.0.0/16"]
+# Subnet configuration - making it dynamic and configurable
+subnet_prefix_length      = 8
+private_subnet_offset     = 20
+public_subnet_offset      = 0
+app_gateway_subnet_offset = 40
+k8s_private_subnet_offset = 30
+frontend_subnet_offset    = 50
+
+####################### security_group variables #######################
+source_bastion_ip = [ "27.107.44.50/32", "58.84.60.45/32", "58.84.62.238/32" ]
+
+####################### VPN Gateway Configuration #######################
+# enable_vpn_gateway = true
+# gateway_subnet_address_prefix = "10.0.60.0/24"
+# vpn_client_address_space = ["10.1.0.0/24"]
+
+####################### AI Foundry Variables #######################
+# enable_ai_foundry = true
+# openai_location = "Eest US"
+# gpt4o_capacity = 50
+# o3_mini_capacity = 20  
+# embedding_capacity = 50
+
+####################### Version Control Variables #######################
+
+github_access_token = "ghp_test_token_placeholder"
+github_owner = "test-org"
+appType = ["react", "node-express", "keycloak-service", "auth-service", "gen-ai-service"]
+
+####################### ACR Variables #######################
+
+acr_repo_names = ["myreact", "mynodeexpress", "mykeycloakservice", "myauthservice", "mygenaiservice"]
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure environment templates variables.tf.liquid renders 1`] = `
+"####################### common variables #######################
+
+variable "subscription_id" {
+  description = "The Azure subscription ID"
+  type        = string
+}
+
+variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+}
+
+variable "availability_zones" {
+  description = "List of availability zones to deploy resources into."
+  type        = list(string)
+  default     = ["1", "2", "3"]
+}
+
+variable "domain_name" {
+  description = "Domain Name."
+  type        = string
+}
+
+variable "common_resource_group_name" {
+  description = "The name of the common resource group where acr repos are created"
+  type        = string
+}
+
+variable "acr_repo_names" {
+  description = "List of ACR registry names to create"
+  type        = list(string)
+  default     = []
+}
+
+####################### sql server variables #######################
+
+variable "sql_location" {
+  description = "The Azure location/region for SQL Server (can be different from main location)"
+  type        = string
+  default     = ""
+}
+
+variable "sql_admin_username" {
+  description = "The administrator username for the SQL Server"
+  type        = string
+  default     = "sqladmin"
+}
+
+variable "sql_admin_password" {
+  description = "The administrator password for the SQL Server"
+  type        = string
+  sensitive   = true
+}
+
+variable "database_name" {
+  description = "The name of the database to create"
+  type        = string
+  default     = "app_database"
+}
+
+variable "sql_firewall_rules" {
+  description = "List of firewall rules for SQL Server"
+  type = list(object({
+    name             = string
+    start_ip_address = string
+    end_ip_address   = string
+  }))
+  default = []
+}
+
+####################### vpn gateway variables #######################
+
+# variable "enable_vpn_gateway" {
+#   description = "Whether to enable VPN Gateway"
+#   type        = bool
+#   default     = true
+# }
+
+# variable "gateway_subnet_address_prefix" {
+#   description = "The address prefix for the Gateway subnet"
+#   type        = string
+#   default     = "10.0.60.0/24"
+# }
+
+ variable "vpn_client_address_space" {
+   description = "The address space for VPN clients"
+   type        = list(string)
+   default     = ["10.1.0.0/24"]
+  }
+
+####################### vnet variables #######################
+
+variable "vnet_address_space" {
+  description = "The address space for the VNet"
+  type        = list(string)
+  default     = ["10.0.0.0/16"]
+}
+
+variable "subnet_prefix_length" {
+  description = "The prefix length for subnets"
+  type        = number
+  default     = 8
+}
+
+variable "private_subnet_offset" {
+  description = "Offset for private subnets in the address space"
+  type        = number
+  default     = 20
+}
+
+variable "public_subnet_offset" {
+  description = "Offset for public subnets in the address space"
+  type        = number
+  default     = 0
+}
+
+variable "app_gateway_subnet_offset" {
+  description = "Offset for the Application Gateway subnet index to ensure no overlap."
+  type        = number
+  default     = 40
+}
+
+variable "k8s_private_subnet_offset" {
+  description = "Offset for the k8s subnet index to ensure no overlap."
+  type        = number
+  default     = 30
+}
+
+variable "frontend_subnet_offset" {
+  description = "Offset for the frontend subnet index to ensure no overlap."
+  type        = number
+  default     = 50
+}
+
+variable "public_ip_allocation_method" {
+  description = "The allocation method for public IPs"
+  type        = string
+  default     = "Static"
+}
+
+variable "public_ip_sku" {
+  description = "The SKU for public IPs"
+  type        = string
+  default     = "Standard"
+}
+
+####################### bastion variables #######################
+
+variable "bastion_admin_username" {
+  description = "The admin username for the bastion host VM."
+  type        = string
+  default     = "ubuntu"
+}
+
+variable "bastion_vm_size" {
+  description = "The size of the virtual machine."
+  type        = string
+  default     = "Standard_B2ms"
+}
+
+variable "bastion_os_disk_size" {
+  description = "The size of the OS disk in GB."
+  type        = number
+  default     = 30
+}
+
+variable "image_publisher" {
+  description = "The publisher of the image."
+  type        = string
+  default     = "Canonical"
+}
+
+variable "image_offer" {
+  description = "The offer of the image."
+  type        = string
+  default     = "0001-com-ubuntu-server-jammy"
+}
+
+variable "image_sku" {
+  description = "The SKU of the image."
+  type        = string
+  default     = "22_04-lts-gen2"
+}
+
+variable "image_version" {
+  description = "The version of the image."
+  type        = string
+  default     = "latest"
+}
+
+variable "bastion_public_ip_allocation_method" {
+  type    = string
+  default = "Static"
+}
+
+variable "bastion_public_ip_sku" {
+  type    = string
+  default = "Standard"
+}
+
+variable "bastion_private_ip_address_allocation" {
+  type    = string
+  default = "Dynamic"
+}
+
+variable "bastion_os_disk_caching" {
+  type    = string
+  default = "ReadWrite"
+}
+
+variable "bastion_os_disk_storage_account_type" {
+  type    = string
+  default = "Standard_LRS"
+}
+
+####################### security_group variables #######################
+
+variable "source_bastion_ip" {
+  type    = list(string)
+  default = []
+}
+
+####################### ai foundry variables #######################
+
+# variable "enable_ai_foundry" {
+#   description = "Whether to enable Azure AI Foundry"
+#   type        = bool
+#   default     = false
+# }
+
+# variable "openai_location" {
+#   description = "The Azure location for OpenAI service (limited regions)"
+#   type        = string
+#   default     = "East US"
+# }
+
+# variable "gpt4o_capacity" {
+#   description = "The capacity for GPT-4o deployment (tokens per minute)"
+#   type        = number
+#   default     = 100
+# }
+
+# variable "o3_mini_capacity" {
+#   description = "The capacity for o3-mini deployment (tokens per minute)"
+#   type        = number
+#   default     = 100
+# }
+
+# variable "embedding_capacity" {
+#   description = "The capacity for text embedding deployment (tokens per minute)"
+#   type        = number
+#   default     = 50
+# }
+
+####################### version control variables #######################
+
+variable "github_access_token" {
+  description = "The github access token"
+  type        = string
+}
+
+variable "github_owner" {
+  description = "The github owner"
+  type        = string
+}
+
+variable "appType" {
+   description = "List of app names"
+   type        = list(string)
+ }"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/acr/main.tf.liquid renders 1`] = `
+"resource "azurerm_container_registry" "this" {
+  for_each            = toset(var.acr_repo_names)
+  name                = each.key
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku                 = "Basic"
+  admin_enabled       = false
+  tags                = var.tags
+ }
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/acr/variables.tf.liquid renders 1`] = `
+"variable "resource_group_name" {
+  description = "The name of the resource group."
+  type        = string
+}
+
+variable "location" {
+  description = "The location where resources will be created."
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to be applied to the ACR."
+  type        = map(string)
+  default     = {}
+}
+
+variable "project_name" {
+  description = "The project name for naming resources."
+  type        = string
+}
+
+variable "acr_repo_names" {
+  description = "List of ACR registry names to create"
+  type        = list(string)
+  default     = []
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/ai_foundry/main.tf.liquid renders 1`] = `
+"# Application Insights for AI Foundry monitoring
+resource "azurerm_application_insights" "ai_foundry_insights" {
+  name                = "testproj-dev-ai-insights"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  application_type    = "web"
+  retention_in_days   = 30
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-ai-insights"
+  })
+}
+
+resource "azurerm_storage_account" "ai_foundry_storage" {
+  name                     = "testprojdevaistorage"
+  resource_group_name      = var.resource_group_name
+  location                 = var.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+
+  blob_properties {
+    versioning_enabled = true
+
+    delete_retention_policy {
+      days = 7
+    }
+  }
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-ai-storage"
+  })
+}
+
+resource "azurerm_container_registry" "ai_foundry_acr" {
+  name                = "testprojdevaiacr"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku                 = "Standard"
+  admin_enabled       = true
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-ai-acr"
+  })
+}
+
+resource "azurerm_ai_services" "ai_services" {
+  name                  = "testprojdevaiservices"
+  location              = var.openai_location
+  resource_group_name   = var.resource_group_name
+  sku_name              = "S0"
+  custom_subdomain_name = "testprojdevaiservices"
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-ai-services"
+  })
+}
+
+# Create Azure AI Foundry Hub
+resource "azurerm_ai_foundry" "ai_foundry_hub" {
+  name                = "testproj-dev-ai-hub"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  storage_account_id  = azurerm_storage_account.ai_foundry_storage.id
+  key_vault_id        = var.existing_key_vault_id
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-ai-hub"
+  })
+
+  depends_on = [
+    azurerm_application_insights.ai_foundry_insights,
+    azurerm_storage_account.ai_foundry_storage,
+    azurerm_container_registry.ai_foundry_acr
+  ]
+}
+
+# Create Azure AI Foundry Project
+resource "azurerm_ai_foundry_project" "ai_foundry_project" {
+  name               = "testproj-dev-project"
+  location           = azurerm_ai_foundry.ai_foundry_hub.location
+  ai_services_hub_id = azurerm_ai_foundry.ai_foundry_hub.id
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-ai-project"
+  })
+
+  depends_on = [azurerm_ai_foundry.ai_foundry_hub]
+}
+
+# Deploy GPT-4o model
+resource "azurerm_cognitive_deployment" "gpt4o_deployment" {
+  name                 = "gpt-4o"
+  cognitive_account_id = azurerm_ai_services.ai_services.id
+
+  model {
+    format  = "OpenAI"
+    name    = "gpt-4o"
+    version = "2024-11-20"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = var.gpt4o_capacity
+  }
+}
+
+# Deploy o3-mini model
+resource "azurerm_cognitive_deployment" "o3_mini_deployment" {
+  name                 = "o3-mini"
+  cognitive_account_id = azurerm_ai_services.ai_services.id
+
+  model {
+    format  = "OpenAI"
+    name    = "o3-mini"
+    version = "2025-01-31"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = var.o3_mini_capacity
+  }
+}
+
+# Deploy text-embedding model
+resource "azurerm_cognitive_deployment" "embedding_deployment" {
+  name                 = "text-embedding-ada-002"
+  cognitive_account_id = azurerm_ai_services.ai_services.id
+
+  model {
+    format  = "OpenAI"
+    name    = "text-embedding-ada-002"
+    version = "2"
+  }
+
+  sku {
+    name     = "Standard"
+    capacity = var.embedding_capacity
+  }
+}
+
+# Store AI Services API key in Key Vault
+resource "azurerm_key_vault_secret" "ai_services_api_key" {
+  name         = "ai-services-api-key"
+  value        = azurerm_ai_services.ai_services.primary_access_key
+  key_vault_id = var.existing_key_vault_id
+
+  depends_on = [azurerm_ai_services.ai_services]
+}
+
+# Store AI Services endpoint in Key Vault
+resource "azurerm_key_vault_secret" "ai_services_endpoint" {
+  name         = "ai-services-endpoint"
+  value        = azurerm_ai_services.ai_services.endpoint
+  key_vault_id = var.existing_key_vault_id
+
+  depends_on = [azurerm_ai_services.ai_services]
+}
+
+# Get current Azure configuration
+data "azurerm_client_config" "current" {}"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/ai_foundry/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+# OpenAI specific variables
+variable "openai_location" {
+  description = "The Azure location for OpenAI service (limited regions)"
+  type        = string
+  default     = "East US"
+}
+
+variable "gpt4o_capacity" {
+  description = "The capacity for GPT-4o deployment (tokens per minute)"
+  type        = number
+  default     = 100  # Match flexify-rg capacity
+}
+
+variable "o3_mini_capacity" {
+  description = "The capacity for o3-mini deployment (tokens per minute)"
+  type        = number
+  default     = 100  # Match flexify-rg capacity
+}
+
+variable "embedding_capacity" {
+  description = "The capacity for text embedding deployment (tokens per minute)"
+  type        = number
+  default     = 50  # Match flexify-rg capacity
+}
+
+# AI Foundry workspace configuration
+variable "enable_private_endpoint" {
+  description = "Enable private endpoint for AI Foundry workspace"
+  type        = bool
+  default     = false
+}
+
+variable "retention_in_days" {
+  description = "Application Insights retention in days"
+  type        = number
+  default     = 30
+}
+
+variable "existing_key_vault_id" {
+  description = "The ID of the existing Key Vault to reuse for AI Foundry secrets"
+  type        = string
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/application_gateway/main.tf.liquid renders 1`] = `
+"# Define the public IP for the Application Gateway (required for WAF_v2)
+resource "azurerm_public_ip" "app_gateway_ip" {
+  name                = "testproj-dev-appgateway-pip"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.public_ip_sku
+  tags                = var.tags
+  zones               = var.availability_zones
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Define local variables for naming conventions
+locals {
+  prefix                           = "testproj-dev"
+  frontend_port_name_http          = "\${local.prefix}-http"
+  frontend_port_name_https         = "\${local.prefix}-https"
+  frontend_ip_configuration_name   = "\${local.prefix}-fip"
+  private_frontend_ip_configuration_name = "\${local.prefix}-private-fip"
+  backend_address_pool_name        = "\${local.prefix}-backend-pool"
+  backend_http_settings_name       = "\${local.prefix}-backend-http"
+  listener_name                    = "\${local.prefix}-http-lstn"
+  https_listener_name              = "\${local.prefix}-https-lstn"
+  request_routing_rule_name_http   = "\${local.prefix}-http"
+  request_routing_rule_name_https  = "\${local.prefix}-https"
+  redirect_configuration_name      = "\${local.prefix}-redirect-cfg"
+  autoscale_configuration_name     = "\${local.prefix}-autoscale"
+  gateway_config_name              = "\${local.prefix}-gatewayconf"
+  probe_name                       = "\${local.prefix}-probe"
+  ssl_cert_name                    = "\${local.prefix}-sslcert"
+  has_ssl_certificate              = var.azurerm_key_vault_certificate_secret_id != null
+}
+
+# Define the Application Gateway
+resource "azurerm_application_gateway" "main" {
+  name                = "\${local.prefix}-appgw"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  zones               = var.availability_zones
+  enable_http2        = true
+
+  ssl_policy {
+    policy_name = "AppGwSslPolicy20220101S"
+    policy_type = "Predefined"
+  }
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [var.appgateway_kv_identity_id]
+  }
+
+  sku {
+    name = "WAF_v2"
+    tier = "WAF_v2"
+  }
+
+  gateway_ip_configuration {
+    name      = local.gateway_config_name
+    subnet_id = var.app_gateway_subnet_id
+  }
+
+  # Public IP configuration (required for WAF_v2, but will be blocked by NSG)
+  frontend_ip_configuration {
+    name                 = local.frontend_ip_configuration_name
+    public_ip_address_id = azurerm_public_ip.app_gateway_ip.id
+  }
+
+  # Private IP configuration - primary access via VPN
+  frontend_ip_configuration {
+    name                          = local.private_frontend_ip_configuration_name
+    subnet_id                     = var.app_gateway_subnet_id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = "10.0.40.10"
+  }
+
+  frontend_port {
+    name = local.frontend_port_name_http
+    port = 80
+  }
+
+  dynamic "frontend_port" {
+    for_each = local.has_ssl_certificate ? [1] : []
+    content {
+      name = local.frontend_port_name_https
+      port = 443
+    }
+  }
+
+  backend_address_pool {
+    name = local.backend_address_pool_name
+  }
+
+  backend_http_settings {
+    name                  = local.backend_http_settings_name
+    cookie_based_affinity = "Disabled"
+    port                  = 80
+    protocol              = "Http"
+    request_timeout       = 20
+  }
+
+  http_listener {
+    name                            = local.listener_name
+    frontend_ip_configuration_name = local.private_frontend_ip_configuration_name
+    frontend_port_name             = local.frontend_port_name_http
+    protocol                       = "Http"
+  }
+
+  request_routing_rule {
+    name                       = local.request_routing_rule_name_http
+    rule_type                  = "Basic"
+    http_listener_name         = local.listener_name
+    backend_address_pool_name  = local.backend_address_pool_name
+    backend_http_settings_name = local.backend_http_settings_name
+    priority                   = 20000
+  }
+
+  autoscale_configuration {
+    min_capacity = 2
+    max_capacity = 10
+  }
+
+  dynamic "ssl_certificate" {
+    for_each = local.has_ssl_certificate ? [1] : []
+    content {
+      name                = local.ssl_cert_name
+      key_vault_secret_id = var.azurerm_key_vault_certificate_secret_id
+    }
+  }
+
+  waf_configuration {
+    enabled          = true
+    firewall_mode    = "Prevention"
+    rule_set_type    = "OWASP"
+    rule_set_version = "3.2"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      backend_address_pool,
+      backend_http_settings,
+      http_listener,
+      request_routing_rule,
+      url_path_map,
+      probe,
+      tags
+    ]
+  }
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/application_gateway/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "availability_zones" {
+  description = "List of availability zones to deploy resources into."
+  type        = list(string)
+}
+
+variable "domain_name" {
+  description = "Domain Name."
+  type        = string
+}
+
+variable "public_ip_allocation_method" {
+  description = "The allocation method for public IPs"
+  type        = string
+}
+
+variable "public_ip_sku" {
+  description = "The SKU for public IPs"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+}
+
+variable "app_gateway_subnet_id" {
+  description = "The ID of the app gateway subnet"
+  type        = string
+}
+
+variable "azurerm_key_vault_id" {
+  description = "The ID of the key vault"
+  type        = string
+}
+
+variable "appgateway_kv_identity_id" {
+  description = "The ID of the key vault identity user"
+  type        = string
+}
+
+variable "azurerm_key_vault_certificate_secret_id" {
+  description = "The secret ID for the Key Vault SSL certificate"
+  type        = string
+  default     = null
+}
+
+# Uncomment if needed:
+# variable "gateway_nic_id" {
+#   description = "The ID of the network interface associated with the gateway."
+#   type        = string
+# }
+
+# variable "gateway_nic_ip_configuration_name" {
+#   description = "The name of the IP configuration for the network interface associated with the gateway."
+#   type        = string
+# }
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/bastion/main.tf.liquid renders 1`] = `
+"# Create a public IP for the Bastion Host
+resource "azurerm_public_ip" "bastion_public_ip" {
+  name                = "testproj-dev-bastion-ip"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = var.bastion_public_ip_allocation_method
+  sku                 = var.bastion_public_ip_sku
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = var.tags
+}
+
+# Network Interface for the bastion host
+resource "azurerm_network_interface" "bastion_nic" {
+  name                = "testproj-dev-bastion-nic"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  ip_configuration {
+    name                          = "testproj-dev-bastion-nic-ipconfig"
+    subnet_id                     = var.bastion_subnet_id
+    private_ip_address_allocation = var.bastion_private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.bastion_public_ip.id
+  }
+
+  depends_on = [
+    azurerm_public_ip.bastion_public_ip,
+    var.bastion_nsg_id
+  ]
+
+  tags = var.tags
+}
+
+# Associate the NSG with the bastion network interface
+resource "azurerm_network_interface_security_group_association" "bastion_nic_nsg" {
+  network_interface_id      = azurerm_network_interface.bastion_nic.id
+  network_security_group_id = var.bastion_nsg_id
+}
+
+# Associate the ASG with the Bastion Network Interface
+resource "azurerm_network_interface_application_security_group_association" "bastion_nic_asg" {
+  network_interface_id          = azurerm_network_interface.bastion_nic.id
+  application_security_group_id = var.bastion_asg_id
+}
+
+# Bastion Host Virtual Machine
+resource "azurerm_linux_virtual_machine" "bastion_vm" {
+  name                  = "testproj-dev-bastion-vm"
+  location              = var.location
+  resource_group_name   = var.resource_group_name
+  network_interface_ids = [azurerm_network_interface.bastion_nic.id]
+  size                  = var.bastion_vm_size
+
+  os_disk {
+    name                 = "testproj-dev-bastion-vm-osdisk"
+    caching              = var.bastion_os_disk_caching
+    storage_account_type = var.bastion_os_disk_storage_account_type
+    disk_size_gb         = var.bastion_os_disk_size
+  }
+
+  source_image_reference {
+    publisher = var.image_publisher
+    offer     = var.image_offer
+    sku       = var.image_sku
+    version   = var.image_version
+  }
+
+  computer_name  = "bastion-dev"
+  admin_username = var.bastion_admin_username
+
+  admin_ssh_key {
+    username   = var.bastion_admin_username
+    public_key = tls_private_key.bastion_ssh_key.public_key_openssh
+  }
+
+  depends_on = [
+    azurerm_network_interface.bastion_nic,
+    azurerm_network_interface_application_security_group_association.bastion_nic_asg
+  ]
+
+  tags = merge(
+    {
+      "Environment" = var.environment,
+      "Group"       = "bastion"
+    },
+    var.tags
+  )
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/bastion/variables.tf.liquid renders 1`] = `
+"# Variables for resource group, location, and other necessary inputs
+
+variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the existing resource group."
+  type        = string
+}
+
+variable "location" {
+  description = "The location of the existing resources."
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to be applied to the ACR."
+  type        = map(string)
+  default     = {}
+}
+
+variable "bastion_subnet_id" {
+  description = "The ID of the existing subnet for the bastion host."
+  type        = string
+}
+
+variable "bastion_nsg_id" {
+  description = "The ID of the bastion host's network security group."
+  type        = string
+}
+
+variable "bastion_asg_id" {
+  description = "The ID of the bastion host's application security group."
+  type        = string
+}
+
+variable "bastion_admin_username" {
+  description = "The admin username for the bastion host VM."
+  type        = string
+}
+
+variable "bastion_vm_size" {
+  description = "The size of the virtual machine."
+  type        = string
+}
+
+variable "bastion_os_disk_size" {
+  description = "The size of the OS disk in GB."
+  type        = number
+}
+
+variable "image_publisher" {
+  description = "The publisher of the image."
+  type        = string
+}
+
+variable "image_offer" {
+  description = "The offer of the image."
+  type        = string
+}
+
+variable "image_sku" {
+  description = "The SKU of the image."
+  type        = string
+}
+
+variable "image_version" {
+  description = "The version of the image."
+  type        = string
+}
+
+variable "bastion_public_ip_allocation_method" {
+  description = "The allocation method for the public IP address. Options are 'Static' or 'Dynamic'."
+  type        = string
+}
+
+variable "bastion_public_ip_sku" {
+  description = "The SKU for the public IP address. Options are 'Basic' or 'Standard'."
+  type        = string
+}
+
+variable "bastion_private_ip_address_allocation" {
+  description = "The allocation method for the private IP address. Options are 'Static' or 'Dynamic'."
+  type        = string
+}
+
+variable "bastion_os_disk_caching" {
+  description = "The caching setting for the OS disk. Options are 'None', 'ReadOnly', or 'ReadWrite'."
+  type        = string
+}
+
+variable "bastion_os_disk_storage_account_type" {
+  description = "The storage account type for the OS disk. Options are 'Standard_LRS', 'Standard_ZRS', 'Premium_LRS', or 'UltraSSD_LRS'."
+  type        = string
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/key_vault/main.tf.liquid renders 1`] = `
+"data "azurerm_client_config" "current" {}
+
+resource "azurerm_user_assigned_identity" "base" {
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  name                = "testproj-dev-kv-user"
+}
+
+resource "random_string" "suffix" {
+  length  = 4
+  special = false
+  upper   = false
+}
+
+resource "azurerm_key_vault" "kv" {
+  name                = "testproj-kv-\${random_string.suffix.result}"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  sku_name            = "standard"
+
+  access_policy {
+    object_id    = data.azurerm_client_config.current.object_id
+    tenant_id    = data.azurerm_client_config.current.tenant_id
+
+    certificate_permissions = [
+      "Create",
+      "Delete",
+      "DeleteIssuers",
+      "Get",
+      "GetIssuers",
+      "Import",
+      "List",
+      "ListIssuers",
+      "ManageContacts",
+      "ManageIssuers",
+      "Purge",
+      "SetIssuers",
+      "Update"
+    ]
+
+    key_permissions = [
+      "Backup",
+      "Create",
+      "Decrypt",
+      "Delete",
+      "Encrypt",
+      "Get",
+      "Import",
+      "List",
+      "Purge",
+      "Recover",
+      "Restore",
+      "Sign",
+      "UnwrapKey",
+      "Update",
+      "Verify",
+      "WrapKey"
+    ]
+
+    secret_permissions = [
+      "Backup",
+      "Delete",
+      "Get",
+      "List",
+      "Purge",
+      "Restore",
+      "Set"
+    ]
+  }
+
+  access_policy {
+    object_id = azurerm_user_assigned_identity.base.principal_id
+    tenant_id = data.azurerm_client_config.current.tenant_id
+
+    secret_permissions = [
+      "Get"
+    ]
+  }
+}
+
+resource "azurerm_key_vault_certificate" "ssl" {
+  count        = var.ssl_certificate_path != null ? 1 : 0
+  name         = "testproj-dev-ssl-certs"
+  key_vault_id = azurerm_key_vault.kv.id
+
+  certificate {
+    contents = filebase64(var.ssl_certificate_path)
+  }
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/key_vault/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "availability_zones" {
+  description = "List of availability zones to deploy resources into."
+  type        = list(string)
+}
+
+variable "ssl_certificate_path" {
+  description = "Path to the SSL certificate PFX file"
+  type        = string
+  default     = null
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/security_groups/main.tf.liquid renders 1`] = `
+"resource "azurerm_application_security_group" "bastion_asg" {
+  name                = "testproj-dev-bastion-asg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_application_security_group" "vm_k8s_asg" {
+  name                = "testproj-dev-k8s-asg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_application_security_group" "app_gateway_asg" {
+  name                = "testproj-dev-app-gateway-asg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_application_security_group" "frontend_private_asg" {
+  name                = "testproj-dev-frontend-private-asg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_network_security_group" "k8s_vm_sg" {
+  name                = "testproj-dev-k8s-vm-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags = merge(
+    {},
+    {
+      "Name" = "K8s VM NSG"
+    }
+  )
+
+  security_rule {
+    name                                       = "AllowAllFromAppGateway"
+    priority                                   = 100
+    direction                                  = "Inbound"
+    access                                     = "Allow"
+    protocol                                   = "*"
+    source_port_range                          = "*"
+    destination_port_range                     = "*"
+    source_application_security_group_ids      = [azurerm_application_security_group.app_gateway_asg.id]
+    destination_application_security_group_ids = [azurerm_application_security_group.vm_k8s_asg.id]
+  }
+
+  security_rule {
+    name                       = "AllowAppGatewaySubnetToK8s"
+    priority                   = 101
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.app_gateway_subnet_offset)
+    destination_address_prefix = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.k8s_private_subnet_offset)
+  }
+
+  security_rule {
+    name                                       = "AllowSSHFromBastion"
+    priority                                   = 102
+    direction                                  = "Inbound"
+    access                                     = "Allow"
+    protocol                                   = "Tcp"
+    source_port_range                          = "*"
+    destination_port_range                     = "22"
+    source_application_security_group_ids      = [azurerm_application_security_group.bastion_asg.id]
+    destination_application_security_group_ids = [azurerm_application_security_group.vm_k8s_asg.id]
+  }
+
+  security_rule {
+    name                       = "AllowVPNToK8s"
+    priority                   = 103
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = var.vpn_client_address_space[0]
+    destination_address_prefix = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.k8s_private_subnet_offset)
+  }
+}
+
+resource "azurerm_network_security_group" "bastion_nsg" {
+  name                = "testproj-dev-bastion-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags = merge(
+    {},
+    {
+      "Name" = "Bastion NSG"
+    }
+  )
+
+  security_rule {
+    name                                       = "AllowSSHFromSpecificIPs"
+    priority                                   = 100
+    direction                                  = "Inbound"
+    access                                     = "Allow"
+    protocol                                   = "Tcp"
+    source_port_range                          = "*"
+    destination_port_range                     = "22"
+    source_address_prefixes                    = var.source_bastion_ip
+    destination_application_security_group_ids = [azurerm_application_security_group.bastion_asg.id]
+  }
+}
+
+resource "azurerm_network_security_group" "app_gateway_nsg" {
+  name                = "testproj-dev-app-gateway-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = {}
+
+  security_rule {
+    name                       = "allow-http-vpn"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["80"]
+    source_address_prefix      = var.vpn_client_address_space[0]
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "allow-https-vpn"
+    priority                   = 101
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["443"]
+    source_address_prefix      = var.vpn_client_address_space[0]
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "allow-appgw-ports"
+    priority                   = 102
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["65200-65535"]
+    source_address_prefix      = "GatewayManager"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "deny-internet-http"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["80", "443"]
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_network_security_group" "frontend_private_nsg" {
+  name                = "testproj-dev-frontend-private-nsg"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags = merge(
+    {},
+    {
+      "Name" = "Frontend Private NSG"
+    }
+  )
+
+  security_rule {
+    name                       = "AllowVPNToFrontend"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = var.vpn_client_address_space[0]
+    destination_address_prefix = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.frontend_subnet_offset)
+  }
+
+  security_rule {
+    name                       = "AllowFrontendToBackend"
+    priority                   = 101
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.frontend_subnet_offset)
+    destination_address_prefix = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.k8s_private_subnet_offset)
+  }
+
+  security_rule {
+    name                       = "AllowFrontendToSQL"
+    priority                   = 102
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "1433"
+    source_address_prefix      = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.frontend_subnet_offset)
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "DenyInternetInbound"
+    priority                   = 4096
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+}"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/security_groups/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "Name of the project"
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment name (e.g., dev, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region where the NSGs will be created"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+}
+
+variable "resource_group_name" {
+  description = "Name of the resource group where the NSGs will be created"
+  type        = string
+}
+
+variable "source_bastion_ip" {
+  description = "List of allowed source IPs for Bastion access"
+  type        = list(string)
+}
+
+variable "vnet_address_space" {
+  description = "The address space for the VNet"
+  type        = list(string)
+}
+
+variable "subnet_prefix_length" {
+  description = "The prefix length for subnets"
+  type        = number
+}
+
+variable "app_gateway_subnet_offset" {
+  description = "Offset for the Application Gateway subnet"
+  type        = number
+}
+
+variable "k8s_private_subnet_offset" {
+  description = "Offset for the Kubernetes private subnet"
+  type        = number
+}
+
+variable "frontend_subnet_offset" {
+  description = "Offset for the frontend subnet"
+  type        = number
+}
+
+variable "vpn_client_address_space" {
+  description = "The address space for VPN clients"
+  type        = list(string)
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/sql_server/main.tf.liquid renders 1`] = `
+"# Generate a random password if none is provided
+resource "random_password" "sql_admin_password" {
+  count   = var.sql_admin_password == null ? 1 : 0
+  length  = 16
+  special = true
+}
+
+# Create the SQL Server
+resource "azurerm_mssql_server" "sql_server" {
+  name                         = "testproj--sql-server"
+  resource_group_name          = var.resource_group_name
+  location                     = var.location
+  version                      = var.sql_version
+  administrator_login          = var.sql_admin_username
+  administrator_login_password = var.sql_admin_password != null ? var.sql_admin_password : random_password.sql_admin_password[0].result
+  minimum_tls_version          = var.min_tls_version
+  public_network_access_enabled = var.public_network_access_enabled
+
+  tags = merge(var.tags, {
+    Name = "testproj--sql-server"
+  })
+}
+
+# Create the SQL Database
+resource "azurerm_mssql_database" "sql_database" {
+  name      = var.database_name
+  server_id = azurerm_mssql_server.sql_server.id
+  sku_name  = "S0"
+
+  tags = merge(var.tags, {
+    Name = "$testproj-$dev-$"
+  })
+}
+
+# Create firewall rules
+resource "azurerm_mssql_firewall_rule" "firewall_rules" {
+  count            = length(var.firewall_rules)
+  name             = var.firewall_rules[count.index].name
+  server_id        = azurerm_mssql_server.sql_server.id
+  start_ip_address = var.firewall_rules[count.index].start_ip_address
+  end_ip_address   = var.firewall_rules[count.index].end_ip_address
+}
+
+# Allow Azure services to access the server
+resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
+  name             = "AllowAzureServices"
+  server_id        = azurerm_mssql_server.sql_server.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
+}
+
+# Create virtual network rules for subnet access
+resource "azurerm_mssql_virtual_network_rule" "vnet_rules" {
+  count     = length(var.allowed_subnet_ids)
+  name      = "vnet-rule-\${count.index}"
+  server_id = azurerm_mssql_server.sql_server.id
+  subnet_id = var.allowed_subnet_ids[count.index]
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/sql_server/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "sql_admin_username" {
+  description = "The administrator username for the SQL Server"
+  type        = string
+  default     = "sqladmin"
+}
+
+variable "sql_admin_password" {
+  description = "The administrator password for the SQL Server"
+  type        = string
+  sensitive   = true
+}
+
+variable "sql_version" {
+  description = "The version of SQL Server to deploy"
+  type        = string
+  default     = "12.0"
+}
+
+variable "database_name" {
+  description = "The name of the database to create"
+  type        = string
+  default     = "app_database"
+}
+
+variable "database_edition" {
+  description = "The edition of the database"
+  type        = string
+  default     = "GeneralPurpose"
+}
+
+variable "database_family" {
+  description = "The compute generation for the database"
+  type        = string
+  default     = "Gen5"
+}
+
+variable "database_capacity" {
+  description = "The capacity of the database"
+  type        = number
+  default     = 2
+}
+
+variable "min_tls_version" {
+  description = "The minimum TLS version for the SQL Server"
+  type        = string
+  default     = "1.2"
+}
+
+variable "public_network_access_enabled" {
+  description = "Whether public network access is enabled"
+  type        = bool
+  default     = true
+}
+
+variable "firewall_rules" {
+  description = "List of firewall rules to create"
+  type = list(object({
+    name             = string
+    start_ip_address = string
+    end_ip_address   = string
+  }))
+  default = []
+}
+
+variable "allowed_subnet_ids" {
+  description = "List of subnet IDs allowed to access the SQL Server"
+  type        = list(string)
+  default     = []
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/vnet/main.tf.liquid renders 1`] = `
+"resource "azurerm_virtual_network" "this" {
+  name                = "testproj-dev-vnet"
+  address_space       = var.vnet_address_space
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_network_interface" "private_nic" {
+  name                = "testproj-dev-private-nic"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  ip_configuration {
+    name                          = "testproj-dev-private-nic"
+    subnet_id                     = azurerm_subnet.k8s_private_subnet.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_subnet_route_table_association" "k8s_private_rt_assoc" {
+  subnet_id      = azurerm_subnet.k8s_private_subnet.id
+  route_table_id = azurerm_route_table.private_rt.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "k8s_private_subnet_nsg_association" {
+  subnet_id                 = azurerm_subnet.k8s_private_subnet.id
+  network_security_group_id = var.k8s_vm_nsg_id
+}
+
+resource "azurerm_subnet_network_security_group_association" "public_subnet_nsg_association" {
+  subnet_id                 = azurerm_subnet.public.id
+  network_security_group_id = var.bastion_nsg_id
+}
+
+resource "azurerm_subnet_network_security_group_association" "app_gateway_subnet_nsg_association" {
+  subnet_id                 = azurerm_subnet.app_gateway_subnet.id
+  network_security_group_id = var.app_gateway_nsg_id
+}
+
+resource "azurerm_nat_gateway" "this" {
+  name                = "testproj-dev-nat-gw"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku_name            = "Standard"
+  tags                = var.tags
+}
+
+resource "azurerm_public_ip" "nat_gateway_ip" {
+  name                = "testproj-dev-nat-pip"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.public_ip_sku
+  tags                = var.tags
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "this" {
+  nat_gateway_id       = azurerm_nat_gateway.this.id
+  public_ip_address_id = azurerm_public_ip.nat_gateway_ip.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "public" {
+  subnet_id      = azurerm_subnet.public.id
+  nat_gateway_id = azurerm_nat_gateway.this.id
+}
+
+resource "azurerm_route_table" "private_rt" {
+  name                = "testproj-dev-private-rt"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tags                = var.tags
+}
+
+resource "azurerm_route" "private_route" {
+  name                   = "private-to-internet"
+  resource_group_name    = var.resource_group_name
+  route_table_name       = azurerm_route_table.private_rt.name
+  address_prefix         = "0.0.0.0/0"
+  next_hop_type          = "Internet"
+}
+
+resource "azurerm_network_interface_security_group_association" "k8s_private_private_nic_nsg" {
+  network_interface_id      = azurerm_network_interface.private_nic.id
+  network_security_group_id = var.k8s_vm_nsg_id
+}
+
+resource "azurerm_network_interface_application_security_group_association" "k8s_private_private_nic_asg" {
+  network_interface_id          = azurerm_network_interface.private_nic.id
+  application_security_group_id = var.k8s_asg_id
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/vnet/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "availability_zones" {
+  description = "List of availability zones to deploy resources into"
+  type        = list(string)
+}
+
+variable "vnet_address_space" {
+  description = "The address space for the Virtual Network"
+  type        = list(string)
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+}
+
+variable "subnet_prefix_length" {
+  description = "The CIDR prefix length for subnets"
+  type        = number
+}
+
+variable "k8s_private_subnet_offset" {
+  description = "Subnet offset for the Kubernetes private subnet"
+  type        = number
+}
+
+variable "private_subnet_offset" {
+  description = "Subnet offset for additional private subnets (if any)"
+  type        = number
+}
+
+variable "public_subnet_offset" {
+  description = "Subnet offset for the public subnet"
+  type        = number
+}
+
+variable "public_ip_allocation_method" {
+  description = "The allocation method for public IPs (e.g., Static, Dynamic)"
+  type        = string
+}
+
+variable "public_ip_sku" {
+  description = "The SKU for public IPs (e.g., Basic, Standard)"
+  type        = string
+}
+
+variable "k8s_vm_nsg_id" {
+  description = "ID of the Network Security Group to attach to the Kubernetes private subnet"
+  type        = string
+}
+
+variable "bastion_nsg_id" {
+  description = "ID of the Network Security Group to attach to the public subnet for Bastion"
+  type        = string
+}
+
+variable "app_gateway_subnet_offset" {
+  description = "Subnet offset for the Application Gateway subnet"
+  type        = number
+}
+
+variable "app_gateway_nsg_id" {
+  description = "ID of the Network Security Group to attach to the Application Gateway subnet"
+  type        = string
+}
+
+variable "k8s_asg_id" {
+  description = "ID of the Application Security Group to attach to the Kubernetes private NIC"
+  type        = string
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/vpn_gateway/main.tf.liquid renders 1`] = `
+"# Gateway Subnet (required for VPN Gateway)
+resource "azurerm_subnet" "gateway_subnet" {
+  name                 = "GatewaySubnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = split("/", var.virtual_network_id)[8]
+  address_prefixes     = [var.gateway_subnet_address_prefix]
+}
+
+# Public IP for VPN Gateway
+resource "azurerm_public_ip" "vpn_gateway_ip" {
+  name                = "testproj-dev-vpn-gateway-ip"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = var.availability_zones
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-vpn-gateway-ip"
+  })
+}
+
+resource "azurerm_virtual_network_gateway" "vpn_gateway" {
+  name                = "testproj-dev-vpn-gateway"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  type     = "Vpn"
+  vpn_type = "RouteBased"
+
+  active_active = false
+  enable_bgp    = false
+  sku           = length(var.availability_zones) > 0 ? "VpnGw1AZ" : "VpnGw1"
+  generation    = "Generation1"
+
+  ip_configuration {
+    name                          = "vnetGatewayConfig"
+    public_ip_address_id          = azurerm_public_ip.vpn_gateway_ip.id
+    private_ip_address_allocation = "Dynamic"
+    subnet_id                     = azurerm_subnet.gateway_subnet.id
+  }
+
+  vpn_client_configuration {
+    address_space         = var.vpn_client_address_space
+    aad_tenant            = var.aad_tenant
+    aad_audience          = var.aad_audience
+    aad_issuer            = var.aad_issuer
+    vpn_client_protocols  = ["OpenVPN"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-vpn-gateway"
+  })
+
+  timeouts {
+    create = "60m"
+    delete = "60m"
+  }
+}
+
+# Private subnet for frontend applications
+resource "azurerm_subnet" "frontend_private_subnet" {
+  name                 = "testproj-dev-frontend-private"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = split("/", var.virtual_network_id)[8]
+  address_prefixes     = [cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.frontend_subnet_offset)]
+}
+
+# Associate NSG with frontend private subnet
+resource "azurerm_subnet_network_security_group_association" "frontend_private_nsg_association" {
+  subnet_id                 = azurerm_subnet.frontend_private_subnet.id
+  network_security_group_id = var.frontend_private_nsg_id
+}
+
+# Route table for VPN clients to access private subnets
+resource "azurerm_route_table" "vpn_route_table" {
+  name                = "testproj-dev-vpn-routes"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  route {
+    name           = "vpn-to-frontend"
+    address_prefix = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.frontend_subnet_offset)
+    next_hop_type  = "VnetLocal"
+  }
+
+  route {
+    name           = "vpn-to-k8s"
+    address_prefix = cidrsubnet(element(var.vnet_address_space, 0), var.subnet_prefix_length, var.k8s_private_subnet_offset)
+    next_hop_type  = "VnetLocal"
+  }
+
+  tags = merge(var.tags, {
+    Name = "testproj-dev-vpn-routes"
+  })
+}
+
+# Associate route table with frontend private subnet
+resource "azurerm_subnet_route_table_association" "frontend_private_routes" {
+  subnet_id      = azurerm_subnet.frontend_private_subnet.id
+  route_table_id = azurerm_route_table.vpn_route_table.id
+}
+"
+`;
+
+exports[`Azure Template Rendering (integration) Azure module templates modules/vpn_gateway/variables.tf.liquid renders 1`] = `
+"variable "project_name" {
+  description = "The project name"
+  type        = string
+}
+
+variable "environment" {
+  description = "The environment (e.g., dev, qa, prod)"
+  type        = string
+}
+
+variable "location" {
+  description = "The Azure location/region"
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+}
+
+variable "availability_zones" {
+  description = "List of availability zones to deploy resources into"
+  type        = list(string)
+  default     = []
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "virtual_network_id" {
+  description = "The ID of the virtual network"
+  type        = string
+}
+
+variable "gateway_subnet_address_prefix" {
+  description = "The address prefix for the gateway subnet"
+  type        = string
+}
+
+variable "vpn_client_address_space" {
+  description = "The address space for VPN clients"
+  type        = list(string)
+  default     = ["10.1.0.0/24"]
+}
+
+variable "frontend_private_nsg_id" {
+  description = "The ID of the NSG for the frontend private subnet"
+  type        = string
+}
+
+variable "vnet_address_space" {
+  description = "The address space for the VNet"
+  type        = list(string)
+}
+
+variable "subnet_prefix_length" {
+  description = "The prefix length for subnets"
+  type        = number
+}
+
+variable "k8s_private_subnet_offset" {
+  description = "Offset for the Kubernetes private subnet"
+  type        = number
+}
+
+variable "frontend_subnet_offset" {
+  description = "Offset for the frontend subnet"
+  type        = number
+}
+
+# Azure AD authentication variables (for VPN Gateway configuration)
+variable "aad_tenant" {
+  description = "The Azure AD tenant URL for VPN authentication"
+  type        = string
+  default     = "https://login.microsoftonline.com/c9e9daed-146b-4959-923c-fcdff492c507/"
+}
+
+variable "aad_audience" {
+  description = "The Azure AD application audience for VPN authentication"
+  type        = string
+  default     = "41b23e61-6c1e-4545-b367-cd054e0ed4b4"
+}
+
+variable "aad_issuer" {
+  description = "The Azure AD issuer URL for VPN authentication"
+  type        = string
+  default     = "https://sts.windows.net/c9e9daed-146b-4959-923c-fcdff492c507/"
+}
+"
+`;

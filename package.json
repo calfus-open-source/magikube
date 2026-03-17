@@ -118,6 +118,7 @@
     "test:unit": "jest --no-coverage",
     "test:quick": "jest --no-coverage --bail",
     "test:coverage": "jest --coverage",
+    "test:integration": "jest --no-coverage --testPathPatterns='test/integration/'",
     "version": "oclif readme && git add README.md"
   },
   "types": "dist/index.d.ts"

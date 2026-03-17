@@ -1,0 +1,995 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`AWS Template Rendering (integration) Ansible templates group_vars/all.yml.liquid renders without errors 1`] = `
+"---
+# Ansible
+ansible_user: ubuntu
+ansible_ssh_private_key_file: ~/.ssh/testproj-dev-key.pem
+aws_profile: default
+
+instance_volumes:
+  data:
+    size: 100G
+  logs:
+    size: 100G
+
+##auto shutdown servers after this limit (specified in hours)
+server_uptime_limit: 4
+
+# need better way to determine region and AZ
+region: us-east-1
+
+# Kubernetes
+token: iotn9i.9ymmeaol3iztc0yy
+
+# Any other additional opts you want to add..
+kubeadm_opts: ""
+# For example:
+# kubeadm_opts: '--apiserver-cert-extra-sans "k8s.domain.com,kubernetes.domain.com"'
+
+service_cidr: "192.168.0.0/17"
+pod_network_cidr: "192.168.128.0/17"
+
+systemd_dir: /lib/systemd/system
+system_env_dir: /etc/sysconfig
+network_dir: /etc/kubernetes/network
+kubeadmin_config: /etc/kubernetes/admin.conf
+kube_addon_dir: /etc/kubernetes/addon
+kube_config_dir: /etc/kubernetes
+kube_version: 1.29
+kube_cni_version: 1.2.0-00
+
+disk_size: 100G
+kube_reserved_cpu: 100m
+kube_reserved_memory: 300Mi
+system_reserved_cpu: 100m
+system_reserved_memory: 200Mi
+eviction_memory_threshold: 100Mi
+
+ingress_controller_replicas: 
+
+# temporary directory used by additional features
+tmp_dir: /tmp/kubeadm-ansible-files
+
+master_ip: "{{ hostvars[groups['k8s_master'][0]]['ansible_default_ipv4'].address | default(groups['k8s_master'][0]) }}"
+worker_name: "{{ hostvars[groups['k8s_worker'][0]]['inventory_hostname'] }}"
+worker_ip:  "{{ hostvars[groups['k8s_worker'][0]]['ansible_default_ipv4'].address }}"
+
+lifecycle: dev
+
+hostname: 
+git_user_name: test-user
+github_access_token: ghp_test_token_placeholder 
+github_owner: test-org
+environment: dev
+project_name: testproj 
+gitops_base_path: testproj-dev
+
+
+aws_secret_access_key : wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+aws_access_key_id : AKIAIOSFODNN7EXAMPLE
+accountId : 123456789012
+aws_region: us-east-1
+namespace: testproj-dev-app
+frontend_app: testproj-react-app
+backend_app: testproj-node-express-app
+keycloak_app: testproj-keycloak-service-app
+auth_service: testproj-auth-service-app
+gen_ai_app:testproj-gen-ai-service-app
+argocd_namespace: testproj-dev-argocd
+
+run_as_uid: 1001
+run_as_gid: 1001
+
+# Ports to open
+# port 53  - DNS
+# port 179  - BGP
+# port 8443 - alternative HTTPS port
+# 2379-2381/tcp - ETCD( 2381 for metrics)
+# 6782-6783/tcp - weavenetworks
+# 6783-6784/udp - weavenetworks
+# 8472/udp - VxLAN ( linux kernel uses this for VxLAN traffic)
+# 4789/udp - VxLAN ( open vSwitch)
+# 9153/tcp - coreDNS metrics
+# 27017-27019/tcp - mongodb port
+ports_to_open:
+  - 80/tcp
+  - 8080/tcp
+  - 53/tcp
+  - 53/udp
+  - 123/udp
+  - 179/tcp
+  - 443/tcp
+  - 2379-2381/tcp
+  - 5432/tcp
+  - 6443/tcp
+  - 6781-6784/tcp
+  - 6781-6784/udp
+  - 8090-8091/tcp
+  - 8472/udp
+  - 9153/tcp
+  - 10248-10260/tcp
+  - 4789/udp
+  - 5473/tcp
+  - 8443/tcp
+  - 8472/udp
+  - 9099/tcp
+  - 27017-27019/tcp
+  - 30000-65535/tcp
+  - 9000-9005/tcp
+"
+`;
+
+exports[`AWS Template Rendering (integration) Ansible templates inventory.aws_ec2.yml.liquid renders valid YAML 1`] = `
+"---
+plugin: aws_ec2
+
+regions:
+  - us-east-1
+
+filters:
+  tag:Group:
+    - bastion
+    - k8s-master
+    - k8s-worker
+  instance-state-name: running
+
+keyed_groups:
+  - key: tags.Group
+    separator: ''
+
+hostnames:
+  - network-interface.association.public-ip
+  - network-interface.addresses.private-ip-address
+
+vars:
+  ansible_user: ubuntu
+  ansible_ssh_private_key_file: ~/.ssh/testproj-dev-key.pem
+"
+`;
+
+exports[`AWS Template Rendering (integration) Common module templates common/providers.tf.liquid renders 1`] = `
+"terraform {
+    required_version = "1.8.2"
+    required_providers {
+        
+        aws = {
+            source = "hashicorp/aws"
+            version = "5.58.0"
+        }
+        helm = {
+            source  = "hashicorp/helm"
+            version = "2.17.0"
+        }
+        
+
+        
+        github = {
+            source = "integrations/github"
+            version = "~> 6.0"
+        }
+        
+    }
+}"
+`;
+
+exports[`AWS Template Rendering (integration) EKS-Fargate templates backend-config.tfvars.liquid renders 1`] = `
+"bucket         = "-tfstate"
+encrypt        = true
+key            = "testproj-dev.tfstate"
+region         = "us-east-1"
+dynamodb_table = "-tfstate-lock""
+`;
+
+exports[`AWS Template Rendering (integration) EKS-Fargate templates main.tf.liquid renders without errors and matches snapshot 1`] = `
+"
+provider "aws" {
+    region     = "us-east-1"
+}
+
+terraform {
+    backend "s3" {
+    }
+}
+
+data "aws_route53_zone" "route53_zone" {
+  name = var.domain_name
+}
+
+module "vpc" {
+    source = "./modules/vpc"
+    name = "\${ var.project_name }-\${ var.environment }-vpc"
+    environment = "\${ var.environment }"
+    cidr = "\${ var.vpc_cidr }"
+}
+
+module "rds"{
+    source = "./modules/rds"  
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    region                 = var.region
+    vpc_id                 = module.vpc.id
+    vpc_private_subnets    = module.vpc.private_subnets
+    vpc_public_subnets     = module.vpc.public_subnets
+    vpc_database_subnets   = module.vpc.database_subnets
+    security_group_id      = module.vpc.default_security_group_id
+}
+
+
+
+
+
+
+module "eks" {
+    source                  = "./modules/eks-fargate"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+    vpc_private_subnets     = module.vpc.private_subnets
+    cluster_version         = "\${ var.cluster_version }"
+}
+
+
+
+
+module "acm" {
+    source = "./modules/acm"
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    domain_name = var.domain_name
+    route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
+}
+
+module "gitops" {
+    source = "./modules/gitops"
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    github_token = "\${ var.github_access_token }"
+    github_owner = "\${ var.github_owner }"
+}
+
+module "repository" {
+     source = "./modules/code-repository"
+     name = "\${ var.project_name }"
+     appType = "\${ var.appType }"
+     environment = "\${ var.environment }"
+     github_token = "\${ var.github_access_token }"
+     github_owner = "\${ var.github_owner }"
+}
+
+
+
+
+
+data "aws_eks_cluster_auth" "eks_cluster_auth" {
+    name = module.eks.cluster_name
+}
+
+
+module "ingress-controller" {
+    source                 = "./modules/ingress-controller"
+    name                   = "\${ var.project_name }"
+    environment            = "\${ var.environment }"
+    region                 = "\${ var.region }"
+    cluster_endpoint       = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name           = module.eks.cluster_name
+    vpc_id                 = module.vpc.id
+    vpc_private_subnets    = module.vpc.private_subnets
+    vpc_public_subnets     = module.vpc.public_subnets
+    oidc_provider_arn      = module.eks.oidc_provider_arn
+    oidc_provider          = module.eks.oidc_provider
+    cluster_token          = data.aws_eks_cluster_auth.eks_cluster_auth.token
+    fargate_profiles       = module.eks.fargate_profiles
+}
+
+module "environment" {
+  source                             = "./modules/environment"
+  name                               = "\${ var.project_name }"
+  environment                        = "\${ var.environment }"
+  region                             = "\${ var.region }"
+  cluster_endpoint                   = module.eks.cluster_endpoint
+  cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+  cluster_token                      = data.aws_eks_cluster_auth.eks_cluster_auth.token
+  domain_name                        = var.domain_name
+  route53_zoneid                     = data.aws_route53_zone.route53_zone.zone_id
+  gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
+  gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+  argocd_namespace                   = module.argo.argocd_namespace
+}
+
+module "argo" {
+    source = "./modules/argocd"
+    name                               = "\${ var.project_name }"
+    environment                        = "\${ var.environment }"
+    region                             = "\${ var.region }"
+    cluster_endpoint                   = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name                       = module.eks.cluster_name
+    oidc_provider_arn                  = module.eks.oidc_provider_arn
+    oidc_provider                      = module.eks.oidc_provider
+    cluster_token                      = data.aws_eks_cluster_auth.eks_cluster_auth.token
+    route53_zoneid                     = data.aws_route53_zone.route53_zone
+    domain_name                        = "\${ var.domain_name }"
+    ssl_cert_arn                       = module.acm.ssl_cert_arn
+    vpc_public_subnets                 = module.vpc.public_subnets
+    gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
+    gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+}
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for \${repo_name}"
+     }
+   ]
+ }
+
+module "ecr-repo" {
+    source            = "./modules/ecr"
+    image_tag_mutability   = "MUTABLE"
+    count = length(local.repositories)
+    name = "\${ var.project_name }"
+    appType = local.repositories[count.index].appType
+}"
+`;
+
+exports[`AWS Template Rendering (integration) EKS-Fargate templates terraform.tfvars.liquid renders 1`] = `
+"region = "us-east-1"
+project_id = ""
+project_name = "testproj"
+environment = "dev"
+vpc_cidr = "10.0.0.0/16"
+source_code_repository = "github"
+cluster_version = "1.30"
+
+github_access_token = "ghp_test_token_placeholder"
+github_owner = "test-org"
+appType = ["react", "node-express", "keycloak-service", "auth-service", "gen-ai-service"]
+
+
+
+"
+`;
+
+exports[`AWS Template Rendering (integration) EKS-Fargate templates variables.tf.liquid renders 1`] = `
+"
+variable "region" {
+    description = "The region in which the resources will be created"
+}
+
+variable "project_id" {
+    description = "The project id"
+}
+
+variable "project_name" {
+    description = "The project name"
+}
+
+variable "environment" {
+    description = "The environment in which the resources will be created"
+}
+
+variable "vpc_cidr" {
+    description = "The CIDR block for the VPC"
+}
+
+variable "domain_name" {
+    description = "The domain name for the project"
+    default = null
+}
+
+variable "source_code_repository" {
+    description = "The source code repository"
+}
+
+variable "cluster_version" {
+    description = "The EKS cluster version"
+}
+
+
+variable "github_access_token" {
+    description = "The github access"
+}
+
+variable "github_owner" {
+    description = "The github owner"
+}
+
+
+variable "appType" {
+   description = "List of app names"
+   type        = list(string)
+ }
+
+
+"
+`;
+
+exports[`AWS Template Rendering (integration) EKS-Nodegroup templates main.tf.liquid renders with nodegroup config 1`] = `
+"
+provider "aws" {
+    region     = "us-east-1"
+}
+
+data "aws_route53_zone" "route53_zone" {
+  name = var.domain_name
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+module "vpc" {
+    source = "./modules/vpc"
+    name = "\${ var.project_name }-\${ var.environment }-vpc"
+    environment = "\${ var.environment }"
+    cidr = "\${ var.vpc_cidr }"
+}
+module "rds"{
+    source = "./modules/rds"  
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    region                 = var.region
+    vpc_id                 = module.vpc.id
+    vpc_private_subnets    = module.vpc.private_subnets
+    vpc_public_subnets     = module.vpc.public_subnets
+    vpc_database_subnets   = module.vpc.database_subnets
+    security_group_id      = module.vpc.default_security_group_id
+}
+
+module "eks" {
+    source                  = "./modules/eks-nodegroup"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+    vpc_private_subnets     = module.vpc.private_subnets
+    cluster_version         = "\${ var.cluster_version }"
+}
+
+
+
+
+module "acm" {
+    source = "./modules/acm"
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    domain_name = var.domain_name
+    route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
+}
+
+module "gitops" {
+    source = "./modules/gitops"
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    github_token = "\${ var.github_access_token }"
+    github_owner = "\${ var.github_owner }"
+}
+
+module "repository" {
+     source = "./modules/code-repository"
+     name = "\${ var.project_name }"
+     appType = "\${ var.appType }"
+     environment = "\${ var.environment }"
+     github_token = "\${ var.github_access_token }"
+     github_owner = "\${ var.github_owner }"
+}
+
+
+
+
+data "aws_eks_cluster_auth" "eks_cluster_auth" {
+    name = module.eks.cluster_name
+}
+  
+module "ingress-controller" {
+    source                   = "./modules/ingress-controller"
+    name                     = "\${ var.project_name }"
+    environment              = "\${ var.environment }"
+    region                   = "\${ var.region }"
+    cluster_endpoint         = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name             = module.eks.cluster_name
+    vpc_id                   = module.vpc.id
+    vpc_private_subnets      = module.vpc.private_subnets
+    vpc_public_subnets       = module.vpc.public_subnets
+    oidc_provider_arn        = module.eks.oidc_provider_arn
+    oidc_provider            = module.eks.oidc_provider
+    cluster_token            = data.aws_eks_cluster_auth.eks_cluster_auth.token
+    cluster_node_group_name  = module.eks.eks_managed_node_groups
+}
+
+
+module "environment" {
+  source                             = "./modules/environment"
+  name                               = "\${ var.project_name }"
+  environment                        = "\${ var.environment }"
+  region                             = "\${ var.region }"
+  cluster_endpoint                   = module.eks.cluster_endpoint
+  cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+  cluster_token                      = data.aws_eks_cluster_auth.eks_cluster_auth.token
+  domain_name                        = var.domain_name
+  route53_zoneid                     = data.aws_route53_zone.route53_zone.zone_id
+  gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
+  gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+  argocd_namespace                   = module.argo.argocd_namespace
+}
+
+module "argo" {
+    source = "./modules/argocd"
+    name                               = "\${ var.project_name }"
+    environment                        = "\${ var.environment }"
+    region                             = "\${ var.region }"
+    cluster_endpoint                   = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name                       = module.eks.cluster_name
+    oidc_provider_arn                  = module.eks.oidc_provider_arn
+    oidc_provider                      = module.eks.oidc_provider
+    cluster_token                      = data.aws_eks_cluster_auth.eks_cluster_auth.token
+    route53_zoneid                     = data.aws_route53_zone.route53_zone
+    domain_name                        = "\${ var.domain_name }"
+    ssl_cert_arn                       = module.acm.ssl_cert_arn
+    vpc_public_subnets                 = module.vpc.public_subnets
+    gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
+    gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+}
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for \${repo_name}"
+     }
+   ]
+ }
+
+module "ecr-repo" {
+    source            = "./modules/ecr"
+    image_tag_mutability   = "MUTABLE"
+    count = length(local.repositories)
+    name = "\${ var.project_name }"
+    appType = local.repositories[count.index].appType
+}
+"
+`;
+
+exports[`AWS Template Rendering (integration) EKS-Nodegroup templates terraform.tfvars.liquid renders 1`] = `
+"region = "us-east-1"
+project_id = ""
+project_name = "testproj"
+environment = "dev"
+vpc_cidr = "10.0.0.0/16"
+source_code_repository = "github"
+cluster_version = "1.30"
+
+github_access_token = "ghp_test_token_placeholder"
+github_owner = "test-org"
+appType = ["react", "node-express", "keycloak-service", "auth-service", "gen-ai-service"]
+
+
+"
+`;
+
+exports[`AWS Template Rendering (integration) K8S (EC2) templates main.tf.liquid renders 1`] = `
+"
+provider "aws" {
+  region     = "us-east-1"
+}
+
+data "aws_route53_zone" "route53_zone" {
+  name = var.domain_name
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+module "vpc" {
+  source = "./modules/vpc"
+  name = "\${ var.project_name }-\${ var.environment }-vpc"
+  environment = "\${ var.environment }"
+  cidr = "\${ var.vpc_cidr }"
+}
+module "security_group"{
+    source = "./modules/security-groups"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+}
+
+module "ssh-key" {
+  source          = "./modules/ssh-key"
+  ssh_key_name    = "\${ var.project_name }-\${ var.environment }-key"
+  env_files_bucket_name = "\${ var.project_name }-\${ var.environment }-bucket"
+}
+
+module "bastion" {
+  source                     = "./modules/bastion"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.private_subnets[0]
+  vpc_public_subnets         = module.vpc.public_subnets[0]
+  name                       = "\${ var.project_name }-\${ var.environment }-bastion"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
+}
+
+module "master" {
+  source                     = "./modules/master"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.private_subnets[0]
+  name                       = "\${ var.project_name }-\${ var.environment }-master"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
+}
+
+module "worker" {
+  source                     = "./modules/worker"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.private_subnets[0]
+  name                       = "\${ var.project_name }-\${ var.environment }-worker"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
+}
+
+
+
+module "alb_ingress" {
+    source                    = "./modules/alb"
+    name                      = "\${ var.project_name }"
+    vpc_public_subnets        = module.vpc.public_subnets
+    aws_acm_certificate_arn   = module.acm.ssl_cert_arn
+    environment               = "\${ var.environment }"
+    ingress_security_group_id = module.security_group.ingress
+    route53_zoneid            = data.aws_route53_zone.route53_zone.zone_id
+    domain_name               = var.domain_name
+    master-node-ips           = module.master.k8s-master-ips
+    worker-node-ips           = module.worker.k8s-worker-ips
+    vpc_id                    = module.vpc.id
+}
+module "acm" {
+    source = "./modules/acm"
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    domain_name = var.domain_name
+    route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
+} 
+
+locals {
+  rendered_template = templatefile("./ssh-config.tftpl", {
+    project_name = "\${ var.project_name }"
+    environment  = "\${ var.environment }"
+    bastion_ips   = module.bastion.k8s-bastion-ips
+    master_ips    = module.master.k8s-master-ips
+    worker_ips   = module.worker.k8s-worker-ips
+  })
+}
+
+resource "null_resource" "ssh_config" {
+  provisioner "local-exec" {
+    command = "echo '\${local.rendered_template}' >> ~/.ssh/config"
+  }
+}
+
+output "master_ip" {
+  value = module.master.k8s-master-ips[0]
+}
+  
+output "vpc_id" {
+  value = module.vpc.id
+}
+
+output "vpc_public_subnets" {
+  value = module.vpc.public_subnets
+}
+
+output "vpc_private_subnets" {
+  value = module.vpc.private_subnets
+}
+
+
+module "gitops" {
+      source = "./modules/gitops"
+      name = "\${ var.project_name }"
+      environment = "\${ var.environment }"
+      github_token = "\${ var.github_access_token }"
+      github_owner = "\${ var.github_owner }"
+}
+ output "gitops_https_clone_url" {
+  value = module.gitops.gitops_https_clone_url
+}
+module "repository" {
+     source = "./modules/code-repository"
+     name = "\${ var.project_name }"
+     appType = "\${ var.appType }"
+     environment = "\${ var.environment }"
+     github_token = "\${ var.github_access_token }"
+     github_owner = "\${ var.github_owner }"
+ }
+
+
+
+locals {
+   repositories = [
+     for repo_name in var.appType : {
+       appType = repo_name
+       description     = "Repository for \${repo_name}"
+     }
+   ]
+ }
+module "ecr-repo" {
+    source            = "./modules/ecr"
+    image_tag_mutability   = "MUTABLE"
+    count = length(local.repositories)
+    name = "\${ var.project_name }"
+    appType = local.repositories[count.index].appType
+}
+
+output "repository_urls" {
+  value = [for repo in module.ecr-repo : repo.repository_urls]
+}
+"
+`;
+
+exports[`AWS Template Rendering (integration) K8S (EC2) templates terraform.tfvars.liquid renders 1`] = `
+"region = "us-east-1"
+project_id = ""
+project_name = "testproj"
+environment = "dev"
+vpc_cidr = "10.0.0.0/16"
+source_code_repository = "github"
+
+github_access_token = "ghp_test_token_placeholder"
+github_owner = "test-org"
+appType = ["react", "node-express", "keycloak-service", "auth-service", "gen-ai-service"]
+
+
+"
+`;
+
+exports[`AWS Template Rendering (integration) Predefined grouping templates ec2-vpc/main.tf.liquid renders 1`] = `
+"provider "aws" {
+  region     = "us-east-1"
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+module "vpc" {
+  source = "./modules/vpc"
+  name = "\${ var.project_name }-\${ var.environment }-vpc"
+  environment = "\${ var.environment }"
+  cidr = "\${ var.vpc_cidr }"
+}
+
+module "security_group"{
+    source = "./modules/security-groups"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+}
+
+module "ssh-key" {
+  source          = "./modules/ssh-key"
+  ssh_key_name    = "\${ var.project_name }-\${ var.environment }-key"
+  env_files_bucket_name = "\${ var.project_name }-\${ var.environment }-bucket"
+}
+
+module "bastion" {
+  source                     = "./modules/bastion"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.private_subnets[0]
+  vpc_public_subnets         = module.vpc.public_subnets[0]
+  name                       = "\${ var.project_name }-\${ var.environment }-bastion"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
+}
+
+module "master" {
+  source                     = "./modules/master"
+  ssh_key_name               = module.ssh-key.ssh_key_name
+  default_security_group_id  = module.vpc.default_security_group_id
+  vpc_private_subnets        = module.vpc.private_subnets[0]
+  name                       = "\${ var.project_name }-\${ var.environment }-master"
+  project_id                 = var.project_id
+  environment                = var.environment
+  project_name               = var.project_name
+}
+
+
+locals {
+  rendered_template = templatefile("./ssh-config.tftpl", {
+    project_name = "\${ var.project_name }"
+    environment  = "\${ var.environment }"
+    bastion_ips   = module.bastion.k8s-bastion-ips
+    master_ips    = module.master.k8s-master-ips
+  })
+}
+
+resource "null_resource" "ssh_config" {
+  provisioner "local-exec" {
+    command = "echo '\${local.rendered_template}' >> ~/.ssh/config"
+  }
+}
+
+"
+`;
+
+exports[`AWS Template Rendering (integration) Predefined grouping templates eks-fargate-vpc/main.tf.liquid renders 1`] = `
+"
+provider "aws" {
+    region     = "us-east-1"
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+module "vpc" {
+    source = "./modules/vpc"
+    name = "\${ var.project_name }-\${ var.environment }-vpc"
+    environment = "\${ var.environment }"
+    cidr = "\${ var.vpc_cidr }"
+}
+
+module "eks" {
+    source                  = "./modules/eks-fargate"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+    vpc_private_subnets     = module.vpc.private_subnets
+    cluster_version         = "\${ var.cluster_version }"
+}"
+`;
+
+exports[`AWS Template Rendering (integration) Predefined grouping templates eks-nodegroup-vpc/main.tf.liquid renders 1`] = `
+"
+provider "aws" {
+    region     = "us-east-1"
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+module "vpc" {
+    source = "./modules/vpc"
+    name = "\${ var.project_name }-\${ var.environment }-vpc"
+    environment = "\${ var.environment }"
+    cidr = "\${ var.vpc_cidr }"
+}
+
+module "eks" {
+    source                  = "./modules/eks-nodegroup"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+    vpc_private_subnets     = module.vpc.private_subnets
+    cluster_version         = "\${ var.cluster_version }"
+}"
+`;
+
+exports[`AWS Template Rendering (integration) Predefined grouping templates rds-vpc/main.tf.liquid renders 1`] = `
+"
+provider "aws" {
+    region     = "us-east-1"
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+module "vpc" {
+  source      = "./modules/vpc"
+  name        = "\${var.project_name}-\${var.environment}-vpc"
+  environment = var.environment
+  cidr        = var.vpc_cidr
+  
+}
+
+module "rds" {
+  source                  = "./modules/rds"
+  name                    = var.project_name
+  environment             = var.environment
+  region                  = var.region
+  security_group_id       = module.vpc.default_security_group_id
+  vpc_id                  = module.vpc.id
+  vpc_public_subnets      = module.vpc.public_subnets  
+  vpc_private_subnets     = module.vpc.private_subnets
+  vpc_database_subnets    = module.vpc.database_subnets
+  depends_on              = [ module.vpc ]
+}
+
+"
+`;
+
+exports[`AWS Template Rendering (integration) Predefined grouping templates vpc-rds-nodegroup-acm-ingress/main.tf.liquid renders 1`] = `
+"
+provider "aws" {
+    region     = "us-east-1"
+}
+
+terraform {
+     backend "s3" {
+     }
+ }
+
+ data "aws_route53_zone" "route53_zone" {
+  name = var.domain_name
+}
+
+
+
+module "vpc" {
+    source = "./modules/vpc"
+    name = "\${ var.project_name }-\${ var.environment }-vpc"
+    environment = "\${ var.environment }"
+    cidr = "\${ var.vpc_cidr }"
+}
+
+module "rds"{
+    source = "./modules/rds"  
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    region                 = var.region
+    vpc_id                 = module.vpc.id
+    vpc_private_subnets    = module.vpc.private_subnets
+    vpc_public_subnets     = module.vpc.public_subnets
+    vpc_database_subnets   = module.vpc.database_subnets
+    security_group_id      = module.vpc.default_security_group_id
+    depends_on             = [ module.vpc ]
+}
+
+module "eks" {
+    source                  = "./modules/eks-nodegroup"
+    name                    = "\${ var.project_name }"
+    environment             = "\${ var.environment }"
+    vpc_id                  = module.vpc.id
+    vpc_private_subnets     = module.vpc.private_subnets
+    cluster_version         = "\${ var.cluster_version }"
+}
+
+
+module "acm" {
+    source = "./modules/acm"
+    name = "\${ var.project_name }"
+    environment = "\${ var.environment }"
+    domain_name = var.domain_name
+    route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
+}
+
+
+data "aws_eks_cluster_auth" "eks_cluster_auth" {
+    name = module.eks.cluster_name
+}
+  
+module "ingress-controller" {
+    source                   = "./modules/ingress-controller"
+    name                     = "\${ var.project_name }"
+    environment              = "\${ var.environment }"
+    region                   = "\${ var.region }"
+    cluster_endpoint         = module.eks.cluster_endpoint
+    cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
+    cluster_name             = module.eks.cluster_name
+    vpc_id                   = module.vpc.id
+    vpc_private_subnets      = module.vpc.private_subnets
+    vpc_public_subnets       = module.vpc.public_subnets
+    oidc_provider_arn        = module.eks.oidc_provider_arn
+    oidc_provider            = module.eks.oidc_provider
+    cluster_token            = data.aws_eks_cluster_auth.eks_cluster_auth.token
+}
+"
+`;

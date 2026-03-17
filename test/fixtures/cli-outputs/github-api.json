@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "description": "Recorded GitHub API responses for contract testing the repository management code. Re-record when the API contract changes.",
+    "api_version": "2022-11-28",
+    "recorded_date": "2026-03-16"
+  },
+  "public_key_response": {
+    "endpoint": "GET /repos/{owner}/{repo}/actions/secrets/public-key",
+    "status": 200,
+    "body": {
+      "key_id": "568250167242549743",
+      "key": "2Sg8iYjAxxmI2LvUXpJjkYrMxURPc8r+dB7TJyvvcCU="
+    }
+  }
+}

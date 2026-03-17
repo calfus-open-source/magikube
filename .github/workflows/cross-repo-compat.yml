@@ -1,0 +1,53 @@
+name: Cross-Repo Compatibility
+
+on:
+  schedule:
+    # Run weekly on Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    # Allow manual triggering from GitHub Actions UI
+
+jobs:
+  template-compatibility:
+    runs-on: ubuntu-latest
+    name: Validate template rendering against latest template repos
+
+    steps:
+      - name: Checkout magikube
+        uses: actions/checkout@v4
+
+      - name: Checkout infrastructure-templates
+        uses: actions/checkout@v4
+        with:
+          repository: calfus-open-source/infrastructure-templates
+          path: ../infrastructure-templates
+
+      - name: Checkout magikube-templates
+        uses: actions/checkout@v4
+        with:
+          repository: calfus-open-source/magikube-templates
+          path: ../magikube-templates
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run template rendering tests against latest templates
+        run: npx jest --no-coverage --testPathPatterns='test/integration/templates/' --updateSnapshot
+        env:
+          TEMPLATE_REPOS_PATH: ${{ github.workspace }}/..
+
+      - name: Run contract tests
+        run: npx jest --no-coverage --testPathPatterns='test/integration/cli-contracts'
+
+      - name: Report results
+        if: failure()
+        run: |
+          echo "::error::Cross-repo compatibility check failed!"
+          echo "Template repos may have introduced breaking changes."
+          echo "Review snapshot diffs above to identify what changed."

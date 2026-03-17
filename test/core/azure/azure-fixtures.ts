@@ -4,6 +4,12 @@
  * Centralized mock data and utilities for Azure-related tests.
  * Azure implementation uses Azure CLI commands via execSync rather than SDK clients,
  * so these fixtures focus on CLI command responses and utility function mocking.
+ *
+ * IMPORTANT: The canonical CLI output formats are recorded in
+ * test/fixtures/cli-outputs/azure-cli.json (the "contract fixtures").
+ * When updating mock data here, ensure the STRUCTURE matches the contract
+ * fixtures — field names, nesting, and types must stay consistent.
+ * Run `npm run test:integration` to verify contract alignment.
  */
 
 /**

@@ -1,0 +1,86 @@
+{
+  "_meta": {
+    "description": "Recorded Azure CLI outputs used as the single source of truth for both contract tests and unit test mocks. Re-record when upgrading Azure CLI.",
+    "azure_cli_version": "2.67.0",
+    "recorded_date": "2026-03-16"
+  },
+  "az_account_show_json": {
+    "command": "az account show --output json",
+    "output": {
+      "environmentName": "AzureCloud",
+      "homeTenantId": "11111111-1111-1111-1111-111111111111",
+      "id": "22222222-2222-2222-2222-222222222222",
+      "isDefault": true,
+      "managedByTenants": [],
+      "name": "Test Subscription",
+      "state": "Enabled",
+      "tenantDefaultDomain": "testorg.onmicrosoft.com",
+      "tenantDisplayName": "Test Organization",
+      "tenantId": "11111111-1111-1111-1111-111111111111",
+      "user": {
+        "name": "test-user@testorg.com",
+        "type": "user"
+      }
+    }
+  },
+  "az_account_list_json": {
+    "command": "az account list --query \"[].{Name:name, SubscriptionId:id, TenantId:tenantId, State:state}\" --output json",
+    "output": [
+      {
+        "Name": "Test Subscription",
+        "SubscriptionId": "22222222-2222-2222-2222-222222222222",
+        "TenantId": "11111111-1111-1111-1111-111111111111",
+        "State": "Enabled"
+      },
+      {
+        "Name": "Dev Subscription",
+        "SubscriptionId": "33333333-3333-3333-3333-333333333333",
+        "TenantId": "11111111-1111-1111-1111-111111111111",
+        "State": "Enabled"
+      }
+    ]
+  },
+  "az_account_show_subscription_json": {
+    "command": "az account show --subscription \"22222222-2222-2222-2222-222222222222\" --query \"{Name:name, State:state}\" --output json",
+    "output": {
+      "Name": "Test Subscription",
+      "State": "Enabled"
+    }
+  },
+  "az_account_show_id_tsv": {
+    "command": "az account show --query \"id\" --output tsv",
+    "output": "22222222-2222-2222-2222-222222222222"
+  },
+  "az_account_show_tenantid_tsv": {
+    "command": "az account show --query \"tenantId\" --output tsv",
+    "output": "11111111-1111-1111-1111-111111111111"
+  },
+  "az_configure_list_defaults_json": {
+    "command": "az configure --list-defaults --output json",
+    "output": [
+      {
+        "name": "location",
+        "source": "/home/user/.azure/config",
+        "value": "eastus"
+      },
+      {
+        "name": "group",
+        "source": "/home/user/.azure/config",
+        "value": "testproj-rg"
+      }
+    ]
+  },
+  "az_storage_account_keys_list_tsv": {
+    "command": "az storage account keys list --resource-group testproj-rg --account-name teststorage --query '[0].value' --output tsv",
+    "output": "aGVsbG93b3JsZHRoaXNpc2FmYWtla2V5MTIzNDU2Nzg5MA=="
+  },
+  "az_ad_sp_create_for_rbac_json": {
+    "command": "az ad sp create-for-rbac --name \"testproj-sp\" --output json",
+    "output": {
+      "appId": "44444444-4444-4444-4444-444444444444",
+      "displayName": "testproj-sp",
+      "password": "fake-secret-value-placeholder",
+      "tenant": "11111111-1111-1111-1111-111111111111"
+    }
+  }
+}

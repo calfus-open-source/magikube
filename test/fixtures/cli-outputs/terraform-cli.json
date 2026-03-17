@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "description": "Recorded Terraform CLI output patterns used for contract testing the regex-based progress parsers. Re-record when upgrading Terraform.",
+    "terraform_version": "1.8.2",
+    "recorded_date": "2026-03-16"
+  },
+  "terraform_init_stdout_lines": [
+    "Initializing the backend...",
+    "",
+    "Successfully configured the backend \"s3\"! Terraform will automatically",
+    "use this backend unless the backend configuration changes.",
+    "",
+    "Initializing provider plugins...",
+    "- Finding hashicorp/aws versions matching \"~> 5.58.0\"...",
+    "- Installing hashicorp/aws v5.58.0...",
+    "- Installed hashicorp/aws v5.58.0 (signed by HashiCorp)",
+    "",
+    "Terraform has been successfully initialized!",
+    "",
+    "You may now begin working with Terraform. Try running \"terraform plan\" to see",
+    "any changes that are required for your infrastructure. All Terraform commands",
+    "should now work."
+  ],
+  "terraform_apply_stdout_lines": [
+    "module.vpc.aws_vpc.main: Creating...",
+    "module.vpc.aws_vpc.main: Still creating... [10s elapsed]",
+    "module.vpc.aws_vpc.main: Creation complete after 12s [id=vpc-0abc123def456789]",
+    "module.vpc.aws_subnet.private[0]: Creating...",
+    "module.vpc.aws_subnet.private[0]: Creation complete after 3s [id=subnet-0def456789abc1234]",
+    "module.vpc.aws_subnet.private[1]: Creating...",
+    "module.vpc.aws_subnet.private[1]: Creation complete after 2s [id=subnet-0abc789def123456]",
+    "module.eks.aws_eks_cluster.main: Creating...",
+    "module.eks.aws_eks_cluster.main: Still creating... [10s elapsed]",
+    "module.eks.aws_eks_cluster.main: Still creating... [9m50s elapsed]",
+    "module.eks.aws_eks_cluster.main: Creation complete after 10m2s [id=testproj-dev-eks]",
+    "",
+    "Apply complete! Resources: 4 added, 0 changed, 0 destroyed."
+  ],
+  "terraform_destroy_stdout_lines": [
+    "module.eks.aws_eks_cluster.main: Refreshing state... [id=testproj-dev-eks]",
+    "module.vpc.aws_subnet.private[0]: Refreshing state... [id=subnet-0def456789abc1234]",
+    "module.vpc.aws_subnet.private[1]: Refreshing state... [id=subnet-0abc789def123456]",
+    "module.vpc.aws_vpc.main: Refreshing state... [id=vpc-0abc123def456789]",
+    "",
+    "Terraform used the selected providers to generate the following execution plan.",
+    "Resource actions are indicated with the following symbols:",
+    "  - destroy",
+    "",
+    "Plan: 0 to add, 0 to change, 4 to destroy.",
+    "",
+    "module.eks.aws_eks_cluster.main: Destroying... [id=testproj-dev-eks]",
+    "module.eks.aws_eks_cluster.main: Still destroying... [id=testproj-dev-eks, 10s elapsed]",
+    "module.eks.aws_eks_cluster.main: Destruction complete after 45s",
+    "module.vpc.aws_subnet.private[0]: Destroying... [id=subnet-0def456789abc1234]",
+    "module.vpc.aws_subnet.private[0]: Destruction complete after 2s",
+    "module.vpc.aws_subnet.private[1]: Destroying... [id=subnet-0abc789def123456]",
+    "module.vpc.aws_subnet.private[1]: Destruction complete after 2s",
+    "module.vpc.aws_vpc.main: Destroying... [id=vpc-0abc123def456789]",
+    "module.vpc.aws_vpc.main: Destruction complete after 3s",
+    "",
+    "Destroy complete! Resources: 4 destroyed."
+  ]
+}
