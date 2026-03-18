@@ -675,6 +675,7 @@ export default class AWSProject extends BaseProject {
 
     while (attempt < maxRetries && !success) {
       attempt++;
+      let interval: NodeJS.Timeout | null = null;
       try {
         AppLogger.error(
           `Running ansible playbook ${playbook}... Attempt ${attempt}`,
@@ -682,13 +683,15 @@ export default class AWSProject extends BaseProject {
         );
 
         let lastLogTimestamp = Date.now();
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
           if (Date.now() - lastLogTimestamp > timeoutDuration) {
             AppLogger.error(
               `No logs detected for ${timeoutDuration / 60000} minutes. Retrying playbook...`,
               true,
             );
-            clearInterval(interval);
+            if (interval) {
+              clearInterval(interval);
+            }
             throw new Error('Inactivity timeout reached');
           }
         }, 10000);
@@ -713,10 +716,15 @@ export default class AWSProject extends BaseProject {
             }
           });
 
-        clearInterval(interval);
+        if (interval) {
+          clearInterval(interval);
+        }
         AppLogger.info(`Playbook ${playbook} completed successfully.`, true);
         success = true;
       } catch (error: unknown) {
+        if (interval) {
+          clearInterval(interval);
+        }
         AppLogger.error(
           `An error occurred while running ${playbook}: ${error instanceof Error ? error.message : String(error)}`,
           true,
