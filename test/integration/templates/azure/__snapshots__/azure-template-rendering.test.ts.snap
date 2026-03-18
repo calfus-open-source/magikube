@@ -65,7 +65,7 @@ resource "azurerm_role_assignment" "aks_acr_role_assignment" {
   principal_id         = azurerm_kubernetes_cluster.aks_cluster.identity[0].principal_id
   role_definition_name = "AcrPull"
   scope                = each.value.id
-  
+
   # Ensure AKS cluster is fully ready before creating role assignments
   depends_on = [
     azurerm_kubernetes_cluster.aks_cluster
@@ -112,7 +112,8 @@ resource "azurerm_role_assignment" "agic_subnet_network_contributor" {
 output "client_certificate" {
   value     = azurerm_kubernetes_cluster.aks_cluster.kube_config[0].client_certificate
   sensitive = true
-}"
+}
+"
 `;
 
 exports[`Azure Template Rendering (integration) Azure Kubernetes templates modules/kubernetes/common/main.tf.liquid renders 1`] = `
@@ -162,7 +163,7 @@ exports[`Azure Template Rendering (integration) Azure environment templates main
   k8s_asg_id                  = module.nsg.k8s_asg_id
   k8s_vm_nsg_id               = module.nsg.k8s_vm_nsg_id
   k8s_private_subnet_offset   = var.k8s_private_subnet_offset
-  public_subnet_offset        = var.public_subnet_offset 
+  public_subnet_offset        = var.public_subnet_offset
  }
 
 module "nsg" {
@@ -218,7 +219,7 @@ module "agw" {
   public_ip_allocation_method       = var.public_ip_allocation_method
   app_gateway_subnet_id             = module.vnet.app_gateway_subnet_id
   azurerm_key_vault_id              = module.kv.key_vault_id
-  appgateway_kv_identity_id         = module.kv.kv_access_identity 
+  appgateway_kv_identity_id         = module.kv.kv_access_identity
   azurerm_key_vault_certificate_secret_id = module.kv.certificate_secret_id
  }
 
@@ -279,7 +280,7 @@ module "sql_server" {
     module.vnet.public_subnet_id
   ]
  }
- 
+
 # module "vpn_gateway" {
 #   count                        = var.enable_vpn_gateway ? 1 : 0
 #   source                       = "./modules/vpn_gateway"
@@ -328,9 +329,10 @@ module "repository" {
      name         = var.project_name
      appType      = var.appType
      environment  = var.environment
-     github_token = var.github_access_token 
+     github_token = var.github_access_token
      github_owner = var.github_owner
-}"
+}
+"
 `;
 
 exports[`Azure Template Rendering (integration) Azure environment templates outputs.tf.liquid renders 1`] = `
@@ -389,7 +391,7 @@ output "application_gateway_public_ip" {
 #  output "ai_services_endpoint" {
 #  description = "The endpoint URL of the AI Services account"
 #  value       = var.enable_ai_foundry ? module.ai_foundry.ai_services_endpoint : null
-# } 
+# }
 
 # output "ai_services_primary_key" {
 #  description = "The primary access key for the AI Services account"
@@ -405,7 +407,8 @@ output "application_gateway_public_ip" {
 # output "gpt4o_deployment_name" {
 #  description = "The name of the GPT-4o deployment"
 #  value       = var.enable_ai_foundry ? module.ai_foundry.gpt4o_deployment_name : null
-# }"
+# }
+"
 `;
 
 exports[`Azure Template Rendering (integration) Azure environment templates provider.tf.liquid renders 1`] = `
@@ -488,7 +491,7 @@ source_bastion_ip = [ "27.107.44.50/32", "58.84.60.45/32", "58.84.62.238/32" ]
 # enable_ai_foundry = true
 # openai_location = "Eest US"
 # gpt4o_capacity = 50
-# o3_mini_capacity = 20  
+# o3_mini_capacity = 20
 # embedding_capacity = 50
 
 ####################### Version Control Variables #######################
@@ -793,7 +796,8 @@ variable "github_owner" {
 variable "appType" {
    description = "List of app names"
    type        = list(string)
- }"
+ }
+"
 `;
 
 exports[`Azure Template Rendering (integration) Azure module templates modules/acr/main.tf.liquid renders 1`] = `
@@ -1007,7 +1011,8 @@ resource "azurerm_key_vault_secret" "ai_services_endpoint" {
 }
 
 # Get current Azure configuration
-data "azurerm_client_config" "current" {}"
+data "azurerm_client_config" "current" {}
+"
 `;
 
 exports[`Azure Template Rendering (integration) Azure module templates modules/ai_foundry/variables.tf.liquid renders 1`] = `
@@ -1868,7 +1873,8 @@ resource "azurerm_network_security_group" "frontend_private_nsg" {
     source_address_prefix      = "Internet"
     destination_address_prefix = "*"
   }
-}"
+}
+"
 `;
 
 exports[`Azure Template Rendering (integration) Azure module templates modules/security_groups/variables.tf.liquid renders 1`] = `

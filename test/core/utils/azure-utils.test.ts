@@ -1,12 +1,30 @@
 import {
   azExecAsync,
   AzureCommandError,
+  checkAzureLogin,
+  displayCurrentAccount,
+  getCurrentSubscriptionId,
+  getCurrentTenantId,
+  listSubscriptions,
+  getAccountInfo,
+  loginWithServicePrincipal,
+  logout,
 } from '../../../src/core/utils/azure-utils.js';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { EventEmitter } from 'events';
+import { AppLogger } from '../../../src/logger/appLogger.js';
 
 // Mock child_process
 jest.mock('child_process');
+
+jest.mock('../../../src/logger/appLogger.js', () => ({
+  AppLogger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+  },
+}));
 
 describe('azExecAsync', () => {
   let mockSpawn: jest.MockedFunction<typeof spawn>;
@@ -407,5 +425,324 @@ describe('azExecAsync', () => {
         expect.any(Object),
       );
     });
+  });
+});
+
+describe('checkAzureLogin', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return true when az account show succeeds', () => {
+    mockExecSync.mockReturnValue(Buffer.from(''));
+
+    const result = checkAzureLogin();
+
+    expect(result).toBe(true);
+    expect(mockExecSync).toHaveBeenCalledWith('az account show', {
+      stdio: 'pipe',
+    });
+  });
+
+  it('should return false when az account show throws', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Not logged in');
+    });
+
+    const result = checkAzureLogin();
+
+    expect(result).toBe(false);
+  });
+});
+
+describe('displayCurrentAccount', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should display account info when execSync succeeds', () => {
+    const accountInfo = 'Name: TestAccount\nSubscriptionId: sub-123';
+    mockExecSync.mockReturnValue(accountInfo);
+
+    displayCurrentAccount();
+
+    expect(AppLogger.info).toHaveBeenCalledWith(
+      'Currently logged in account details:',
+      true,
+    );
+    expect(AppLogger.info).toHaveBeenCalledWith(accountInfo, true);
+  });
+
+  it('should log error when execSync throws', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Failed');
+    });
+
+    displayCurrentAccount();
+
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      'Failed to get current account details',
+      true,
+    );
+  });
+});
+
+describe('getCurrentSubscriptionId', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return trimmed subscription id on success', () => {
+    mockExecSync.mockReturnValue('  sub-123  \n');
+
+    const result = getCurrentSubscriptionId();
+
+    expect(result).toBe('sub-123');
+  });
+
+  it('should return null and log error on failure', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Failed');
+    });
+
+    const result = getCurrentSubscriptionId();
+
+    expect(result).toBeNull();
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      'Failed to get current subscription ID',
+      true,
+    );
+  });
+});
+
+describe('getCurrentTenantId', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return trimmed tenant id on success', () => {
+    mockExecSync.mockReturnValue('tenant-456\n');
+
+    const result = getCurrentTenantId();
+
+    expect(result).toBe('tenant-456');
+  });
+
+  it('should return null and log error on failure', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Failed');
+    });
+
+    const result = getCurrentTenantId();
+
+    expect(result).toBeNull();
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      'Failed to get current tenant ID',
+      true,
+    );
+  });
+});
+
+describe('listSubscriptions', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return parsed subscription array on success', async () => {
+    const subscriptions = [
+      {
+        Name: 'Sub1',
+        SubscriptionId: 'id-1',
+        TenantId: 'tid-1',
+        State: 'Enabled',
+      },
+    ];
+    mockExecSync.mockReturnValue(JSON.stringify(subscriptions));
+
+    const result = await listSubscriptions();
+
+    expect(result).toEqual(subscriptions);
+  });
+
+  it('should return empty array and log error on failure', async () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Network error');
+    });
+
+    const result = await listSubscriptions();
+
+    expect(result).toEqual([]);
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Error listing subscriptions'),
+      true,
+    );
+  });
+});
+
+describe('getAccountInfo', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return parsed account info on success', () => {
+    const accountInfo = {
+      id: 'sub-123',
+      tenantId: 'tenant-456',
+      name: 'TestAccount',
+    };
+    mockExecSync.mockReturnValue(JSON.stringify(accountInfo));
+
+    const result = getAccountInfo();
+
+    expect(result).toEqual(accountInfo);
+  });
+
+  it('should return null and log error on failure', () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Failed');
+    });
+
+    const result = getAccountInfo();
+
+    expect(result).toBeNull();
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      'Failed to get account information',
+      true,
+    );
+  });
+});
+
+describe('loginWithServicePrincipal', () => {
+  let mockSpawn: jest.MockedFunction<typeof spawn>;
+  let mockChildProcess: EventEmitter & {
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+    kill: jest.Mock;
+    killed: boolean;
+  };
+
+  beforeEach(() => {
+    mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
+
+    const proc = new EventEmitter() as typeof mockChildProcess;
+    proc.stdout = new EventEmitter();
+    proc.stderr = new EventEmitter();
+    proc.kill = jest.fn();
+    proc.killed = false;
+    mockChildProcess = proc;
+
+    mockSpawn.mockReturnValue(
+      mockChildProcess as unknown as ReturnType<typeof spawn>,
+    );
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return true and log success when azExecAsync resolves', async () => {
+    const promise = loginWithServicePrincipal(
+      'client-id',
+      'client-secret',
+      'tenant-id',
+    );
+
+    // Simulate successful spawn completion
+    process.nextTick(() => {
+      mockChildProcess.emit('close', 0);
+    });
+
+    const result = await promise;
+
+    expect(result).toBe(true);
+    expect(AppLogger.info).toHaveBeenCalledWith(
+      'Logging in with service principal...',
+      true,
+    );
+    expect(AppLogger.info).toHaveBeenCalledWith(
+      'Successfully logged in with service principal',
+      true,
+    );
+  });
+
+  it('should return false and redact secret in error message when azExecAsync rejects', async () => {
+    const secret = 'my-super-secret';
+
+    const promise = loginWithServicePrincipal('client-id', secret, 'tenant-id');
+
+    // Simulate failed spawn with non-zero exit code
+    process.nextTick(() => {
+      mockChildProcess.stderr.emit(
+        'data',
+        Buffer.from(`Authentication failed for ${secret}`),
+      );
+      mockChildProcess.emit('close', 1);
+    });
+
+    const result = await promise;
+
+    expect(result).toBe(false);
+    // Verify error was logged
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to login with service principal'),
+      true,
+    );
+    // Verify the secret does not appear in the logged error message
+    const errorCall = (AppLogger.error as jest.Mock).mock.calls.find(
+      (call) =>
+        typeof call[0] === 'string' &&
+        call[0].includes('Failed to login with service principal'),
+    );
+    expect(errorCall).toBeDefined();
+    expect(errorCall![0]).not.toContain(secret);
+  });
+});
+
+describe('logout', () => {
+  const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return true when az logout succeeds', async () => {
+    mockExecSync.mockReturnValue('');
+
+    const result = await logout();
+
+    expect(result).toBe(true);
+    expect(mockExecSync).toHaveBeenCalledWith('az logout', {
+      encoding: 'utf8',
+    });
+    expect(AppLogger.info).toHaveBeenCalledWith(
+      'Successfully logged out of Azure CLI',
+      true,
+    );
+  });
+
+  it('should return false and log error when az logout throws', async () => {
+    mockExecSync.mockImplementation(() => {
+      throw new Error('Logout failed');
+    });
+
+    const result = await logout();
+
+    expect(result).toBe(false);
+    expect(AppLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to logout'),
+      true,
+    );
   });
 });

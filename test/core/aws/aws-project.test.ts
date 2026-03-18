@@ -18,6 +18,8 @@ jest.mock('child_process', () => ({
 }));
 
 // Mock base-project.js
+const mockBaseDestroyProject = jest.fn(() => Promise.resolve(true));
+
 jest.mock('../../../src/core/base-project.js', () => {
   return {
     __esModule: true,
@@ -34,10 +36,27 @@ jest.mock('../../../src/core/base-project.js', () => {
           this.command = command;
         }
         createProject = jest.fn(() => Promise.resolve(true));
-        destroyProject = jest.fn(() => Promise.resolve(true));
         createFile = jest.fn();
         deleteFolder = jest.fn(() => Promise.resolve());
+
+        getConfigString(key: string): string {
+          const val = this.config[key];
+          return typeof val === 'string' ? val : String(val ?? '');
+        }
+
+        getConfigStringOrUndefined(key: string): string | undefined {
+          const val = this.config[key];
+          return typeof val === 'string' ? val : undefined;
+        }
+
+        getConfigArray(key: string): string[] {
+          const val = this.config[key];
+          return Array.isArray(val) ? (val as string[]) : [];
+        }
       }
+      // Put destroyProject on the prototype so super.destroyProject works
+      BaseProjectMock.prototype.destroyProject =
+        mockBaseDestroyProject as unknown as () => Promise<boolean>;
       return BaseProjectMock;
     })(),
   };
@@ -902,6 +921,344 @@ describe('AWSProject', () => {
       expect(awsProject.createFile).toHaveBeenCalled();
       const callCount = (awsProject.createFile as jest.Mock).mock.calls.length;
       expect(callCount).toBeGreaterThan(0);
+    });
+  });
+
+  describe('destroyProject - frontend/backend branching', () => {
+    test('should call destroyApp with react_app_name for react frontend', async () => {
+      const reactProject = new AWSProject(mockCommand, {
+        project_name: 'test-project',
+        cloud_provider: 'aws',
+        command: 'new',
+        aws_region: 'us-east-1',
+        aws_access_key_id: 'AKIA123456789',
+        aws_secret_access_key: 'secret-key',
+        project_id: 'proj-123',
+        environment: 'dev',
+        frontend_app_type: 'react',
+        react_app_name: 'my-react-app',
+        git_user_name: 'user',
+        github_access_token: 'token',
+        github_owner: 'owner',
+      });
+
+      (AWSPolicies.delete as jest.Mock).mockResolvedValue(true);
+      (AWSTerraformBackend.delete as jest.Mock).mockResolvedValue(true);
+
+      await reactProject.destroyProject('test-project', '/path');
+
+      expect(AWSPolicies.delete).toHaveBeenCalled();
+    });
+
+    test('should call destroyApp with next_app_name for next frontend', async () => {
+      const nextProject = new AWSProject(mockCommand, {
+        project_name: 'test-project',
+        cloud_provider: 'aws',
+        command: 'new',
+        aws_region: 'us-east-1',
+        aws_access_key_id: 'AKIA123456789',
+        aws_secret_access_key: 'secret-key',
+        project_id: 'proj-123',
+        environment: 'dev',
+        frontend_app_type: 'next',
+        next_app_name: 'my-next-app',
+        git_user_name: 'user',
+        github_access_token: 'token',
+        github_owner: 'owner',
+      });
+
+      (AWSPolicies.delete as jest.Mock).mockResolvedValue(true);
+      (AWSTerraformBackend.delete as jest.Mock).mockResolvedValue(true);
+
+      await nextProject.destroyProject('test-project', '/path');
+
+      expect(AWSPolicies.delete).toHaveBeenCalled();
+    });
+
+    test('should call destroyApp with node_app_name for node-express backend', async () => {
+      const nodeProject = new AWSProject(mockCommand, {
+        project_name: 'test-project',
+        cloud_provider: 'aws',
+        command: 'new',
+        aws_region: 'us-east-1',
+        aws_access_key_id: 'AKIA123456789',
+        aws_secret_access_key: 'secret-key',
+        project_id: 'proj-123',
+        environment: 'dev',
+        backend_app_type: 'node-express',
+        node_app_name: 'my-node-app',
+        git_user_name: 'user',
+        github_access_token: 'token',
+        github_owner: 'owner',
+      });
+
+      (AWSPolicies.delete as jest.Mock).mockResolvedValue(true);
+      (AWSTerraformBackend.delete as jest.Mock).mockResolvedValue(true);
+
+      await nodeProject.destroyProject('test-project', '/path');
+
+      expect(AWSPolicies.delete).toHaveBeenCalled();
+    });
+
+    test('should skip AWSTerraformBackend.delete when AWSPolicies.delete returns false', async () => {
+      (AWSPolicies.delete as jest.Mock).mockResolvedValue(false);
+      (AWSTerraformBackend.delete as jest.Mock).mockClear();
+
+      await awsProject.destroyProject('test-project', '/path');
+
+      expect(AWSTerraformBackend.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('runTerraformDestroyTemplate', () => {
+    test('should call executeCommandWithRetry, AWSPolicies.delete, AWSTerraformBackend.delete, and deleteFolder', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(undefined);
+      (AWSPolicies.delete as jest.Mock).mockResolvedValue(true);
+      (AWSTerraformBackend.delete as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroyTemplate('/project/infrastructure');
+
+      expect(executeCommandWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('terraform destroy'),
+        expect.objectContaining({ cwd: '/project/infrastructure' }),
+        3,
+      );
+      expect(AWSPolicies.delete).toHaveBeenCalled();
+      expect(AWSTerraformBackend.delete).toHaveBeenCalled();
+      expect(awsProject.deleteFolder).toHaveBeenCalled();
+    });
+
+    test('should append -var-file to destroy command when varFile is provided', async () => {
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(undefined);
+      (AWSPolicies.delete as jest.Mock).mockResolvedValue(true);
+      (AWSTerraformBackend.delete as jest.Mock).mockResolvedValue(true);
+
+      await awsProject.runTerraformDestroyTemplate(
+        '/project/infrastructure',
+        'custom.tfvars',
+      );
+
+      expect(executeCommandWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('-var-file=custom.tfvars'),
+        expect.any(Object),
+        3,
+      );
+    });
+
+    test('should skip AWSPolicies.delete when moduleType has single item', async () => {
+      const singleModuleProject = new AWSProject(mockCommand, {
+        project_name: 'test-project',
+        cloud_provider: 'aws',
+        command: 'new',
+        aws_region: 'us-east-1',
+        aws_access_key_id: 'AKIA123456789',
+        aws_secret_access_key: 'secret-key',
+        project_id: 'proj-123',
+        environment: 'dev',
+        moduleType: ['module.vpc'],
+      });
+
+      (executeCommandWithRetry as jest.Mock).mockResolvedValue(undefined);
+      (AWSPolicies.delete as jest.Mock).mockClear();
+      (AWSTerraformBackend.delete as jest.Mock).mockResolvedValue(true);
+
+      await singleModuleProject.runTerraformDestroyTemplate(
+        '/project/infrastructure',
+      );
+
+      expect(AWSPolicies.delete).not.toHaveBeenCalled();
+    });
+
+    test('should call process.exit(1) when executeCommandWithRetry throws', async () => {
+      (executeCommandWithRetry as jest.Mock).mockRejectedValue(
+        new Error('destroy failed'),
+      );
+
+      await awsProject.runTerraformDestroyTemplate('/project/infrastructure');
+
+      expect(AppLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to destroy terraform process'),
+        true,
+      );
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('editKubeConfigFile', () => {
+    const importedFs = require('fs') as typeof import('fs');
+    const jsyaml = require('js-yaml');
+
+    const newClusterConfigYaml = {
+      clusters: [
+        {
+          cluster: {
+            'certificate-authority-data': 'ca-data-abc',
+            server: 'https://k8s-api.example.com',
+          },
+        },
+      ],
+      users: [
+        {
+          user: {
+            'client-certificate-data': 'cert-data-xyz',
+            'client-key-data': 'key-data-xyz',
+          },
+        },
+      ],
+    };
+
+    let existsSyncSpy: jest.SpyInstance;
+    let mkdirSyncSpy: jest.SpyInstance;
+    let readFileSyncSpy: jest.SpyInstance;
+    let writeFileSyncSpy: jest.SpyInstance;
+    let yamlLoadSpy: jest.SpyInstance;
+    let yamlDumpSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      existsSyncSpy = jest.spyOn(importedFs, 'existsSync');
+      mkdirSyncSpy = jest
+        .spyOn(importedFs, 'mkdirSync')
+        .mockReturnValue(undefined);
+      readFileSyncSpy = jest
+        .spyOn(importedFs, 'readFileSync')
+        .mockReturnValue('yaml-content');
+      writeFileSyncSpy = jest
+        .spyOn(importedFs, 'writeFileSync')
+        .mockReturnValue(undefined);
+      yamlLoadSpy = jest.spyOn(jsyaml, 'load');
+      yamlDumpSpy = jest.spyOn(jsyaml, 'dump').mockReturnValue('dumped-yaml');
+    });
+
+    afterEach(() => {
+      existsSyncSpy.mockRestore();
+      mkdirSyncSpy.mockRestore();
+      readFileSyncSpy.mockRestore();
+      writeFileSyncSpy.mockRestore();
+      yamlLoadSpy.mockRestore();
+      yamlDumpSpy.mockRestore();
+    });
+
+    test('should create .kube directory when it does not exist', async () => {
+      existsSyncSpy
+        .mockReturnValueOnce(false) // .kube dir does not exist
+        .mockReturnValueOnce(false); // kubeconfig file does not exist
+
+      yamlLoadSpy.mockReturnValue(newClusterConfigYaml);
+
+      await awsProject.editKubeConfigFile('/path/to/new-cluster.yaml');
+
+      expect(mkdirSyncSpy).toHaveBeenCalled();
+    });
+
+    test('should merge into existing kubeconfig', async () => {
+      const existingKubeconfig = {
+        apiVersion: 'v1',
+        kind: 'Config',
+        clusters: [{ name: 'existing-cluster', cluster: {} }],
+        users: [{ name: 'existing-user', user: {} }],
+        contexts: [{ name: 'existing-context', context: {} }],
+        'current-context': 'existing-context',
+      };
+
+      existsSyncSpy
+        .mockReturnValueOnce(true) // .kube dir exists
+        .mockReturnValueOnce(true); // kubeconfig file exists
+
+      yamlLoadSpy
+        .mockReturnValueOnce(existingKubeconfig) // existing kubeconfig
+        .mockReturnValueOnce(newClusterConfigYaml); // new cluster config
+
+      await awsProject.editKubeConfigFile('/path/to/new-cluster.yaml');
+
+      expect(writeFileSyncSpy).toHaveBeenCalled();
+      // Verify the existing clusters were preserved and new one added
+      expect(existingKubeconfig.clusters).toHaveLength(2);
+      expect(existingKubeconfig.users).toHaveLength(2);
+      expect(existingKubeconfig.contexts).toHaveLength(2);
+    });
+
+    test('should set current-context correctly', async () => {
+      existsSyncSpy
+        .mockReturnValueOnce(true) // .kube dir exists
+        .mockReturnValueOnce(false); // kubeconfig does not exist — fresh
+
+      yamlLoadSpy.mockReturnValue(newClusterConfigYaml);
+
+      let capturedConfig: Record<string, unknown> | undefined;
+      yamlDumpSpy.mockImplementation((obj: unknown) => {
+        capturedConfig = obj as Record<string, unknown>;
+        return 'yaml-output';
+      });
+
+      await awsProject.editKubeConfigFile('/path/to/new-cluster.yaml');
+
+      expect(capturedConfig).toBeDefined();
+      expect(capturedConfig!['current-context']).toBe(
+        'test-project-dev-user@test-project-dev-cluster',
+      );
+    });
+  });
+
+  describe('startSSHProcess', () => {
+    test('should spawn SSH with correct arguments and call unref', async () => {
+      const mockProcess = {
+        unref: jest.fn(),
+      };
+      mockSpawn.mockReturnValue(mockProcess);
+
+      await awsProject.startSSHProcess();
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'ssh',
+        ['-D', '8002', '-N', 'test-project-dev-proxy'],
+        expect.objectContaining({
+          detached: true,
+          stdio: 'ignore',
+        }),
+      );
+      expect(mockProcess.unref).toHaveBeenCalled();
+    });
+  });
+
+  describe('runAnsiblePlaybook', () => {
+    test('should succeed on first attempt', async () => {
+      mockExecSync.mockReturnValue(Buffer.from('ok=1 changed=0\n'));
+
+      await awsProject.runAnsiblePlaybook('setup.yml', '/project');
+
+      expect(mockExecSync).toHaveBeenCalledWith(
+        'ansible-playbook -v ../playbooks/setup.yml',
+        expect.objectContaining({
+          cwd: '/project/templates/aws/ansible/environments',
+        }),
+      );
+    });
+
+    test('should retry on failure and succeed on second attempt', async () => {
+      mockExecSync
+        .mockImplementationOnce(() => {
+          throw new Error('playbook failed');
+        })
+        .mockReturnValue(Buffer.from('ok=1\n'));
+
+      await awsProject.runAnsiblePlaybook('setup.yml', '/project');
+
+      expect(mockExecSync).toHaveBeenCalledTimes(2);
+    });
+
+    test('should call process.exit(1) after max retries exceeded', async () => {
+      mockExecSync.mockImplementation(() => {
+        throw new Error('playbook always fails');
+      });
+
+      await awsProject.runAnsiblePlaybook('setup.yml', '/project');
+
+      expect(mockExecSync).toHaveBeenCalledTimes(6);
+      expect(mockExit).toHaveBeenCalledWith(1);
+      expect(AppLogger.error).toHaveBeenCalledWith(
+        'Max retries reached. Exiting...',
+        true,
+      );
     });
   });
 });

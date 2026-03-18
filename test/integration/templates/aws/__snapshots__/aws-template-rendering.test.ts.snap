@@ -59,10 +59,10 @@ lifecycle: dev
 
 hostname: 
 git_user_name: test-user
-github_access_token: ghp_test_token_placeholder 
+github_access_token: ghp_test_token_placeholder
 github_owner: test-org
 environment: dev
-project_name: testproj 
+project_name: testproj
 gitops_base_path: testproj-dev
 
 
@@ -170,7 +170,8 @@ exports[`AWS Template Rendering (integration) Common module templates common/pro
         }
         
     }
-}"
+}
+"
 `;
 
 exports[`AWS Template Rendering (integration) EKS-Fargate templates backend-config.tfvars.liquid renders 1`] = `
@@ -178,7 +179,8 @@ exports[`AWS Template Rendering (integration) EKS-Fargate templates backend-conf
 encrypt        = true
 key            = "testproj-dev.tfstate"
 region         = "us-east-1"
-dynamodb_table = "-tfstate-lock""
+dynamodb_table = "-tfstate-lock"
+"
 `;
 
 exports[`AWS Template Rendering (integration) EKS-Fargate templates main.tf.liquid renders without errors and matches snapshot 1`] = `
@@ -204,7 +206,7 @@ module "vpc" {
 }
 
 module "rds"{
-    source = "./modules/rds"  
+    source = "./modules/rds"
     name = "\${ var.project_name }"
     environment = "\${ var.environment }"
     region                 = var.region
@@ -294,7 +296,7 @@ module "environment" {
   domain_name                        = var.domain_name
   route53_zoneid                     = data.aws_route53_zone.route53_zone.zone_id
   gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
-  gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+  gitops_user_private_key            = module.gitops.gitops_ssh_private_key
   argocd_namespace                   = module.argo.argocd_namespace
 }
 
@@ -314,7 +316,7 @@ module "argo" {
     ssl_cert_arn                       = module.acm.ssl_cert_arn
     vpc_public_subnets                 = module.vpc.public_subnets
     gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
-    gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+    gitops_user_private_key            = module.gitops.gitops_ssh_private_key
 }
 locals {
    repositories = [
@@ -331,7 +333,8 @@ module "ecr-repo" {
     count = length(local.repositories)
     name = "\${ var.project_name }"
     appType = local.repositories[count.index].appType
-}"
+}
+"
 `;
 
 exports[`AWS Template Rendering (integration) EKS-Fargate templates terraform.tfvars.liquid renders 1`] = `
@@ -401,8 +404,6 @@ variable "appType" {
    description = "List of app names"
    type        = list(string)
  }
-
-
 "
 `;
 
@@ -428,7 +429,7 @@ module "vpc" {
     cidr = "\${ var.vpc_cidr }"
 }
 module "rds"{
-    source = "./modules/rds"  
+    source = "./modules/rds"
     name = "\${ var.project_name }"
     environment = "\${ var.environment }"
     region                 = var.region
@@ -482,7 +483,7 @@ module "repository" {
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
     name = module.eks.cluster_name
 }
-  
+
 module "ingress-controller" {
     source                   = "./modules/ingress-controller"
     name                     = "\${ var.project_name }"
@@ -512,7 +513,7 @@ module "environment" {
   domain_name                        = var.domain_name
   route53_zoneid                     = data.aws_route53_zone.route53_zone.zone_id
   gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
-  gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+  gitops_user_private_key            = module.gitops.gitops_ssh_private_key
   argocd_namespace                   = module.argo.argocd_namespace
 }
 
@@ -532,7 +533,7 @@ module "argo" {
     ssl_cert_arn                       = module.acm.ssl_cert_arn
     vpc_public_subnets                 = module.vpc.public_subnets
     gitops_repo_url_ssh                = module.gitops.gitops_ssh_clone_url
-    gitops_user_private_key            = module.gitops.gitops_ssh_private_key 
+    gitops_user_private_key            = module.gitops.gitops_ssh_private_key
 }
 locals {
    repositories = [
@@ -565,6 +566,7 @@ cluster_version = "1.30"
 github_access_token = "ghp_test_token_placeholder"
 github_owner = "test-org"
 appType = ["react", "node-express", "keycloak-service", "auth-service", "gen-ai-service"]
+
 
 
 "
@@ -659,7 +661,7 @@ module "acm" {
     environment = "\${ var.environment }"
     domain_name = var.domain_name
     route53_zoneid = data.aws_route53_zone.route53_zone.zone_id
-} 
+}
 
 locals {
   rendered_template = templatefile("./ssh-config.tftpl", {
@@ -680,7 +682,7 @@ resource "null_resource" "ssh_config" {
 output "master_ip" {
   value = module.master.k8s-master-ips[0]
 }
-  
+
 output "vpc_id" {
   value = module.vpc.id
 }
@@ -748,6 +750,7 @@ source_code_repository = "github"
 github_access_token = "ghp_test_token_placeholder"
 github_owner = "test-org"
 appType = ["react", "node-express", "keycloak-service", "auth-service", "gen-ai-service"]
+
 
 
 "
@@ -821,7 +824,6 @@ resource "null_resource" "ssh_config" {
     command = "echo '\${local.rendered_template}' >> ~/.ssh/config"
   }
 }
-
 "
 `;
 
@@ -850,7 +852,8 @@ module "eks" {
     vpc_id                  = module.vpc.id
     vpc_private_subnets     = module.vpc.private_subnets
     cluster_version         = "\${ var.cluster_version }"
-}"
+}
+"
 `;
 
 exports[`AWS Template Rendering (integration) Predefined grouping templates eks-nodegroup-vpc/main.tf.liquid renders 1`] = `
@@ -878,7 +881,8 @@ module "eks" {
     vpc_id                  = module.vpc.id
     vpc_private_subnets     = module.vpc.private_subnets
     cluster_version         = "\${ var.cluster_version }"
-}"
+}
+"
 `;
 
 exports[`AWS Template Rendering (integration) Predefined grouping templates rds-vpc/main.tf.liquid renders 1`] = `
@@ -897,7 +901,7 @@ module "vpc" {
   name        = "\${var.project_name}-\${var.environment}-vpc"
   environment = var.environment
   cidr        = var.vpc_cidr
-  
+
 }
 
 module "rds" {
@@ -907,12 +911,11 @@ module "rds" {
   region                  = var.region
   security_group_id       = module.vpc.default_security_group_id
   vpc_id                  = module.vpc.id
-  vpc_public_subnets      = module.vpc.public_subnets  
+  vpc_public_subnets      = module.vpc.public_subnets
   vpc_private_subnets     = module.vpc.private_subnets
   vpc_database_subnets    = module.vpc.database_subnets
   depends_on              = [ module.vpc ]
 }
-
 "
 `;
 
@@ -941,7 +944,7 @@ module "vpc" {
 }
 
 module "rds"{
-    source = "./modules/rds"  
+    source = "./modules/rds"
     name = "\${ var.project_name }"
     environment = "\${ var.environment }"
     region                 = var.region
@@ -975,7 +978,7 @@ module "acm" {
 data "aws_eks_cluster_auth" "eks_cluster_auth" {
     name = module.eks.cluster_name
 }
-  
+
 module "ingress-controller" {
     source                   = "./modules/ingress-controller"
     name                     = "\${ var.project_name }"
