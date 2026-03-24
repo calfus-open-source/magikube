@@ -3,6 +3,8 @@ name: Tests
 on:
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    # Allow manual triggering from GitHub Actions UI
 
 jobs:
   test:
