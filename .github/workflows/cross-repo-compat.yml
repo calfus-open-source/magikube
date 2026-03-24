@@ -1,6 +1,8 @@
 name: Cross-Repo Compatibility
 
 on:
+  push:
+    branches: [refactor/improve-code-quality-and-testing] # TEMPORARY: remove after workflow is registered
   schedule:
     # Run weekly on Monday at 06:00 UTC
     - cron: '0 6 * * 1'

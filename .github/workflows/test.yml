@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, refactor/improve-code-quality-and-testing] # TEMPORARY: remove branch after workflow is registered
   pull_request:
     branches: [main]
 
