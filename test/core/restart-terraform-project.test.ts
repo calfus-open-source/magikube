@@ -1,4 +1,4 @@
-import RestartTerraformProject from '../../src/core/restartterraform-project';
+import RestartTerraformProject from '../../src/core/restartTerraform-project';
 import { dotMagikubeConfig } from '../../src/core/utils/projectConfigReader-utils.js';
 
 import EKSFargateProject from '../../src/core/aws/aws-eks-fargate.js';
