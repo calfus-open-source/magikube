@@ -1,8 +1,6 @@
 name: Cross-Repo Compatibility
 
 on:
-  push:
-    branches: [refactor/improve-code-quality-and-testing] # TEMPORARY: remove after workflow is registered
   schedule:
     # Run weekly on Monday at 06:00 UTC
     - cron: '0 6 * * 1'
@@ -22,27 +20,26 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: calfus-open-source/infrastructure-templates
-          path: ../infrastructure-templates
+          path: external/infrastructure-templates
 
       - name: Checkout magikube-templates
         uses: actions/checkout@v4
         with:
           repository: calfus-open-source/magikube-templates
-          path: ../magikube-templates
+          path: external/magikube-templates
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run template rendering tests against latest templates
         run: npx jest --no-coverage --testPathPatterns='test/integration/templates/' --updateSnapshot
         env:
-          TEMPLATE_REPOS_PATH: ${{ github.workspace }}/..
+          TEMPLATE_REPOS_PATH: ${{ github.workspace }}/external
 
       - name: Run contract tests
         run: npx jest --no-coverage --testPathPatterns='test/integration/cli-contracts'
