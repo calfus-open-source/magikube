@@ -317,8 +317,8 @@ const azurePrompts: any[] = [
     type: 'list',
     choices: [VersionControl.GITHUB, VersionControl.BITBUCKET],
     default:
-      VersionControl.GITHUB ||
-      SystemConfig.getInstance().getConfig().source_code_repository,
+      SystemConfig.getInstance().getConfig().source_code_repository ||
+      VersionControl.GITHUB,
   },
 ];
 
