@@ -6,7 +6,6 @@ import TerraformProject from '../../core/terraform-project.js';
 import SystemConfig from '../../config/system.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import CreateApplication from '../../core/setup-application.js';
-import { ConfigObject } from '../../core/interface.js';
 import { Colours } from '../../prompts/constants.js';
 import { initializeStatusFile } from '../../core/utils/statusUpdater-utils.js';
 import AWSAccount from '../../core/aws/aws-account.js';
@@ -15,16 +14,17 @@ import { handlePrompts } from '../../core/utils/handlePrompts-utils.js';
 import { cloneAndCopyTemplates } from '../../core/utils/copyTemplates-utils.js';
 import {
   services,
-  modules,
+  aws_modules,
   InvalidProjectNames,
   supportedTemplates,
+  azure_modules,
 } from '../../core/constants/constants.js';
 import {
-  handleEKS,
+  handleEKSandAKS,
   handleK8s,
 } from '../../core/utils/terraformHandlers-utils.js';
 import { setupAndPushServices } from '../../core/utils/setupAndPushService-utils.js';
-import { createEmptyMagikubeProject } from '../../core/utils/createEmptyProject-utils.js';
+import { createBlankMagikubeProject } from '../../core/utils/createEmptyProject-utils.js';
 import { handleTemplateFlag } from '../../core/utils/groupingTemplateProject-utils.js';
 import {
   BASTION_SYSTEM_CONFIG,
@@ -36,8 +36,14 @@ import {
   REACT_APP_CONFIG,
   GEN_AI_CONFIG,
   NODE_APP_CONFIG,
+  AWS_SPECIFIC_CONFIG,
+  AZURE_SPECIFIC_CONFIG,
 } from '../../core/constants/systemDefaults.js';
+import { FullConfigObject } from '../../core/interface.js';
+import AzurePolicies from '../../core/azure/azure-iam.js';
+import { executeCommandWithRetry } from '../../core/utils/executeCommandWithRetry-utils.js';
 
+// Validates the project name input using regex rules
 function validateUserInput(input: string): void {
   const pattern = /^(?=.{3,8}$)(?!.*_$)[a-z][a-z0-9]*(?:_[a-z0-9]*)?$/;
   if (!pattern.test(input)) {
@@ -51,6 +57,7 @@ function validateUserInput(input: string): void {
   }
 }
 
+// Prevents usage of restricted or reserved project names
 function validateRestrictedInputs(input: string): void {
   const restrictedCommands = [...InvalidProjectNames];
   if (restrictedCommands.includes(input)) {
@@ -63,6 +70,7 @@ function validateRestrictedInputs(input: string): void {
   }
 }
 
+// Main class for creating a new project using Magikube CLI
 export default class CreateProject extends BaseCommand {
   static description =
     'Create new Magikube project with a specific template or as an empty project.';
@@ -72,6 +80,7 @@ export default class CreateProject extends BaseCommand {
     `<%= config.bin %> <%= command.id %> sample -t eks-fargate-vpc`,
   ];
 
+  // Accepts a required project name as argument
   static args = {
     name: Args.string({
       description: 'Project name to be created',
@@ -79,6 +88,7 @@ export default class CreateProject extends BaseCommand {
     }),
   };
 
+  // Accepts an optional template flag for project creation
   static flags = {
     template: Flags.string({
       char: 't',
@@ -87,28 +97,32 @@ export default class CreateProject extends BaseCommand {
     }),
   };
 
+  // List of predefined templates supported by Magikube
   private predefinedTemplates = [...supportedTemplates];
 
+  // Main execution logic for the command
   async run(): Promise<void> {
     const { args, flags } = await this.parse(CreateProject);
     const projectName = args.name;
-    // validate the project name
+
+    // Validate project name format and ensure it’s not restricted
     validateUserInput(args.name);
     validateRestrictedInputs(args.name);
+
+    // Initialize logging for the CLI command
     AppLogger.configureLogger(args.name, this.id);
     AppLogger.info('Logger Started ...');
 
     try {
-      // Handle empty project creation
+      // If template is 'empty', generate a skeleton project with config only
       if (flags.template === 'empty') {
         const responses: Answers = await handlePrompts(
           args,
           this.id,
           flags.template,
         );
-        // merge the response in system config
         SystemConfig.getInstance().mergeConfigs(responses);
-        await createEmptyMagikubeProject(args.name, responses);
+        await createBlankMagikubeProject(args.name, responses);
         AppLogger.info(
           `Created an empty project named '${args.name}' with .magikube folder populated with configurations.`,
           true,
@@ -116,7 +130,6 @@ export default class CreateProject extends BaseCommand {
         process.exit(0);
       }
 
-      //Create project with valid predefined template
       if (
         flags.template &&
         this.predefinedTemplates.includes(flags.template.trim())
@@ -125,10 +138,35 @@ export default class CreateProject extends BaseCommand {
         process.exit(0);
       }
 
+      // Default flow (no template): Prompt for user inputs interactively
+      let responses: Answers = await handlePrompts(args, this.id);
+
+      // Special handling for Azure login if selected as provider
+      if (responses['cloud_provider'] === 'azure') {
+        AppLogger.info('Attempting Azure login...', true);
+        try {
+          const loginResp = await AzurePolicies.getAzureLogin();
+          if (loginResp === false) {
+            AppLogger.error('Azure login failed!');
+          } else {
+            AppLogger.info('Azure login successful!', true);
+            responses = { ...responses, ...loginResp };
+          }
+        } catch (error) {
+          AppLogger.error(`Azure login error: ${error}`, true);
+        }
+      }
+
+      // Inject CLI command ID into responses
+      responses.command = this.id;
+
+      // Merge system-level configuration with user responses
       // Default project creation process
 
       // default system config values
       const systemConfig = {
+        ...(responses.cloud_provider === 'aws' ? AWS_SPECIFIC_CONFIG : {}),
+        ...(responses.cloud_provider === 'azure' ? AZURE_SPECIFIC_CONFIG : {}),
         ...BASTION_SYSTEM_CONFIG,
         ...MASTER_SYSTEM_CONFIG,
         ...WORKER_SYSTEM_CONFIG,
@@ -140,25 +178,44 @@ export default class CreateProject extends BaseCommand {
         ...GEN_AI_CONFIG,
       };
 
-      //taking input from user
-      const responses: Answers = await handlePrompts(args, this.id);
-      // check if dist folder present
+      // Clone base templates locally for customization
       responses.command = this.id;
-      if (!fs.existsSync(`${process.cwd()}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+      const distFolderPath = `${process.cwd()}/dist`;
+      if (!fs.existsSync(distFolderPath)) {
+        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
       }
 
-      AppLogger.debug(
+      AppLogger.info(
         `Creating new Magikube project named '${args.name}' in the current directory`,
         true,
       );
+
+      // Combine user input and default configurations
       const combinedConfig = { ...systemConfig, ...responses };
       SystemConfig.getInstance().mergeConfigs(combinedConfig);
+
+      // Terraform and application setup logic
       const terraform = await TerraformProject.getProject(this);
       const projectConfig = SystemConfig.getInstance().getConfig();
       const createApp = new CreateApplication(this, projectConfig);
-      initializeStatusFile(projectName, modules, services);
 
+      // Choose modules based on cloud provider
+      const modules =
+        projectConfig.cloud_provider === 'aws' ? aws_modules : azure_modules;
+
+      // Initialize a status file to track provisioning progress
+      initializeStatusFile(
+        projectName,
+        modules,
+        projectConfig.cloud_provider === 'azure'
+          ? [
+              ...services.filter((s) => s !== 'policy'),
+              projectConfig.frontend_app_type,
+            ]
+          : [...services, projectConfig.frontend_app_type],
+      );
+
+      // Extracting required config values
       const {
         github_access_token: token,
         git_user_name: userName,
@@ -167,45 +224,76 @@ export default class CreateProject extends BaseCommand {
         aws_region: region,
         aws_access_key_id: awsAccessKey,
         aws_secret_access_key: awsSecretKey,
+        azure_location: azureLocation,
+        azure_client_id: azureClientId,
+        azure_client_secret: azureClientSecret,
+        azure_tenant_id: azureTenantId,
+        azure_subscription_id: azureSubscriptionId,
         environment,
       } = projectConfig;
 
-      const configObject: ConfigObject = {
-        token,
-        userName,
-        orgName,
-        sourceCodeRepo,
-        region,
-        projectName,
-        awsAccessKey,
-        awsSecretKey,
-        environment,
+      // Building a structured config object
+      const configObject: FullConfigObject = {
+        common: {
+          token,
+          userName,
+          orgName,
+          sourceCodeRepo,
+          projectName: args.name,
+          environment,
+        },
       };
 
-      //get Account ID and merge it in systemConfig
-      const accountId = await AWSAccount.getAccountId(
-        awsAccessKey,
-        awsSecretKey,
-        region,
-      );
-      SystemConfig.getInstance().mergeConfigs({ accountId });
+      // Populate cloud-specific configuration
+      if (projectConfig.cloud_provider === 'aws') {
+        configObject.aws = {
+          region,
+          awsAccessKey,
+          awsSecretKey,
+        };
 
-      //setup Gitops service
+        // Fetch AWS account ID and store in config
+        const accountId = await AWSAccount.getAccountId(
+          awsAccessKey,
+          awsSecretKey,
+          region,
+        );
+
+        configObject.aws.accountId = accountId;
+        SystemConfig.getInstance().mergeConfigs({ accountId });
+      } else if (projectConfig.cloud_provider === 'azure') {
+        configObject.azure = {
+          location: azureLocation,
+          clientId: azureClientId,
+          clientSecret: azureClientSecret,
+          tenantId: azureTenantId,
+          subscriptionId: azureSubscriptionId,
+        };
+
+        const resource_group_name = `${projectName}-rg`;
+        SystemConfig.getInstance().mergeConfigs({ resource_group_name });
+      }
+
+      // Setup GitOps repository/service
       const setupGitopsServiceStatus =
         await createApp.setupGitops(projectConfig);
 
       if (terraform) {
-        await terraform.createProject(projectName, process.cwd(), this.id);
+        // Run Terraform project generation
+        await terraform.createProject(projectName, process.cwd());
+
+        // Activate AWS profile if applicable
         if (responses.cloud_provider === 'aws') {
-          await terraform.AWSProfileActivate(responses.aws_profile);
+          await (terraform as any).AWSProfileActivate(responses.aws_profile);
         }
 
-        // setup infrastructure if cluster type is eks-fargate OR eks-nodegroup
+        // Conditional handling for Kubernetes cluster setup
         if (
           responses.cluster_type === 'eks-fargate' ||
-          responses.cluster_type === 'eks-nodegroup'
+          responses.cluster_type === 'eks-nodegroup' ||
+          responses.cluster_type === 'aks'
         ) {
-          await handleEKS(
+          await handleEKSandAKS(
             projectName,
             responses,
             terraform,
@@ -214,7 +302,7 @@ export default class CreateProject extends BaseCommand {
           );
         }
 
-        // setup infrastructure if cluster type is K8S
+        // Conditional setup for generic Kubernetes clusters
         if (responses.cluster_type === 'k8s') {
           await handleK8s(
             projectName,
@@ -224,11 +312,17 @@ export default class CreateProject extends BaseCommand {
             configObject,
           );
         }
-        // create microservices
+
+        // Final step to setup and push application services (frontend/backend/auth etc.)
         await setupAndPushServices(projectConfig, configObject);
       }
-
-      // check the status of microservice
+      //remove dist folder
+      await executeCommandWithRetry(
+        `rm -rf ${distFolderPath}`,
+        { cwd: `${process.cwd()}` },
+        1,
+      );
+      // Perform health check to ensure services are live
       await serviceHealthCheck(args, responses, projectConfig);
       process.exit(0);
     } catch (error) {

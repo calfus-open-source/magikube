@@ -14,7 +14,7 @@ import {
   initializeStatusFile,
   updateStatusFile,
 } from './statusUpdater-utils.js';
-import { modules } from '../constants/constants.js';
+// `modules` is not exported from constants; remove incorrect import
 import { dotMagikubeConfig } from './projectConfigReader-utils.js';
 import { handlePrompts } from './handlePrompts-utils.js';
 import { cloneAndCopyTemplates } from './copyTemplates-utils.js';
@@ -22,8 +22,8 @@ import {
   BASTION_SYSTEM_CONFIG,
   MASTER_SYSTEM_CONFIG,
   WORKER_SYSTEM_CONFIG,
-  KUBERNITIES_SYSTEM_CONFIG,
   EKSNODEGROUP_SYSTEM_CONFIG,
+  KUBERNITIES_SYSTEM_CONFIG,
 } from '../constants/systemDefaults.js';
 
 export async function handleTemplateFlag(
@@ -33,14 +33,16 @@ export async function handleTemplateFlag(
 ) {
   const currentDir = process.cwd();
   const responses = dotMagikubeConfig(args.name, currentDir);
+  if (!responses) {
+    throw new Error(`Failed to read .magikube configuration for project '${args.name}'`);
+  }
   const moduleType = '';
   const domain =
     template === 'vpc-rds-nodegroup-acm-ingress'
       ? await handlePrompts(args, commandName, template, moduleType)
       : null;
 
-  await cloneAndCopyTemplates(commandName);
-
+  await cloneAndCopyTemplates(commandName, responses.cloud_provider);
   AppLogger.debug(
     `Creating new magikube project named '${args.name}' in the current directory`,
     true,
@@ -89,7 +91,6 @@ export async function handleTemplateFlag(
     true,
   );
   const terraform = await TemplateTerraformProject.getProject(commandName);
-
   const {
     aws_region: region,
     aws_access_key_id: awsAccessKey,
@@ -107,7 +108,7 @@ export async function handleTemplateFlag(
   if (terraform) {
     await terraform.createProject(projectName, currentDir);
     if (responses['cloud_provider'] === 'aws') {
-      await terraform.AWSProfileActivate(responses['aws_profile']);
+      await (terraform as any).AWSProfileActivate(responses['aws_profile']);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 15000));
@@ -174,7 +175,7 @@ export async function handleTemplateFlag(
         // ⭐ THIS WILL NOW ALWAYS EXECUTE FOR ALL TEMPLATE TYPES
         AppLogger.error(
           `Error applying Terraform for module: ${module}: ${error}`,
-          true
+          true,
         );
 
         allModulesAppliedSuccessfully = false;

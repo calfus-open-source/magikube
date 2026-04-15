@@ -1,4 +1,4 @@
-export const modules = [
+export const aws_modules = [
   'module.vpc',
   'module.eks',
   'module.acm',
@@ -8,6 +8,47 @@ export const modules = [
   'module.ingress-controller',
   'module.argo',
   'module.environment',
+];
+
+export const azure_modules = [
+  'module.vnet',
+  'module.nsg',
+  'module.bastion',
+  'module.kv',
+  'module.agw',
+  'module.k8s_common',
+  'module.acr',
+  'module.aks',
+  'module.sql_server',
+  'module.gitops',
+  'module.repository',
+];
+
+export const aws_destroy_modules = [
+  'module.rds',
+  'module.environment',
+  'module.argo',
+  'module.ingress-controller',
+  'module.repository',
+  'module.gitops',
+  'module.ecr-repo',
+  'module.acm',
+  'module.eks',
+  'module.vpc',
+];
+
+export const azure_destroy_modules = [
+  'module.repository',
+  'module.gitops',
+  'module.sql_server',
+  'module.aks',
+  'module.acr',
+  'module.k8s_common',
+  'module.agw',
+  'module.bastion',
+  'module.kv',
+  'module.nsg',
+  'module.vnet',
 ];
 
 export const singleModules = [
@@ -84,4 +125,42 @@ export const awsSupportedRegions = [
   'eu-north-1',
   'me-south-1',
   'sa-east-1',
+];
+
+export const azureSupportedRegions = [
+  'eastus',
+  'eastus2',
+  'westus',
+  'westus2',
+  'westus3',
+  'centralus',
+  'northcentralus',
+  'southcentralus',
+  'westcentralus',
+  'canadacentral',
+  'canadaeast',
+  'brazilsouth',
+  'northeurope',
+  'westeurope',
+  'uksouth',
+  'ukwest',
+  'francecentral',
+  'francesouth',
+  'germanywestcentral',
+  'norwayeast',
+  'switzerlandnorth',
+  'swedencentral',
+  'eastasia',
+  'southeastasia',
+  'japaneast',
+  'japanwest',
+  'australiaeast',
+  'australiasoutheast',
+  'centralindia',
+  'southindia',
+  'westindia',
+  'koreacentral',
+  'koreasouth',
+  'uaenorth',
+  'southafricanorth',
 ];

@@ -1,11 +1,11 @@
 import { updateStatusFile } from './statusUpdater-utils.js'; // Adjust the import path as necessary
 import { execSync } from 'child_process';
-import { services, modules } from '../../core/constants/constants.js';
+import { aws_modules, azure_modules } from '../../core/constants/constants.js';
 import { AppLogger } from '../../logger/appLogger.js';
 import { ManageRepository } from '../manage-repository.js';
 import { playbooks } from '../../core/constants/constants.js';
 
-export const handleEKS = async (
+export const handleEKSandAKS = async (
   projectName: string,
   responses: any,
   terraform: any,
@@ -19,7 +19,8 @@ export const handleEKS = async (
     projectName,
   );
   let allModulesAppliedSuccessfully = true;
-
+  const modules =
+    responses.cloud_provider === 'aws' ? aws_modules : azure_modules;
   for (const module of modules) {
     try {
       updateStatusFile(projectName, module, 'fail');
@@ -44,8 +45,8 @@ export const handleEKS = async (
   }
 
   if (setupGitopsServiceStatus) {
-    configObject.appName = `${responses.environment}`;
-    configObject.appType = 'gitops';
+    configObject.common.appName = `${responses.environment}`;
+    configObject.common.appType = 'gitops';
     await ManageRepository.pushCode(configObject);
   }
 
@@ -80,13 +81,13 @@ export const handleK8s = async (
       stdio: 'inherit',
     });
     AppLogger.info('AWS export command executed.', true);
-  } catch (error) {
+  } catch (_error) {
     AppLogger.error('AWS export command NOT executed', true);
   }
 
   if (setupGitopsServiceStatus) {
-    configObject.appName = `${responses.environment}`;
-    configObject.appType = 'gitops';
+    configObject.common.appName = `${responses.environment}`;
+    configObject.common.appType = 'gitops';
     await ManageRepository.pushCode(configObject);
   }
 

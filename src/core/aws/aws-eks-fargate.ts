@@ -2,8 +2,7 @@ import BaseCommand from '../../commands/base.js';
 import gitOpsProject from '../gitops/common-gitops.js';
 import AWSProject from './aws-project.js';
 import repositoryProject from '../code-repository/common-repository.js';
-import argoCdProject from '../argocd/setup-argocd.js';
-import fs from 'fs-extra';
+import argoCdProjectAWS from '../argocd/setup-argocd-aws.js';
 
 export default class EKSFargateProject extends AWSProject {
   private path: string | undefined;
@@ -26,7 +25,7 @@ export default class EKSFargateProject extends AWSProject {
       command as BaseCommand,
       this.config,
     );
-    const argocdInstance = new argoCdProject(
+    const argocdInstance = new argoCdProjectAWS(
       command as BaseCommand,
       this.config,
     );

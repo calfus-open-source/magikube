@@ -8,7 +8,6 @@ import {
   readStatusFile,
   updateStatusFile,
 } from '../../../core/utils/statusUpdater-utils.js';
-import { services, singleModules } from '../../../core/constants/constants.js';
 import path from 'path';
 import fs from 'fs';
 import SubModuleTemplateProject from '../../../core/submoduleTerraform.js';
@@ -101,7 +100,7 @@ export default class NewModule extends BaseCommand {
       const distFolderPath = path.resolve(currentDir, '..');
       // Check if dist folder exists
       if (!fs.existsSync(`${distFolderPath}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+        await cloneAndCopyTemplates(this.id, responses.cloud_provider);
       }
 
       // Update the modules structure and vpcNames/cidr_blocks in config Object
@@ -148,7 +147,9 @@ export default class NewModule extends BaseCommand {
       if (terraform) {
         await terraform.createProject('', currentDir);
         if (projectConfig['cloud_provider'] === 'aws') {
-          await terraform.AWSProfileActivate(projectConfig['aws_profile']);
+          await (terraform as any).AWSProfileActivate(
+            projectConfig['aws_profile'],
+          );
         }
         // Delay of 15 seconds
         await new Promise((resolve) => setTimeout(resolve, 15000));

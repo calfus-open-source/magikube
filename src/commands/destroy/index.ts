@@ -19,6 +19,7 @@ import { Liquid } from 'liquidjs';
 
 export default class DestroyProject extends BaseCommand {
   protected engine = new Liquid();
+
   static args = {
     name: Args.string({
       description: 'Project name to be destroyed',
@@ -38,7 +39,7 @@ export default class DestroyProject extends BaseCommand {
 
   static examples = [
     `<%= config.bin %> <%= command.id %> sample
-Destroying magikube project named 'sample' in the current directory`,
+    Destroying magikube project named 'sample' in the current directory`,
   ];
 
   async run(): Promise<void> {
@@ -62,6 +63,7 @@ Destroying magikube project named 'sample' in the current directory`,
           config,
           createdServiceResp,
         );
+
         // Write updated config to .magikube file
         const dotMagikubeFile = join(process.cwd(), '.magikube');
         fs.writeFileSync(
@@ -98,10 +100,12 @@ Destroying magikube project named 'sample' in the current directory`,
 
     const projectPath = path.join(process.cwd(), args.name);
     AppLogger.configureLogger(args.name, this.id, false);
+
     const responses = dotMagikubeConfig(args.name, process.cwd());
     const readFile = readStatusFile(responses, this.id);
     const infrastructurePath = path.join(projectPath, 'infrastructure');
     responses.dryrun = flags.dryrun || false;
+
     SystemConfig.getInstance().mergeConfigs(responses);
     const project_config = SystemConfig.getInstance().getConfig();
 
@@ -109,6 +113,7 @@ Destroying magikube project named 'sample' in the current directory`,
       `Destroying magikube project named '${args.name}' in the current directory`,
       true,
     );
+
     // Default behavior for other project types
     let terraform;
     if (project_config.command === 'new' && !('template' in project_config)) {
@@ -122,7 +127,7 @@ Destroying magikube project named 'sample' in the current directory`,
     }
 
     if (terraform && responses.cloud_provider === 'aws') {
-      await terraform.AWSProfileActivate(responses['aws_profile']);
+      await (terraform as any).AWSProfileActivate(responses['aws_profile']);
 
       if (
         readFile.services['terraform-apply'] === 'fail' ||
@@ -137,6 +142,7 @@ Destroying magikube project named 'sample' in the current directory`,
         project_config.command === 'create'
       ) {
         await runTerraformUnlockCommands(projectPath, responses);
+
         await terraform?.runTerraformDestroyTemplate(
           infrastructurePath,
           'terraform.tfvars',
@@ -147,6 +153,7 @@ Destroying magikube project named 'sample' in the current directory`,
             `Removing folder ${process.cwd()}/${args.name}`,
             true,
           );
+
           await executeCommandWithRetry(
             `rm -rf ${process.cwd()}/${args.name}`,
             { cwd: `${process.cwd()}/${args.name}` },
@@ -161,6 +168,20 @@ Destroying magikube project named 'sample' in the current directory`,
       } else {
         await terraform.destroyProject(args.name, process.cwd());
       }
+    } else if (
+      responses.cloud_provider === 'azure' &&
+      project_config.command === 'new'
+    ) {
+      await terraform?.runTerraformInit(
+        infrastructurePath,
+        `${project_config['environment']}-config.tfvars`,
+        project_config.project_name,
+      );
+      await terraform?.runTerraformDestroyTemplate(
+        infrastructurePath,
+        'terraform.tfvars',
+        readFile,
+      );
     } else {
       AppLogger.error(
         'Terraform project initialization failed or unsupported cloud provider.',

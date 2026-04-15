@@ -2,12 +2,12 @@ import { AppLogger } from '../logger/appLogger.js';
 import BaseProject from './base-project.js';
 import fs from 'fs-extra';
 import SystemConfig from '../config/system.js';
-import { AppTypeMap, ConfigObject } from './interface.js';
+import { AppTypeMap, FullConfigObject } from './interface.js';
 import { ManageRepository } from './manage-repository.js';
 import BaseCommand from '../commands/base.js';
 import { executeCommandWithRetry } from './utils/executeCommandWithRetry-utils.js';
 import { updateStatusFile } from './utils/statusUpdater-utils.js';
-import path, { join } from 'path';
+import path from 'path';
 
 export default class CreateApplication extends BaseProject {
   private appTypeMap: AppTypeMap;
@@ -209,7 +209,7 @@ export default class CreateApplication extends BaseProject {
     const { appName, projectName } = configObject;
     const nodeAppName =
       this.config.command === 'create' ? projectConfig.service_name : appName;
-    const filePath = process.cwd();
+    const _filePath = process.cwd();
     let copyFilePath;
     let createFilePath;
     let applicationPath;
@@ -313,7 +313,7 @@ export default class CreateApplication extends BaseProject {
 
   // Create Next.js application
   createNextApp = async (configObject: any) => {
-    const filePath = process.cwd();
+    const _filePath = process.cwd();
     const projectConfig = SystemConfig.getInstance().getConfig();
     const { appName, projectName } = configObject;
     const nextAppName =
@@ -510,15 +510,15 @@ export default class CreateApplication extends BaseProject {
         : genAI_app_name;
     let copyFilePath;
     let createFilePath;
-    let applicationPath;
+    let _applicationPath;
     if (this.config.command === 'create') {
       copyFilePath = path.resolve(process.cwd(), '..');
       createFilePath = `${projectConfig.service_name}`;
-      applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
+      _applicationPath = `${process.cwd()}/${projectConfig.service_name}`;
     } else {
       copyFilePath = process.cwd();
       createFilePath = `${genAIAppName}`;
-      applicationPath = `${process.cwd()}/${projectName}/${genAIAppName}`;
+      _applicationPath = `${process.cwd()}/${projectName}/${genAIAppName}`;
     }
     try {
       AppLogger.info('creating gen AI app...', true);
@@ -668,15 +668,18 @@ export default class CreateApplication extends BaseProject {
   // Wrapper for app creation and repo setup
   async handleAppCreation(
     appType: string,
-    configObject: ConfigObject,
+    configObject: FullConfigObject,
     projectConfig: any,
   ) {
     try {
       const appConfig = this.appTypeMap[appType];
       if (appConfig) {
-        configObject.appName = projectConfig[appConfig.appNameKey];
-        configObject.appType = projectConfig[appConfig.appTypeKey];
-        const appStatus = await appConfig.createAppFunction(configObject);
+        // store app-specific values under the `common` section to match types
+        configObject.common.appName = projectConfig[appConfig.appNameKey];
+        configObject.common.appType = projectConfig[appConfig.appTypeKey];
+        const appStatus = await appConfig.createAppFunction(
+          configObject.common,
+        );
         // After app creation, repository setup initiates
         if (appStatus) {
           const repoSetupError = await ManageRepository.pushCode(configObject);
@@ -685,7 +688,7 @@ export default class CreateApplication extends BaseProject {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       AppLogger.error('Error occured while setting up the repository', true);
       process.exit(1);
     }
@@ -715,12 +718,12 @@ export default class CreateApplication extends BaseProject {
           AppLogger.debug(`Deleting repository for..., ${url}`);
           const command = `curl -X DELETE -u "${userName}:${token}" ${url}`;
           try {
-            executeCommandWithRetry(command, { stdio: 'pipe' }, 3);
+            await executeCommandWithRetry(command, { stdio: 'pipe' }, 3);
             AppLogger.info(`Repository deleted successfully : ${url}`, true);
           } catch (error) {
             AppLogger.error(`Failed to delete repository: ${error}`, true);
           }
-          const appfilePath = fs.existsSync(`./${projectName}/${appName}`);
+          const _appfilePath = fs.existsSync(`./${projectName}/${appName}`);
           if (fs.existsSync(`./${projectName}/${appName}`)) {
             fs.rmdirSync(`./${projectName}/${appName}`, { recursive: true });
           }

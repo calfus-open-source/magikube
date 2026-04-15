@@ -1,12 +1,14 @@
 import { Liquid } from 'liquidjs';
 import fs from 'fs-extra';
-import path, { dirname, join } from 'path';
+import { dirname, join } from 'path';
 import SystemConfig from '../config/system.js';
 import BaseCommand from '../commands/base.js';
-import TerraformProject from './terraform-project.js';
 import { AppLogger } from '../logger/appLogger.js';
 import { readStatusFile } from './utils/statusUpdater-utils.js';
-import { modules } from './constants/constants.js';
+import {
+  aws_destroy_modules,
+  azure_destroy_modules,
+} from './constants/constants.js';
 import { appendUniqueLines } from './utils/appendUniqueLines-utils.js';
 
 export default abstract class BaseProject {
@@ -24,29 +26,31 @@ export default abstract class BaseProject {
     //initialize terraform in the path
     this.projectPath = join(path, projectName);
     // Run terraform destroy
-    AppLogger.debug(`Destroying project '${projectName}' in the path`, true);
-    await this.terraformDestroy(projectName);
-    await this.deleteFolder();
+    AppLogger.debug(`Destroying project '${projectName}'`, true);
+    try {
+      await this.terraformDestroy(projectName);
+      // await this.deleteFolder(projectName);
+    } catch (err) {
+      AppLogger.error(
+        `Project destroy failed, skipping deleteFolder :${err}`,
+        true,
+      );
+    }
   }
 
   async terraformDestroy(projectName: string): Promise<void> {
     const TerraformProject = (await import('./terraform-project.js')).default;
     // Run terraform destroy
-    AppLogger.info(`Running terraform destroy in the path`, true);
+    AppLogger.info(`Running terraform destroy...`);
     const terraform = await TerraformProject.getProject(this.command);
-    const modules = [
-      'module.rds',
-      'module.environment',
-      'module.argo',
-      'module.ingress-controller',
-      'module.repository',
-      'module.gitops',
-      'module.ecr-repo',
-      'module.acm',
-      'module.eks',
-      'module.vpc',
-    ];
 
+    // Initialize modules with a default value
+    const modules =
+      this.config.cluster_type === 'eks-fargate' || this.config.cluster_type === 'eks-nodegroup'
+        ? aws_destroy_modules
+        : this.config.cluster_type === 'aks'
+          ? azure_destroy_modules
+          : [];
     if (
       this.config.cluster_type === 'eks-fargate' ||
       this.config.cluster_type === 'eks-nodegroup'
@@ -57,10 +61,15 @@ export default abstract class BaseProject {
         `${this.config.environment}-config.tfvars`,
         projectName,
       );
+
       const readFile = readStatusFile(this.config, this.config.command);
+
       // Destroy modules one by one
       for (const module of modules) {
-        if (readFile.modules[module] == 'success') {
+        if (
+          readFile.modules[module] == 'success' ||
+          readFile.modules[module] == 'fail'
+        ) {
           try {
             AppLogger.debug(`Starting Terraform destroy for module: ${module}`);
             await terraform?.runTerraformDestroy(
@@ -84,12 +93,12 @@ export default abstract class BaseProject {
     // Check if it has multiple modules
     if (this.config.cluster_type === 'k8s') {
       // Initialize the terraform
-      // await terraform?.runTerraformInit(`${this.projectPath}/infrastructure`, `/infrastructure/${this.config.environment}-config.tfvars`);
       await terraform?.runTerraformInit(
         this.projectPath + `/infrastructure`,
         `${this.config.environment}-config.tfvars`,
         projectName,
       );
+
       for (const module of modules) {
         try {
           terraform?.startSSHProcess();
@@ -112,39 +121,40 @@ export default abstract class BaseProject {
         }
       }
     }
-    //await terraform?.runTerraformDestroy(this.projectPath);
   }
 
-  async deleteFolder(): Promise<void> {
-    if (fs.existsSync(this.projectPath)) {
-      AppLogger.debug(`Removing folder '${this.projectPath}'`, true);
-      fs.rmSync(this.projectPath, { recursive: true });
+  async deleteFolder(projectName: string): Promise<void> {
+    const projectPath = `${process.cwd()}/${projectName}`;
+    if (fs.existsSync(projectPath)) {
+      fs.rmSync(projectPath, { recursive: true });
+      AppLogger.info(`${projectName} project Destroyed successfully`, true);
     } else {
       AppLogger.debug(
-        `Folder '${this.projectPath}' does not exist in the path`,
+        `Project '${this.projectPath}' does not exist in the path`,
         true,
       );
     }
   }
 
   async createProject(name: string, path: string): Promise<void> {
-    //initialize terraform in the path
-    this.projectPath = join(path, name);
-    await this.createFolder();
-
-    const projectConfigFile = join(this.projectPath, '.magikube');
-    AppLogger.debug(`Creating project '${name}' in the path`, true);
-    fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
-
-    // await this.createProviderFile();
+    try {
+      this.projectPath = join(path, name);
+      await this.createFolder();
+      const projectConfigFile = join(this.projectPath, '.magikube');
+      fs.writeFileSync(projectConfigFile, JSON.stringify(this.config, null, 4));
+      AppLogger.info(`Created project folder with name: '${name}'`, true);
+    } catch (error) {
+      AppLogger.error(
+        `Failed to create project folder'${name}': ${(error as Error).message}`,
+      );
+      throw error;
+    }
   }
+
   async createFolder(): Promise<void> {
     //create a folder with the name in the path
 
     if (fs.existsSync(this.projectPath)) {
-      AppLogger.debug(
-        `Folder '${this.projectPath}' already exists in the path`,
-      );
       AppLogger.error(
         `Folder '${this.projectPath}' already exists in the path`,
       );
@@ -178,17 +188,17 @@ export default abstract class BaseProject {
     templateFilename: string,
     folderName: string = '.',
     CreateProjectFile: boolean = false,
-    command: string = '',
+    _command: string = '',
   ): Promise<void> {
     AppLogger.debug(`Creating or appending to ${filename} file`);
 
     const project_config = SystemConfig.getInstance().getConfig();
-    const status = readStatusFile(project_config, project_config.command);
+    const _status = readStatusFile(project_config, project_config.command);
     // Determine the template file path based on the command and CreateProjectFile flag
     const templateFilePath = CreateProjectFile
       ? templateFilename
       : project_config.command === 'resume'
-        ? join(new URL('.', import.meta.url).pathname, templateFilename)
+        ? join(process.cwd(), 'dist/templates', templateFilename)
         : templateFilename;
 
     // Read the template file
@@ -218,10 +228,10 @@ export default abstract class BaseProject {
     // Define full path to the file
     const filePath = join(folderPath, filename);
 
-    let lastModule;
+    let _lastModule;
     if (project_config.moduleType !== undefined) {
-      lastModule = project_config.moduleType[project_config.moduleType.length - 1];
-
+      _lastModule =
+        project_config.moduleType[project_config.moduleType.length - 1];
     }
 
     if (

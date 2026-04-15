@@ -1,4 +1,3 @@
-import path from 'path';
 import SystemConfig from '../config/system.js';
 import { AppLogger } from '../logger/appLogger.js';
 import {
@@ -7,8 +6,10 @@ import {
   VersionControl,
   Colours,
 } from './constants.js';
-import fs from 'fs';
-import { awsSupportedRegions } from '../core/constants/constants.js';
+import {
+  awsSupportedRegions,
+  azureSupportedRegions,
+} from '../core/constants/constants.js';
 
 const productionPrompts: any[] = [
   {
@@ -81,7 +82,7 @@ const awsPrompts: any[] = [
     message: 'Enter AWS profile to use: ',
     name: 'aws_profile',
     type: 'input',
-    default: 'sample',
+    default: '',
   },
   {
     message: 'Source code repository: ',
@@ -167,7 +168,7 @@ const githubPrompts: any[] = [
   },
 ];
 
-const codeCommitPrompts: any[] = [
+const _codeCommitPrompts: any[] = [
   {
     message: 'Enter Name for Frontend Repo: ',
     name: 'frontend_repo_codecommit',
@@ -182,7 +183,7 @@ const codeCommitPrompts: any[] = [
   },
 ];
 
-const vpcPrompt: any[] = [
+const _vpcPrompt: any[] = [
   {
     choices: [],
     message: 'Select the Vpc:',
@@ -276,6 +277,51 @@ enum ApplicationType {
   NODE = 'node',
 }
 
+const azureRegion: any[] = [];
+
+const azureProfile: any[] = [
+  {
+    message: 'Enter Azure profile to use: ',
+    name: 'azure_profile',
+    type: 'input',
+    default: 'sample',
+  },
+];
+
+const azurePrompts: any[] = [
+  {
+    message: 'Select an Azure Location: ',
+    name: 'azure_location',
+    default:
+      process.env.AZURE_LOCATION ||
+      SystemConfig.getInstance().getConfig().azure_location,
+    type: 'input',
+    // Validate the input
+    validate: function (input: string) {
+      const azureRegions = [...azureSupportedRegions];
+      if (!azureRegions.includes(input)) {
+        return `${Colours.boldText}${Colours.redColor}\n Invalid Location. Please enter existing Azure location.${Colours.colorReset}`;
+      }
+      return true;
+    },
+  },
+  {
+    choices: ['aks', 'k8s'],
+    message: 'Select a Cluster Type:',
+    name: 'cluster_type',
+    type: 'list',
+  },
+  {
+    message: 'Source code repository: ',
+    name: 'source_code_repository',
+    type: 'list',
+    choices: [VersionControl.GITHUB, VersionControl.BITBUCKET],
+    default:
+      SystemConfig.getInstance().getConfig().source_code_repository ||
+      VersionControl.GITHUB,
+  },
+];
+
 export default class PromptGenerator {
   getCloudProvider(): any[] {
     return [
@@ -318,6 +364,14 @@ export default class PromptGenerator {
     return awsProfile;
   }
 
+  getAzureRegion(): any[] {
+    return azureRegion;
+  }
+
+  getAzureProfile(): any[] {
+    return azureProfile;
+  }
+
   getMicroService(): any[] {
     return microServicePrompts;
   }
@@ -342,6 +396,8 @@ export default class PromptGenerator {
   getCloudProviderPrompts(cloudProvider: CloudProvider): any[] {
     if (cloudProvider === CloudProvider.AWS) {
       return awsPrompts;
+    } else if (cloudProvider === CloudProvider.AZURE) {
+      return azurePrompts;
     } else {
       // Handle unknown cloud providers or invalid input
       AppLogger.error(

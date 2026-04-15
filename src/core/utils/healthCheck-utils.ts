@@ -36,7 +36,9 @@ export async function waitForServiceToUP(
     }
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
-  spinner.fail(`${AppName.charAt(0).toUpperCase() + AppName.slice(1)} service is DOWN`);
+  spinner.fail(
+    `${AppName.charAt(0).toUpperCase() + AppName.slice(1)} service is DOWN`,
+  );
   AppLogger.error(
     `Failed to detect that ${AppName} service is up. Exiting...`,
     true,

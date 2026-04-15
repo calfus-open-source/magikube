@@ -9,13 +9,12 @@ import {
   initializeStatusFile,
   updateStatusFile,
 } from '../../../core/utils/statusUpdater-utils.js';
-import { services } from '../../../core/constants/constants.js';
 import { readStatusFile } from '../../../core/utils/statusUpdater-utils.js';
 import MicroserviceProject from '../../../core/microserviceTerraform.js';
 import { dotMagikubeConfig } from '../../../core/utils/projectConfigReader-utils.js';
 import { Args } from '@oclif/core';
 import { setupAndPushServices } from '../../../core/utils/setupAndPushService-utils.js';
-import { ConfigObject } from '../../../core/interface.js';
+import { FullConfigObject } from '../../../core/interface.js';
 import { updateProjectConfigArrays } from '../../../core/utils/updateDotMagikube-utils.js';
 import {
   GEN_AI_CONFIG,
@@ -41,7 +40,7 @@ export default class Microservice extends BaseCommand {
   async run(): Promise<void> {
     // Extract the argument
     const { args } = await this.parse(Microservice);
-
+    AppLogger.configureLogger(args.name, this.id);
     // Check if the argument is "microservice"
     if (args.name !== 'microservice') {
       AppLogger.error(
@@ -86,7 +85,7 @@ export default class Microservice extends BaseCommand {
 
       // Create dist folder if not exist
       if (!fs.existsSync(`${distFolderPath}/dist`)) {
-        await cloneAndCopyTemplates(this.id);
+        await cloneAndCopyTemplates(this.id, resp.cloud_provider);
       }
 
       AppLogger.debug(
@@ -119,22 +118,21 @@ export default class Microservice extends BaseCommand {
         git_user_name: userName,
         github_owner: orgName,
         source_code_repository: sourceCodeRepo,
-        aws_region: region,
-        aws_access_key_id: awsAccessKey,
-        aws_secret_access_key: awsSecretKey,
+        aws_region: _region,
+        aws_access_key_id: _awsAccessKey,
+        aws_secret_access_key: _awsSecretKey,
         environment,
       } = projectConfig;
 
-      const configObject: ConfigObject = {
-        token,
-        userName,
-        orgName,
-        sourceCodeRepo,
-        region,
-        projectName,
-        awsAccessKey,
-        awsSecretKey,
-        environment,
+      const configObject: FullConfigObject = {
+        common: {
+          token,
+          userName,
+          orgName,
+          sourceCodeRepo,
+          projectName: projectConfig.project_name,
+          environment,
+        },
       };
       // Read the status.json file
       await readStatusFile(projectConfig, this.id);

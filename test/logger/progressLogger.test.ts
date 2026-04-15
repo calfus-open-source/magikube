@@ -1,38 +1,37 @@
-import ProgressBar from "../../src/logger/progressLogger";
-import cliProgress from "cli-progress";
-import colors from "colors";
+import ProgressBar from '../../src/logger/progressLogger';
+import cliProgress from 'cli-progress';
 
-jest.mock("cli-progress", () => {
-    const SingleBarMock = jest.fn();
-    return {
-        SingleBar: SingleBarMock,
-        Presets: { shades_classic: "mockPreset" },
-    };
+jest.mock('cli-progress', () => {
+  const SingleBarMock = jest.fn();
+  return {
+    SingleBar: SingleBarMock,
+    Presets: { shades_classic: 'mockPreset' },
+  };
 });
 
-jest.mock("colors", () => ({
-    cyan: jest.fn((str: string) => `cyan(${str})`),
-    green: jest.fn((str: string) => `green(${str})`),
+jest.mock('colors', () => ({
+  cyan: jest.fn((str: string) => `cyan(${str})`),
+  green: jest.fn((str: string) => `green(${str})`),
 }));
 
-describe("ProgressBar", () => {
-    const SingleBarMock = cliProgress.SingleBar as unknown as jest.Mock;
+describe('ProgressBar', () => {
+  const SingleBarMock = cliProgress.SingleBar as unknown as jest.Mock;
 
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    it("should create a SingleBar instance with correct options", () => {
-        const bar = ProgressBar.createProgressBar();
+  it('should create a SingleBar instance with correct options', () => {
+    const bar = ProgressBar.createProgressBar();
 
-        expect(SingleBarMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                format: "cyan({bar}) {percentage}% | green({message})",
-                hideCursor: true,
-            }),
-            "mockPreset"
-        );
+    expect(SingleBarMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        format: 'cyan({bar}) {percentage}% | green({message})',
+        hideCursor: true,
+      }),
+      'mockPreset',
+    );
 
-        expect(bar).toBeInstanceOf(SingleBarMock);
-    });
+    expect(bar).toBeInstanceOf(SingleBarMock);
+  });
 });

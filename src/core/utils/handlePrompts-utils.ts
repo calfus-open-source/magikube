@@ -2,17 +2,18 @@ import inquirer, { Answers } from 'inquirer';
 import CredentialsPrompts from '../../prompts/credentials-prompts.js';
 import PromptGenerator from '../../prompts/prompt-generator.js';
 import { v4 as uuidv4 } from 'uuid';
-import path, { join } from 'path';
+import path from 'path';
 import fs from 'fs';
 import { AppLogger } from '../../logger/appLogger.js';
 import { dotMagikubeConfig } from './projectConfigReader-utils.js';
+import AzurePolicies from '../azure/azure-iam.js';
 
 export async function handlePrompts(
   args: any,
   commandName?: any,
   template?: any,
   moduleType?: string,
-  serviceName?: string,
+  _serviceName?: string,
 ): Promise<Answers> {
   let responses: any =
     commandName === 'module' || commandName === 'create'
@@ -42,26 +43,72 @@ export async function handlePrompts(
         responses = { ...responses, ...resp };
       }
 
-      for (const regionPrompt of promptGenerator.getRegion()) {
-        const regionResp = await inquirer.prompt(regionPrompt);
-        responses = { ...responses, ...regionResp };
-      }
-
-      for (const regionPrompt of promptGenerator.getAwsProfile()) {
-        const regionResp = await inquirer.prompt(regionPrompt);
-        responses = { ...responses, ...regionResp };
-      }
-
-      const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
-        responses['cloud_provider'],
-        responses,
-      );
-      if (credentialPrompts.length > 0) {
-        for (const prompt of credentialPrompts) {
-          const credentialResp = await inquirer.prompt(prompt);
-          responses = { ...responses, ...credentialResp };
+      if (responses.cloud_provider === 'aws') {
+        for (const regionPrompt of promptGenerator.getRegion()) {
+          const regionResp = await inquirer.prompt(regionPrompt);
+          responses = { ...responses, ...regionResp };
         }
-        credentialsPrompts.saveCredentials(responses);
+
+        for (const profilePrompt of promptGenerator.getAwsProfile()) {
+          const profileResp = await inquirer.prompt(profilePrompt);
+          responses = { ...responses, ...profileResp };
+        }
+      } else if (responses.cloud_provider === 'azure') {
+        for (const regionPrompt of promptGenerator.getAzureRegion()) {
+          const regionResp = await inquirer.prompt(regionPrompt);
+          responses = { ...responses, ...regionResp };
+        }
+
+        for (const profilePrompt of promptGenerator.getAzureProfile()) {
+          const profileResp = await inquirer.prompt(profilePrompt);
+          responses = { ...responses, ...profileResp };
+        }
+
+        // Collect Azure credentials
+        const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
+          responses['cloud_provider'],
+          responses,
+        );
+
+        if (credentialPrompts.length > 0) {
+          for (const prompt of credentialPrompts) {
+            const credentialResp = await inquirer.prompt(prompt);
+            responses = { ...responses, ...credentialResp };
+          }
+          credentialsPrompts.saveCredentials(responses);
+        } else {
+          AppLogger.info(
+            'No credential prompts - using existing profile credentials',
+            true,
+          );
+        }
+
+        // Azure login attempt
+        AppLogger.info('Attempting Azure login...', true);
+        const loginResp = await AzurePolicies.getAzureLogin();
+
+        if (loginResp === false) {
+          AppLogger.error('Azure login failed!', true);
+          throw new Error('Azure login failed. Cannot proceed without authentication.');
+        } else {
+          AppLogger.info('Azure login successful!', true);
+          responses = { ...responses, ...loginResp };
+        }
+      }
+
+      // Move general credential collection for AWS or other cases
+      if (responses.cloud_provider !== 'azure') {
+        const credentialPrompts = credentialsPrompts.getCredentialsPrompts(
+          responses['cloud_provider'],
+          responses,
+        );
+        if (credentialPrompts.length > 0) {
+          for (const prompt of credentialPrompts) {
+            const credentialResp = await inquirer.prompt(prompt);
+            responses = { ...responses, ...credentialResp };
+          }
+          credentialsPrompts.saveCredentials(responses);
+        }
       }
 
       for (const envPrompt of promptGenerator.getEnvironment()) {

@@ -1,4 +1,4 @@
-import path, { join } from 'path';
+import path from 'path';
 import AWSProject from './aws-project.js';
 import repositoryProject from '../code-repository/common-repository.js';
 import BaseCommand from '../../commands/base.js';

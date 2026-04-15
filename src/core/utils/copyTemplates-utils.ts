@@ -5,6 +5,7 @@ import { AppLogger } from '../../logger/appLogger.js';
 
 export async function cloneAndCopyTemplates(
   commandName: string | undefined,
+  cloud_provider: string,
 ): Promise<void> {
   try {
     const parentPath =
@@ -16,7 +17,7 @@ export async function cloneAndCopyTemplates(
     const distFolder = `${parentPath}/dist`; // Dist folder path
     if (!fs.existsSync(distFolder)) {
       await executeCommandWithRetry(
-        `mkdir -p ${distFolder}/templates/aws`, // Create the required subfolders in dist
+        `mkdir -p ${distFolder}/templates/${cloud_provider}`, // Create the required subfolders in dist
         { cwd: parentPath },
         1,
       );
@@ -30,13 +31,23 @@ export async function cloneAndCopyTemplates(
         1,
       );
     }
-
     // Copy infrastructure templates to the 'dist' folder
-    await executeCommandWithRetry(
-      `rsync -av ${dir_infra}/aws/* ${distFolder}/templates/aws/ --prune-empty-dirs > /dev/null 2>&1`,
-      { cwd: parentPath },
-      1,
-    );
+    if (cloud_provider === 'aws') {
+      await executeCommandWithRetry(
+        `rsync -av ${dir_infra}/aws/* ${distFolder}/templates/aws/ --prune-empty-dirs > /dev/null 2>&1`,
+        { cwd: parentPath },
+        1,
+      );
+    }
+
+    if (cloud_provider === 'azure') {
+      await executeCommandWithRetry(
+        `rsync -av ${dir_infra}/azure/* ${distFolder}/templates/azure/ --prune-empty-dirs > /dev/null 2>&1`,
+        { cwd: parentPath },
+        1,
+      );
+    }
+
     await executeCommandWithRetry(
       `rsync -av ${dir_infra}/common-modules/* ${distFolder}/templates/ --prune-empty-dirs > /dev/null 2>&1`,
       { cwd: parentPath },
