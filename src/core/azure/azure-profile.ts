@@ -312,10 +312,11 @@ export default class AzureProfile {
     const existingProfileIndex = profiles.findIndex(
       (p: any) => p.profileName === profileName,
     );
+    // Note: Do NOT persist clientSecret to disk to avoid credential exposure.
+    // The clientSecret must be provided securely at runtime instead.
     const newProfile = {
       profileName,
       clientId,
-      clientSecret,
       tenantId,
       subscriptionId,
     };
