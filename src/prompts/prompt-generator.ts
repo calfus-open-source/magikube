@@ -277,24 +277,7 @@ enum ApplicationType {
   NODE = 'node',
 }
 
-const azureRegion: any[] = [
-  {
-    message: 'Select an Azure Location: ',
-    name: 'azure_location',
-    default:
-      process.env.AZURE_LOCATION ||
-      SystemConfig.getInstance().getConfig().azure_location,
-    type: 'input',
-    // Validate the input
-    validate: function (input: string) {
-      const azureRegions = [...azureSupportedRegions];
-      if (!azureRegions.includes(input)) {
-        return `${Colours.boldText}${Colours.redColor}\n Invalid Location. Please enter an existing Azure location.${Colours.colorReset}`;
-      }
-      return true;
-    },
-  },
-];
+const azureRegion: any[] = [];
 
 const azureProfile: any[] = [
   {
